@@ -1,6 +1,7 @@
+spark_jar = ENV["SPARK_JAR"] || "java/spark.jar"
+
 require "java"
-require "java/spark.jar"
-# require "java/spark-ruby.jar"
+require spark_jar
 
 $CLASSPATH << "java"
 
