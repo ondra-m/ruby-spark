@@ -118,6 +118,7 @@ org.apache.maven:maven-artifact-manager:jar:2.2.1
 org.apache.maven.reporting:maven-reporting-api:jar:2.2.1
 org.apache.maven:maven-settings:jar:2.2.1
 org.codehaus.plexus:plexus-interactivity-api:jar:1.0-alpha-4
+org.slf4j:slf4j-simple:jar:1.7.5
 org.scala-lang:scala-compiler:jar:2.10.4
 org.apache.ant:ant:jar:1.9.0
 org.apache.maven.wagon:wagon-http-lightweight:jar:1.0-beta-6

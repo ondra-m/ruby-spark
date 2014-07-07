@@ -1,8 +1,14 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env jruby
 
+require 'jbundler'
 require "readline" # for pry
 require "sourcify"
-require "lib/spark"
+require File.expand_path(File.dirname(__FILE__), "target/ruby-spark-0.0.1.jar")
+require_relative "lib/spark"
+
+
+java_import org.slf4j.Logger
+java_import org.slf4j.LoggerFactory
 
 puts <<-STRING
 Welcome to

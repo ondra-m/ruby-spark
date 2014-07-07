@@ -21,7 +21,7 @@ GEM
       ruby-maven (>= 3.1.1.0.6, < 3.1.2)
     maven-tools (1.0.2)
       virtus (~> 1.0)
-    rake (10.1.0)
+    rake (10.3.2)
     rspec (3.0.0)
       rspec-core (~> 3.0.0)
       rspec-expectations (~> 3.0.0)

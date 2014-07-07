@@ -23,3 +23,13 @@ rake jar
 ```
 rake build
 ```
+
+## Run
+
+```
+jbundle install --vendor
+```
+
+```
+ $ bundle exec ruby main.rb 
+```

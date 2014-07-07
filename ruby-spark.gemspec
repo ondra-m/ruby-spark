@@ -8,6 +8,7 @@ Gem::Specification.new do |s|
   s.summary = 'Ruby wrapper for Spark'
   s.description = ''
   s.requirements << "jar org.apache.spark:spark-core_2.10, 1.0.0"
+  s.files = Dir['lib/**']
 end
 
 # vim: syntax=Ruby

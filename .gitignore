@@ -4,3 +4,4 @@ target/*
 *.class
 *.jar
 pom.xml
+vendor/*

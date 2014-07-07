@@ -1,9 +1,7 @@
-spark_jar = ENV["SPARK_JAR"] || "java/spark.jar"
+#spark_jar = ENV["SPARK_JAR"] || "java/spark.jar"
 
 require "java"
-require spark_jar
-
-$CLASSPATH << "java"
+#require spark_jar
 
 java_import org.apache.spark.SparkConf
 java_import org.apache.spark.api.java.JavaSparkContext
