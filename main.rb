@@ -2,7 +2,6 @@
 
 require "readline" # for pry
 require "sourcify"
-
 require "lib/spark"
 
 puts <<-STRING
