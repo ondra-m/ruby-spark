@@ -1,3 +1,6 @@
 /java/spark.jar
 .jbundler
 target/*
+*.class
+*.jar
+pom.xml

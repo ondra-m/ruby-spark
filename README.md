@@ -13,3 +13,9 @@ install dependencies:
 ```
 jbundle install
 ```
+
+## Build
+
+```
+rake jar
+```
