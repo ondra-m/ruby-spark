@@ -1,6 +1,4 @@
 #-*- mode: ruby -*-
-
-
 group_id "cvut"
 artifact_id "ruby-spark"
 version "0.0.1"
