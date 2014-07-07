@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.email = [ 'moravon4@fit.cvut.cz' ]
   s.summary = 'Ruby wrapper for Spark'
   s.description = ''
-  #s.requirements << "jar org.bouncycastle:bcprov-jdk15on, 1.49"
+  s.requirements << "jar org.apache.spark:spark-core_2.10, 1.0.0"
 end
 
 # vim: syntax=Ruby

@@ -18,3 +18,10 @@ properties( 'jruby.versions' => ['1.6.8','1.7.4', '1.7.13'].join(','),
             'tesla.dump.pom' => 'pom.xml',
             'tesla.dump.readonly' => true )
 
+plugin :compiler, '3.1' do
+  execute_goals( :testCompile, :phase => 'test-compile' )
+end
+
+plugin 'org.scala-tools:maven-scala-plugin', '2.15.2' do
+  execute_goals( :compile, :phase => 'compile' )
+end
