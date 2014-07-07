@@ -19,3 +19,7 @@ jbundle install
 ```
 rake jar
 ```
+
+```
+rake build
+```
