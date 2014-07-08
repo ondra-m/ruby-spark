@@ -15,7 +15,7 @@ GEM
       tins (~> 0.5)
     ice_nine (0.11.0)
     jar-dependencies (0.0.4)
-    jbundler (0.6.0)
+    jbundler (0.6.1)
       bundler (~> 1.5)
       jar-dependencies (~> 0.0.4)
       ruby-maven (>= 3.1.1.0.6, < 3.1.2)
@@ -49,8 +49,6 @@ GEM
       ruby2ruby (>= 1.2.5)
       ruby_parser (>= 2.0.5)
       sexp_processor (>= 3.0.5)
-    thor (0.19.1)
-    thread_safe (0.3.4)
     thread_safe (0.3.4-java)
     tins (0.13.2)
     virtus (1.0.2)
@@ -67,4 +65,3 @@ DEPENDENCIES
   rake
   rspec
   sourcify
-  thor
