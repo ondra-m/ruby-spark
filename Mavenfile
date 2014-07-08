@@ -3,7 +3,7 @@ group_id "cvut"
 artifact_id "ruby-spark"
 version "0.0.1"
 
-gemspec :include_jars => true
+#gemspec :include_jars => true
 
 gemfile
 
