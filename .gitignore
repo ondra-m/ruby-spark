@@ -5,3 +5,4 @@ target/*
 *.jar
 pom.xml
 vendor/*
+pkg/*
