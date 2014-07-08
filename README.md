@@ -20,6 +20,7 @@ jbundle install
 rake jar
 ```
 
+should build `ruby-spark-{VERSION}.jar` to target directory
 ```
 rake build
 ```
@@ -27,9 +28,5 @@ rake build
 ## Run
 
 ```
-jbundle install --vendor
-```
-
-```
- $ bundle exec ruby main.rb 
+ $ bundle exec ruby main.rb
 ```
