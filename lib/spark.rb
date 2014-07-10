@@ -1,10 +1,11 @@
 require "spark/version"
 
 module Spark
-  autoload :Context, "spark/context"
-  autoload :RDD,     "spark/rdd"
-  autoload :CLI,     "spark/cli"
-  autoload :Build,   "spark/build"
+  autoload :Context,    "spark/context"
+  autoload :RDD,        "spark/rdd"
+  autoload :CLI,        "spark/cli"
+  autoload :Build,      "spark/build"
+  autoload :Serializer, "spark/serializer"
 
   # Cannot load before CLI::install
   def self.load_lib

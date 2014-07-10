@@ -35,8 +35,8 @@ module Spark
     #
     # TODO: add varible type to RubyRDD
     #       or as python => objects are written to a file and loaded through textFile
-    def parallelize(array)
-      Spark::RDD.new(@jcontext.parallelize(array.map!(&:to_s)), self)
+    def parallelize(array, num_slices=nil)
+      Spark::RDD.new(@jcontext.parallelize(array.map!(&:to_s), num_slices), self)
     end
 
   end

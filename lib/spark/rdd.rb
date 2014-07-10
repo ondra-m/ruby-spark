@@ -15,9 +15,11 @@ module Spark
       @checkpointed = false
     end
 
+    # jrdd.collect() -> ArrayList
+    #     .to_a -> Arrays in Array
     def collect
-      # bytesInJava = jrdd.collect()#.iterator()
-      bytesInJava = Marshal.load(jrdd.collect().to_a.flatten.pack("C*"))
+      bytes_array = jrdd.collect().to_a
+      Spark::Serializer::UTF8.load(bytes_array)
     end
 
     def flat_map(f)

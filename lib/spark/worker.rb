@@ -1,5 +1,13 @@
 #!/usr/bin/env ruby
 
+# -------------------------------------------------------------------------------
+#
+# TODO: create Serializer class
+# TODO: add constant for log, end stream
+#
+# -------------------------------------------------------------------------------
+
+
 require "socket"
 
 # -------------------------------------------------------------------------------
@@ -10,20 +18,46 @@ def log(message=nil)
   puts %{==> [#{Time.now.strftime("%H:%M")}] RUBY WORKER: #{message}}
 end
 
-def load_stream(s)
-  result = []
+class SparkSocket < TCPSocket
+  
+  def initialize(port, address='127.0.0.1', encoding='UTF-8')
+    @encoding = encoding
 
-  loop { 
-    begin
-      size = s.read(4).unpack("l>")[0]
-      result << s.read(size).force_encoding('UTF-8')
-    rescue
-      break
+    super(address, port)
+
+    set_encoding(@encoding)
+  end
+
+  # 4 byte, big endian
+  def read_int
+    read(4).unpack("l>")[0] 
+  end
+
+  def write_int(x)
+    send([x].pack("l>"), 0)
+  end
+
+  # first read size of item
+  # then load command
+  def load_stream
+    result = []
+    loop { 
+      result << read(read_int).force_encoding(@encoding) rescue break
+    }
+    result
+  end
+
+  def write_stream(data)
+    data.each do |x|
+      serialized = Marshal.dump(x)
+
+      write_int(serialized.size)
+      send(serialized, 0)
     end
-  }
+  end
 
-  result
 end
+
 
 
 
@@ -35,15 +69,12 @@ log "INIT"
 
 port = $stdin.readline.to_i
 
-log "PORT: #{port}"
+s = SparkSocket.new(port)
 
-s = TCPSocket.new('127.0.0.1', port)
-s.set_encoding 'UTF-8'
-
-split_index = s.read(4).unpack("l>")[0] # 4 byte, big endian
-command_size = s.read(4).unpack("l>")[0]
+split_index = s.read_int
+command_size = s.read_int
 command = Marshal.load(s.read(command_size))
-iterator = load_stream(s)
+iterator = s.load_stream
 
 eval(command[0]) # original lambda
 
@@ -55,13 +86,7 @@ log "COMMAND: #{command}"
 log "ITERATOR: #{iterator}"
 log "RESULT: #{result}"
 
-result = Marshal.dump(result)
-
-log result.size
-
-s.send([result.size].pack("l>"), 0)
-s.send(result, 0)
-
-s.send([0].pack("l>"), 0)
+s.write_stream(result)
+s.write_int(0)
 
 s.close
