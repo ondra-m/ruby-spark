@@ -22,15 +22,25 @@ module Spark
       Spark::Serializer::UTF8.load(bytes_array)
     end
 
+    def map(f)
+      function = [f, Proc.new {|split, iterator| iterator.map{|i| @_f.call(i)} }]
+      PipelinedRDD.new(self, function)
+    end
+
     def flat_map(f)
       function = [f, Proc.new {|split, iterator| iterator.map{|i| @_f.call(i)}.flatten }]
-      mapPartitionsWithIndex(function)
+      map_partitions_with_index(function)
     end
-    alias_method :flatMap, :flat_map
 
-    def mapPartitionsWithIndex(f)
+    def map_partitions_with_index(f)
       PipelinedRDD.new(self, f)
     end
+
+
+
+    # Aliases
+    alias_method :flatMap, :flat_map
+    alias_method :mapPartitionsWithIndex, :map_partitions_with_index
 
   end
 
@@ -50,7 +60,7 @@ module Spark
     def jrdd
       return @jrdd_values if @jrdd_values
 
-      command = Marshal.dump(["@_f=#{@function[0].to_source}" , @function[1].to_source]).bytes.to_a
+      command = Marshal.dump(["@_f=#{@function[0].to_source}", @function[1].to_source]).bytes.to_a
       env = @context.environment
       class_tag = @prev_jrdd.classTag
 

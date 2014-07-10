@@ -15,7 +15,7 @@ require "socket"
 # -------------------------------------------------------------------------------
 
 def log(message=nil)
-  puts %{==> [#{Time.now.strftime("%H:%M")}] RUBY WORKER: #{message}}
+  puts %{==> [#{Process.pid}] [#{Time.now.strftime("%H:%M")}] RUBY WORKER: #{message}}
 end
 
 class SparkSocket < TCPSocket
@@ -39,12 +39,16 @@ class SparkSocket < TCPSocket
 
   # first read size of item
   # then load command
+  # TODO: too many rescue
   def load_stream
     result = []
-    loop { 
-      result << read(read_int).force_encoding(@encoding) rescue break
-    }
+    loop { result << _next rescue break }
     result
+  end
+
+  def _next
+    data = read(read_int).force_encoding(@encoding)
+    Marshal.load(data) rescue data
   end
 
   def write_stream(data)
@@ -65,7 +69,7 @@ end
 # Main
 # -------------------------------------------------------------------------------
 
-log "INIT"
+# log "INIT"
 
 port = $stdin.readline.to_i
 
@@ -80,11 +84,11 @@ eval(command[0]) # original lambda
 
 result = eval(command[1]).call(split_index, iterator)
 
-log "SPLIT INDEX: #{split_index}"
-log "COMMAND SIZE: #{command_size}"
-log "COMMAND: #{command}"
-log "ITERATOR: #{iterator}"
-log "RESULT: #{result}"
+# log "SPLIT INDEX: #{split_index}"
+# log "COMMAND SIZE: #{command_size}"
+# log "COMMAND: #{command}"
+# log "ITERATOR: #{iterator}"
+# log "RESULT: #{result}"
 
 s.write_stream(result)
 s.write_int(0)
