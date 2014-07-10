@@ -12,6 +12,10 @@ GEM
     file-tail (1.0.12)
       tins (~> 0.5)
     method_source (0.8.2)
+    pry (0.10.0)
+      coderay (~> 1.1.0)
+      method_source (~> 0.8.1)
+      slop (~> 3.4)
     pry (0.10.0-java)
       coderay (~> 1.1.0)
       method_source (~> 0.8.1)
@@ -49,6 +53,7 @@ GEM
 
 PLATFORMS
   java
+  ruby
 
 DEPENDENCIES
   bundler (~> 1.6)

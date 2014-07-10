@@ -26,7 +26,8 @@ import org.apache.spark.api.python.PythonRDD
 class RubyRDD[T: ClassTag](
   parent: RDD[T],
   command: Array[Byte],
-  envVars: JMap[String, String])
+  envVars: JMap[String, String],
+  rubyWorker: String)
 
   extends RDD[Array[Byte]](parent){
 
@@ -38,7 +39,7 @@ class RubyRDD[T: ClassTag](
 
       val startTime = System.currentTimeMillis
       val env = SparkEnv.get
-      val worker: Socket = RubyRDD.createWorker
+      val worker: Socket = RubyRDD.createWorker(rubyWorker)
 
       // Start a thread to feed the process input from our parent's iterator
       val writerThread = new WriterThread(env, worker, split, context)
@@ -170,18 +171,18 @@ class RubyRDD[T: ClassTag](
 
 object RubyRDD {
 
-  def createWorker(): Socket = {
+  def createWorker(rubyWorker: String): Socket = {
     var serverSocket: ServerSocket = null
     try {
       serverSocket = new ServerSocket(0, 1, InetAddress.getByAddress(Array(127, 0, 0, 1)))
 
-      val execCommand = "ruby"
-      val execOptions = ""
-      val execScript  = "/vagrant_data/lib/spark/worker.rb"
+      // val execCommand = "ruby"
+      // val execOptions = ""
+      // val execScript  = "/vagrant_data/lib/spark/worker.rb"
 
-      val args = List(execCommand, execOptions, execScript)
+      // val args = List(execCommand, execOptions, execScript)
 
-      val pb = new ProcessBuilder(execScript)
+      val pb = new ProcessBuilder(rubyWorker)
       // val pb = new ProcessBuilder(args: _*)
       // val pb = new ProcessBuilder(execCommand, execOptions, execScript)
       // pb.environment().put("", "")

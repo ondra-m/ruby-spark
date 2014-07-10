@@ -1,3 +1,5 @@
+require "sourcify"
+
 # Resilient Distributed Dataset
 
 module Spark
@@ -18,10 +20,11 @@ module Spark
       bytesInJava = Marshal.load(jrdd.collect().to_a.flatten.pack("C*"))
     end
 
-    def flatMap(f)
+    def flat_map(f)
       function = [f, Proc.new {|split, iterator| iterator.map{|i| @_f.call(i)}.flatten }]
       mapPartitionsWithIndex(function)
     end
+    alias_method :flatMap, :flat_map
 
     def mapPartitionsWithIndex(f)
       PipelinedRDD.new(self, f)
@@ -49,7 +52,7 @@ module Spark
       env = @context.environment
       class_tag = @prev_jrdd.classTag
 
-      ruby_rdd = RubyRDD.new(@prev_jrdd.rdd, command, env, class_tag)
+      ruby_rdd = RubyRDD.new(@prev_jrdd.rdd, command, env, Spark.ruby_worker, class_tag)
       @jrdd_values = ruby_rdd.asJavaRDD()
       @jrdd_values
     end

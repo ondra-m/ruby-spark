@@ -1,3 +1,5 @@
+Spark.load_lib
+
 module Spark
   class Context
 
@@ -26,6 +28,7 @@ module Spark
       partitions ||= [@context.sc.defaultParallelism, 2].min
       Spark::RDD.new(@context.textFile(name, partitions), self)
     end
+    alias_method :textFile, :text_file
 
   end
 end
