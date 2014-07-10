@@ -24,8 +24,13 @@ module Spark
 
     end
 
+    def default_parallelism
+      @jcontext.sc.defaultParallelism
+    end
+    alias_method :defaultParallelism, :default_parallelism
+
     def text_file(name, partitions=nil)
-      partitions ||= [@jcontext.sc.defaultParallelism, 2].min
+      partitions ||= [default_parallelism, 2].min
       Spark::RDD.new(@jcontext.textFile(name, partitions), self)
     end
     alias_method :textFile, :text_file
@@ -35,7 +40,7 @@ module Spark
     #
     # TODO: add varible type to RubyRDD
     #       or as python => objects are written to a file and loaded through textFile
-    def parallelize(array, num_slices=nil)
+    def parallelize(array, num_slices=default_parallelism)
       Spark::RDD.new(@jcontext.parallelize(array.map!(&:to_s), num_slices), self)
     end
 
