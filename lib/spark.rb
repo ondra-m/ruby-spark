@@ -1,11 +1,13 @@
-#spark_jar = ENV["SPARK_JAR"] || "java/spark.jar"
+require "spark/version"
 
 require "java"
-#require spark_jar
 
 java_import org.apache.spark.SparkConf
 java_import org.apache.spark.api.java.JavaSparkContext
 java_import org.apache.spark.api.ruby.RubyRDD
 
-require "lib/spark/context"
-require "lib/spark/rdd"
+module Spark
+  autoload :Context, "spark/context"
+  autoload :RDD,     "spark/rdd"
+  autoload :CLI,     "spark/cli"
+end

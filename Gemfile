@@ -1,10 +1,11 @@
 source 'https://rubygems.org'
 
-gem 'jbundler'
+gemspec
+
 gem 'sourcify'
-gem 'rake'
 gem 'thor'
 
 group :development do
   gem 'rspec'
+  gem 'pry'
 end
