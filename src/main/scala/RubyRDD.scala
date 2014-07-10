@@ -139,10 +139,11 @@ class RubyRDD[T: ClassTag](
           //   dataOut.writeInt(broadcast.value.length)
           //   dataOut.write(broadcast.value)
           // }
-          dataOut.flush()
           // Serialized command:
           dataOut.writeInt(command.length)
           dataOut.write(command)
+          dataOut.flush()
+          
           // Data values
           PythonRDD.writeIteratorToStream(parent.iterator(split, context), dataOut)
           dataOut.flush()

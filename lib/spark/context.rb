@@ -30,8 +30,13 @@ module Spark
     end
     alias_method :textFile, :text_file
 
+    # WORKAROUND to_s: PythonRDD.writeIteratorToStream works only with Array[Byte], String, Tuple2[_, _]
+    # [1,2,3] is convert as [java.lang.Long, ...]
+    #
+    # TODO: add varible type to RubyRDD
+    #       or as python => objects are written to a file and loaded through textFile
     def parallelize(array)
-      Spark::RDD.new(@jcontext.parallelize(array), self)
+      Spark::RDD.new(@jcontext.parallelize(array.map!(&:to_s)), self)
     end
 
   end
