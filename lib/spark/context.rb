@@ -5,7 +5,7 @@ module Spark
 
     EXECUTOR_ENV_KEY = "spark.executorEnv."
 
-    attr_reader :conf, :environment, :context, :java_accumulator
+    attr_reader :conf, :environment, :jcontext, :java_accumulator
 
     def initialize(options={})
       @options = options
@@ -16,7 +16,7 @@ module Spark
       @conf.setAppName(options[:app_name])
       @conf.setMaster(options[:master])
 
-      @context = JavaSparkContext.new(@conf)
+      @jcontext = JavaSparkContext.new(@conf)
 
       @conf.getAll.each do |tuple|
         @environment[EXECUTOR_ENV_KEY.size..-1] = tuple._2 if tuple._1.start_with?(EXECUTOR_ENV_KEY)
@@ -25,10 +25,14 @@ module Spark
     end
 
     def text_file(name, partitions=nil)
-      partitions ||= [@context.sc.defaultParallelism, 2].min
-      Spark::RDD.new(@context.textFile(name, partitions), self)
+      partitions ||= [@jcontext.sc.defaultParallelism, 2].min
+      Spark::RDD.new(@jcontext.textFile(name, partitions), self)
     end
     alias_method :textFile, :text_file
+
+    def parallelize(array)
+      Spark::RDD.new(@jcontext.parallelize(array), self)
+    end
 
   end
 end
