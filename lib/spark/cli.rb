@@ -20,12 +20,12 @@ module Spark
     desc "irb", "start ruby shell for spark"
     option :spark
     def irb
-      to_load = options[:spark] || Spark.default_target
+      to_load = options[:spark] || Spark.target_dir
 
       require "irb"
       require "java"
-      Dir.glob("#{to_load}/*"){|file| require file}
-      require File.join(Spark.default_target, "ruby-spark.jar")
+      Dir.glob(File.join(to_load, "*")){|file| require file}
+      require Spark.ruby_spark_jar
 
       $sc = Spark::Context.new(app_name: "RubySpark", master: "local")
 

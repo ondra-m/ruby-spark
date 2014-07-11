@@ -1,4 +1,5 @@
 require "spark/version"
+require "spark/error"
 
 module Spark
   autoload :Context,    "spark/context"
@@ -16,12 +17,20 @@ module Spark
     java_import org.apache.spark.api.ruby.RubyRDD
   end
 
-  def self.default_target
-    @default_target ||= File.expand_path(File.dirname(__FILE__) + '/../target')
+  def self.root
+    @root ||= File.expand_path("..", File.dirname(__FILE__))
   end
 
-  def self.ruby_worker
-    @ruby_worker ||= File.expand_path(File.dirname(__FILE__) + '/spark/worker.rb')
+  def self.target_dir
+    @target_dir ||= File.join(root, 'target')
+  end
+
+  def self.worker_dir
+    @worker_dir ||= File.join(root, 'lib', 'spark', 'worker')
+  end
+
+  def self.ruby_spark_jar
+    @ruby_spark_jar ||= File.join(target_dir, 'ruby-spark.jar')
   end
 
 end
