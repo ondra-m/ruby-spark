@@ -15,6 +15,27 @@ module Spark
       @checkpointed = false
     end
 
+
+
+    # =======================================================================    
+    # Variables 
+    # =======================================================================   
+
+    def default_reduce_partitions
+      if @context.conf.contains("spark.default.parallelism")
+        @context.default_parallelism
+      else
+        @jrdd.partitions.size
+      end
+    end
+
+
+
+    # =======================================================================    
+    # Compute functions    
+    # =======================================================================        
+
+
     # jrdd.collect() -> ArrayList
     #     .to_a -> Arrays in Array
     def collect
@@ -32,6 +53,14 @@ module Spark
       map_partitions_with_index(function)
     end
 
+    def reduce_by_key(f, num_partitions=nil)
+      combine_by_key(lambda {|x| x}, f, f, num_partitions)
+    end
+
+    def combine_by_key(create_combiner, merge_value, merge_combiners, num_partitions=nil)
+      num_partitions ||= default_reduce_partitions
+    end
+
     def map_partitions_with_index(f)
       PipelinedRDD.new(self, f)
     end
@@ -40,6 +69,8 @@ module Spark
 
     # Aliases
     alias_method :flatMap, :flat_map
+    alias_method :reduceByKey, :reduce_by_key
+    alias_method :combineByKey, :combine_by_key
     alias_method :mapPartitionsWithIndex, :map_partitions_with_index
 
   end
