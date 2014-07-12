@@ -106,23 +106,33 @@ class Worker
   end
 
   def run
+    time = Time.now.to_i
+
     split_index = read_int
     command_size = read_int
+
+    log "1: #{-1*(time - (time=Time.now.to_i))}s"
+
     command = Marshal.load(read(command_size))
-    iterator = load_stream
+
+    log "2: #{-1*(time - (time=Time.now.to_i))}s"
+
+    iterator = load_iterator
+
+    log "3: #{-1*(time - (time=Time.now.to_i))}s"
 
     eval(command[0]) # original lambda
 
+    log "4: #{-1*(time - (time=Time.now.to_i))}s"
+
     result = eval(command[1]).call(split_index, iterator)
 
-    # log "SPLIT INDEX: #{split_index}"
-    # log "COMMAND SIZE: #{command_size}"
-    # log "COMMAND: #{command}"
-    # log "ITERATOR: #{iterator}"
-    # log "RESULT: #{result}"
+    log "5: #{-1*(time - (time=Time.now.to_i))}s"
 
     write_stream(result)
     write_int(0)
+
+    log "6: #{-1*(time - (time=Time.now.to_i))}s"
   end
 
   private
@@ -143,15 +153,26 @@ class Worker
       send(to_stream(data))
     end
 
-    def load_stream
-      result = []
-      loop { 
-        result << begin
-                    data = read(read_int).force_encoding(@encoding) rescue break # end of stream
-                    Marshal.load(data) rescue data # data cannot be mashaled (e.g. first input)
-                  end
-      }
-      result
+    def load_iterator(&block)
+      # result = []
+      # loop { 
+      #   result << begin
+      #               data = read(read_int).force_encoding(@encoding) rescue break # end of stream
+      #               Marshal.load(data) rescue data # data cannot be mashaled (e.g. first input)
+      #             end
+      # }
+      # result
+
+      Enumerator.new do |e|
+        while true
+          begin
+            e.yield(read(read_int))
+          rescue
+            break
+          end
+        end
+      end.each(&block)
+
     end
 
     def write_stream(data)
