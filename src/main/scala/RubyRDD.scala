@@ -19,6 +19,7 @@ import org.apache.spark.InterruptibleIterator
 import org.apache.spark.api.python.PythonRDD
 
 
+
 // -------------------------------------------------------------------------------
 // Class RubyRDD
 // -------------------------------------------------------------------------------
@@ -27,7 +28,7 @@ class RubyRDD[T: ClassTag](
   parent: RDD[T],
   command: Array[Byte],
   envVars: JMap[String, String],
-  rubyWorker: String)
+  workerDir: String)
 
   extends RDD[Array[Byte]](parent){
 
@@ -35,11 +36,15 @@ class RubyRDD[T: ClassTag](
 
     override def getPartitions = parent.partitions
 
+    // find path
+    // override val partitioner = if (preservePartitoning) parent.partitioner else None
+    override val partitioner = None
+
     override def compute(split: Partition, context: TaskContext): Iterator[Array[Byte]] = {
 
       val startTime = System.currentTimeMillis
       val env = SparkEnv.get
-      val worker: Socket = RubyRDD.createWorker(rubyWorker)
+      val worker: Socket = RubyWorker.createWorker(workerDir)
 
       // Start a thread to feed the process input from our parent's iterator
       val writerThread = new WriterThread(env, worker, split, context)
@@ -103,7 +108,7 @@ class RubyRDD[T: ClassTag](
 
 
     class WriterThread(env: SparkEnv, worker: Socket, split: Partition, context: TaskContext)
-      extends Thread("stdout writer for $pythonExec") {
+      extends Thread("stdout writer for ruby worker") {
 
       @volatile private var _exception: Exception = null
 
@@ -123,8 +128,10 @@ class RubyRDD[T: ClassTag](
           SparkEnv.set(env)
           val stream = new BufferedOutputStream(worker.getOutputStream, bufferSize)
           val dataOut = new DataOutputStream(stream)
+
           // Partition index
           dataOut.writeInt(split.index)
+
           // // sparkFilesDir
           // PythonRDD.writeUTF(SparkFiles.getRootDirectory, dataOut)
           // // Python includes (*.zip and *.egg files)
@@ -139,9 +146,12 @@ class RubyRDD[T: ClassTag](
           //   dataOut.writeInt(broadcast.value.length)
           //   dataOut.write(broadcast.value)
           // }
+
           // Serialized command:
           dataOut.writeInt(command.length)
           dataOut.write(command)
+
+          // Send it
           dataOut.flush()
           
           // Data values
@@ -156,86 +166,10 @@ class RubyRDD[T: ClassTag](
             // will kill the whole executor (see org.apache.spark.executor.Executor).
             _exception = e
         } finally {
-          Try(worker.shutdownOutput()) // kill Python worker process
+          Try(worker.shutdownOutput()) // kill worker process
         }
       }
-    }
+    } // end WriterThread
 
 
   }
-
-
-
-// -------------------------------------------------------------------------------
-// Object RubyRDD
-// -------------------------------------------------------------------------------
-
-object RubyRDD {
-
-  def createWorker(rubyWorker: String): Socket = {
-    var serverSocket: ServerSocket = null
-    try {
-      serverSocket = new ServerSocket(0, 1, InetAddress.getByAddress(Array(127, 0, 0, 1)))
-
-      // val execCommand = "ruby"
-      // val execOptions = ""
-      // val execScript  = "/vagrant_data/lib/spark/worker.rb"
-
-      // val args = List(execCommand, execOptions, execScript)
-
-      val pb = new ProcessBuilder(rubyWorker)
-      // val pb = new ProcessBuilder(args: _*)
-      // val pb = new ProcessBuilder(execCommand, execOptions, execScript)
-      // pb.environment().put("", "")
-      val worker = pb.start()
-
-      // Redirect worker stdout and stderr
-      redirectStreamsToStderr(worker.getInputStream, worker.getErrorStream)
-
-      // Tell the worker our port
-      // OutputStreamWriter from java
-      val out = new OutputStreamWriter(worker.getOutputStream)
-      out.write(serverSocket.getLocalPort + "\n")
-      out.flush()
-
-      // Wait for it to connect to our socket
-      serverSocket.setSoTimeout(10000)
-      try {
-        return serverSocket.accept()
-      } catch {
-        case e: Exception =>
-          throw new SparkException("Python worker did not connect back in time", e)
-      }
-    } finally {
-      if (serverSocket != null) {
-        serverSocket.close()
-      }
-    }
-    null
-  }
-
-
-
-
-  private def redirectStreamsToStderr(stdout: InputStream, stderr: InputStream) {
-    try {
-      new RedirectThread(stdout, System.err, "stdout reader for").start()
-      new RedirectThread(stderr, System.err, "stderr reader for").start()
-    } catch {
-      case e: Exception =>
-        // logError("Exception in redirecting streams", e)
-    }
-  }
-
-
-
-
-
-
-
-
-
-
-
-
-}

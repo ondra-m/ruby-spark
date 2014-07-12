@@ -95,7 +95,7 @@ module Spark
       env = @context.environment
       class_tag = @prev_jrdd.classTag
 
-      ruby_rdd = RubyRDD.new(@prev_jrdd.rdd, command, env, Spark.ruby_worker, class_tag)
+      ruby_rdd = RubyRDD.new(@prev_jrdd.rdd, command, env, Spark.worker_dir, class_tag)
       @jrdd_values = ruby_rdd.asJavaRDD()
       @jrdd_values
     end

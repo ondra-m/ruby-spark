@@ -69,7 +69,7 @@ end
 # Main
 # -------------------------------------------------------------------------------
 
-# log "INIT"
+log "INIT"
 
 port = $stdin.readline.to_i
 
@@ -93,4 +93,4 @@ result = eval(command[1]).call(split_index, iterator)
 s.write_stream(result)
 s.write_int(0)
 
-s.close
+# s.close

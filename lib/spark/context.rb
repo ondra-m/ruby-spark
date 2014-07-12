@@ -15,6 +15,7 @@ module Spark
       @conf = SparkConf.new(true)
       @conf.setAppName(options[:app_name])
       @conf.setMaster(options[:master])
+      @conf.set("spark.default.parallelism", "2")
 
       @jcontext = JavaSparkContext.new(@conf)
 
@@ -38,6 +39,7 @@ module Spark
     #
     # TODO: add varible type to RubyRDD
     #       or as python => objects are written to a file and loaded through textFile
+    #       or serialize to bytes
     def parallelize(array, num_slices=default_parallelism)
       Spark::RDD.new(@jcontext.parallelize(array.map!(&:to_s), num_slices), self)
     end
