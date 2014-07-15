@@ -3,6 +3,7 @@
 # $stderr.reopen("/ruby_spark/err.txt", "w")
 
 require "socket"
+require "benchmark"
 
 def log(message=nil)
   puts %{==> [#{Process.pid}] [#{Time.now.strftime("%H:%M")}] RUBY WORKER: #{message}}
@@ -86,6 +87,7 @@ class PoolMaster
     loop {
       client_socket = server_socket.accept
       create_worker(client_socket)
+      # client_socket.close # not for thread
     }
   end
 
@@ -103,97 +105,6 @@ end
 # Worker
 # ==============================================================================
 
-# class Worker
-
-#   include SocketHelper
-
-#   attr_accessor :client_socket
-
-#   def initialize(client_socket)
-#     self.client_socket = client_socket
-#   end
-
-#   def run
-#     time = Time.now
-
-#     split_index = read_int
-
-#     command = Marshal.load(read(read_int))
-
-#     log "1: #{-1*(time - (time=Time.now))*1000}ms"
-#     iterator = load_iterator
-
-#     log "2: #{-1*(time - (time=Time.now))*1000}ms"
-#     eval(command[0]) # original lambda
-
-#     log "3: #{-1*(time - (time=Time.now))*1000}ms"
-#     result = eval(command[1]).call(split_index, iterator)
-#     log "4: #{-1*(time - (time=Time.now))*1000}ms"
-    
-#     write_stream(result)
-#     log "5: #{-1*(time - (time=Time.now))*1000}ms"
-
-#     write_int(0)
-#   end
-
-#   private
-
-#     def read(size)
-#       client_socket.read(size)
-#     end
-
-#     def send(data)
-#       client_socket.send(data, 0)
-#     end
-
-#     def read_int
-#       read(4).unpack("l>")[0] 
-#     end
-
-#     def write_int(data)
-#       send(to_stream(data))
-#     end
-
-#     def load_iterator(&block)
-#       # result = []
-#       # loop { 
-#       #   result << begin
-#       #               data = read(read_int).force_encoding(@encoding) rescue break # end of stream
-#       #               Marshal.load(data) rescue data # data cannot be mashaled (e.g. first input)
-#       #             end
-#       # }
-#       # result
-
-#       Enumerator.new do |e|
-#         while true
-#           begin
-#             e.yield(read(read_int))
-#           rescue
-#             break
-#           end
-#         end
-#       end.each(&block)
-
-#     end
-
-#     def write_stream(data)
-#       data.each do |x|
-#         serialized = Marshal.dump(x)
-
-#         write_int(serialized.size)
-#         send(serialized)
-#       end
-#     end
-
-# end
-
-
-
-
-
-
-
-
 class Worker
 
   include SocketHelper
@@ -204,34 +115,42 @@ class Worker
     self.client_socket = client_socket
 
     @iterator = []
-    @point = Time.now
   end
 
   def run
 
-    split_index = read_int
+    @split_index = read_int
 
-    command = Marshal.load(read(read_int))
+    Benchmark.bmbm do |bm|
+      bm.report("Load command") do
+        @command = Marshal.load(read(read_int))
+      end
 
-    report("Load command")
+      bm.report("Load iterator") do
+        load_iterator
+      end
 
-    load_iterator
+      bm.report("Compute") do
+        eval(@command[0]) # original lambda
+        @result = eval(@command[1]).call(@split_index, @iterator)
+      end
 
-    report("Load iterator")
+      bm.report("Marshal result") do
+        @result.map!{|x|
+          Marshal.dump(x)
+        }
+      end
 
-    eval(command[0]) # original lambda
+      bm.report("Send result") do
+        @result.each{|x|
+          write_int(x.size)
+          send(x)
+        }
+        write_int(0)
+      end
+      
+    end # end benchmark
 
-    report("Eval original lambda")
-
-    @result = eval(command[1]).call(split_index, @iterator)
-
-    report("Run")
-    
-    write_stream
-
-    report("Write stream")
-
-    write_int(0)
   end
 
   private
