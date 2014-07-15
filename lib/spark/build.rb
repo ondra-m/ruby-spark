@@ -1,3 +1,5 @@
+require 'open3'
+
 module Spark
   module Build
 
@@ -6,16 +8,14 @@ module Spark
 
       begin
         puts "Building ivy"
-        `#{get_ivy.call(dir, 'ivy.jar')}`
-        check_status
+        exec(get_ivy.call(dir, 'ivy.jar'))
         puts "Building spark"
-        `#{get_spark.call(dir, 'ivy.jar')}`
-        check_status
+        exec(get_spark.call(dir, 'ivy.jar'))
         puts "Moving files"
         FileUtils.mkdir_p(Spark.target_dir)
         FileUtils.mv(Dir.glob(File.join(dir, 'spark', '*')), Spark.target_dir)
-      rescue
-        raise Spark::BuildError, "Cannot build Spark."
+      rescue Exception => e
+        raise Spark::BuildError, "Cannot build Spark. #{e}"
       ensure
         FileUtils.remove_entry(dir)
       end
@@ -26,10 +26,9 @@ module Spark
 
       begin
         puts "Building ruby-spark extension"
-        `#{compile_ext.call(spark)}`
-        check_status
-      rescue
-        raise Spark::BuildError, "Cannot build ruby-spark extension."
+	exec(compile_ext.call(spark))
+      rescue Exception => e
+        raise Spark::BuildError, "Cannot build ruby-spark extension. #{e}", e.backtrace
       end
     end
 
@@ -57,6 +56,16 @@ module Spark
                               "-d", Spark.ruby_spark_jar,
                               "-classpath", "\"#{File.join(classpath, '*')}\"",
                               File.join(Spark.root, "src", "main", "scala", "*.scala")].join(" ")}
+      end
+
+      def self.exec(cmd)
+	Open3.popen3(cmd) do |stdin, stdout, stderr, wait_thr|
+	  exit_status = wait_thr.value
+	  unless exit_status.success?
+	    err = stderr.read
+	    raise Spark::BuildError, "'#{cmd}' \n failed: #{err}"
+	  end
+	end
       end
 
   end
