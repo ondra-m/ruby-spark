@@ -39,14 +39,14 @@ module Spark
     # jrdd.collect() -> ArrayList
     #     .to_a -> Arrays in Array
     def collect
-      time = Time.now
+      # time = Time.now
       bytes_array = jrdd.collect().to_a
-      puts "1: #{-1*(time - (time=Time.now))*1000}ms"
-      result = Spark::Serializer::UTF8.load(bytes_array)
+      # puts "1: #{-1*(time - (time=Time.now))*1000}ms"
+      Spark::Serializer::UTF8.load(bytes_array)
       # it = jrdd.collect.iterator
       # result = Spark::Serializer::UTF8.load_from_itr(it)
-      puts "2: #{-1*(time - (time=Time.now))*1000}ms"
-      result
+      # puts "2: #{-1*(time - (time=Time.now))*1000}ms"
+      # result
 
 
 
