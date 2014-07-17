@@ -4,8 +4,11 @@
 
 require "socket"
 
+dir = File.expand_path(File.join("..", "serializer"), File.dirname(__FILE__))
+Dir.glob(File.join(dir, "*.rb")) { |file| require file  }
+
 def log(message=nil)
-  puts %{==> [#{Process.pid}] [#{Time.now.strftime("%H:%M")}] RUBY WORKER: #{message}}
+  puts %{==> [#{Process.pid}##{Thread.current.object_id}] [#{Time.now.strftime("%H:%M")}] #{message}}
 end
 
 # ==============================================================================
@@ -80,14 +83,14 @@ class PoolMaster
   end
 
   def run
-    log "Init POOLMASTER [#{Thread.current.object_id}]"
+    log "Init POOLMASTER"
     loop {
       client_socket = server_socket.accept
       create_worker(client_socket)
       # client_socket.close # not for thread
     }
     workers.each {|t| t.join}
-    log "Shutdown POOLMASTER [#{Thread.current.object_id}]"
+    log "Shutdown POOLMASTER"
   end
 
   def create_worker(client_socket)
@@ -112,40 +115,22 @@ class Worker
 
   def initialize(client_socket)
     self.client_socket = client_socket
-
-    @iterator = []
   end
 
   def run
-    log "Init WORKER [#{Thread.current.object_id}]"
+    log "Init WORKER"
 
-    @split_index = read_int
-
-    @command = Marshal.load(read(read_int))
+    load_split_index
+    load_command
     load_iterator
 
-    eval(@command[0]) # original lambda
-    @result = eval(@command[1]).call(@split_index, @iterator)
+    compute
 
-    @result.map!{|x|
-      serialized = Marshal.dump(x)
+    serialize_result
+    send_result
+    finish
 
-      [serialized.size].pack("l>") + serialized
-    }
-
-    send(@result.join)
-    write_int(0)
-
-    client_socket.flush
-
-    while true
-        # Empty string is returned upon EOF (and only then).
-      if client_socket.recv(4096) == ''
-        break
-      end
-    end
-
-    log "Shutdown WORKER [#{Thread.current.object_id}]"
+    log "Shutdown WORKER"
   end
 
   private
@@ -154,38 +139,50 @@ class Worker
       client_socket.read(size)
     end
 
-    def send(data)
-      client_socket.write(data)
-    end
-
     def read_int
       read(4).unpack("l>")[0] 
     end
 
-    def write_int(data)
-      send(to_stream(data))
+    def load_split_index
+      @split_index = read_int
+    end
+
+    def load_command
+      command = Marshal.load(read(read_int))
+
+      @commands = command[0].map!{|x| [eval(x[0]), eval(x[1])]}
+      @serializer = eval(command[1])
     end
 
     def load_iterator
+      @iterator = @serializer.load_from_io(client_socket)
+    end
 
-      @iterator = []
-      loop { 
-        @iterator << begin
-                       # data = read(read_int).force_encoding(@encoding) rescue break # end of stream
-                       data = read(read_int) rescue break # end of stream
-                       # Marshal.load(data) rescue data # data cannot be mashaled (e.g. first input)
-                     end
-      }
+    def compute
+      @commands.each do |command|
+        @__function__ = command[0]
+        @iterator = command[1].call(@split_index, @iterator)
+      end
+    end
 
-      # @iterator = Enumerator.new do |e|
-      #   while true
-      #     begin
-      #       e.yield(read(read_int))
-      #     rescue
-      #       break
-      #     end
-      #   end
-      # end
+    def serialize_result
+      @serializer.dump_for_io(@iterator)
+    end
+
+    def send_result
+      client_socket.write(@iterator.join)
+    end
+
+    def finish
+      client_socket.write(to_stream(0))
+      client_socket.flush
+
+      while true
+        # Empty string is returned upon EOF (and only then).
+        if client_socket.recv(4096) == ''
+          break
+        end
+      end
 
     end
 
