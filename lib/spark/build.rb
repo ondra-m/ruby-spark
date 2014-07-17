@@ -26,7 +26,8 @@ module Spark
 
       begin
         puts "Building ruby-spark extension"
-        exec(compile_ext(spark))
+        # exec(compile_ext(spark))
+        system(compile_ext(spark))
       rescue Exception => e
         raise Spark::BuildError, "Cannot build ruby-spark extension. #{e}", e.backtrace
       end
