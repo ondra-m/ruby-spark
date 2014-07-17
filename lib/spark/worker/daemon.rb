@@ -2,20 +2,11 @@
 
 # $stderr.reopen("/ruby_spark/err.txt", "w")
 
-
-
 require "socket"
-# require "benchmark"
 
 def log(message=nil)
   puts %{==> [#{Process.pid}] [#{Time.now.strftime("%H:%M")}] RUBY WORKER: #{message}}
 end
-
-# def realtime
-#   t1 = Time.now
-#   yield
-#   Time.now - t1
-# end
 
 # ==============================================================================
 # SocketHelper
@@ -53,9 +44,6 @@ class Master
 
   def send_info
     $stdout.write(to_stream(port))
-
-    orig_stdout = $stdout.clone
-    $stdout.reopen $stderr
   end
 
   def run
@@ -126,7 +114,6 @@ class Worker
     self.client_socket = client_socket
 
     @iterator = []
-    # @queue = Queue.new
   end
 
   def run
@@ -134,39 +121,20 @@ class Worker
 
     @split_index = read_int
 
-    # Benchmark.bmbm do |bm|
-      # bm.report("Load command") do
-        @command = Marshal.load(read(read_int))
-      # end
+    @command = Marshal.load(read(read_int))
+    load_iterator
 
-      # bm.report("Load iterator") do
-        load_iterator
-      # end
+    eval(@command[0]) # original lambda
+    @result = eval(@command[1]).call(@split_index, @iterator)
 
-      # bm.report("Compute") do
-        eval(@command[0]) # original lambda
-        @result = eval(@command[1]).call(@split_index, @iterator)
-      # end
+    @result.map!{|x|
+      serialized = Marshal.dump(x)
 
-      # bm.report("Marshal result") do
-        @result.map!{|x|
-          serialized = Marshal.dump(x)
+      [serialized.size].pack("l>") + serialized
+    }
 
-          [serialized.size].pack("l>") + serialized
-        }
-      # end
-
-      # bm.report("Send result") do
-        # @result.each{|x|
-        #   # write_int(x.size)
-        #   send(x)
-        # }
-        send(@result.join)
-        # send(@result)
-        write_int(0)
-      # end
-      
-    # end # end benchmark
+    send(@result.join)
+    write_int(0)
 
     client_socket.flush
 
@@ -181,11 +149,6 @@ class Worker
   end
 
   private
-
-    # def report(message)
-    #   log("#{message}: #{(Time.now - @point)*1000}ms")
-    #   @point = Time.now
-    # end
 
     def read(size)
       client_socket.read(size)
@@ -225,15 +188,6 @@ class Worker
       # end
 
     end
-
-    # def write_stream
-    #   @result.each{|x|
-    #     serialized = Marshal.dump(x)
-
-    #     write_int(serialized.size)
-    #     send(serialized)
-    #   }
-    # end
 
 end
 
