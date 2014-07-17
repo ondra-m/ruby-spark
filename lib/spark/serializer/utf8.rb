@@ -3,17 +3,9 @@ module Spark
     class UTF8
       
       def self.load(bytes_array)
-        # result = []
-
-        # bytes_array.each do |bytes|
-        #   result << Marshal.load(bytes.pack("C*"))
-        # end
-
-        # result
-
-        bytes_array.map!{ |bytes|
+        bytes_array.map! do |bytes|
           Marshal.load(bytes.pack("C*"))
-        }
+        end
       end
 
       def self.load_from_itr(iterator)

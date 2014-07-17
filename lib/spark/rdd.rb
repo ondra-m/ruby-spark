@@ -39,31 +39,8 @@ module Spark
     # jrdd.collect() -> ArrayList
     #     .to_a -> Arrays in Array
     def collect
-      # time = Time.now
-      bytes_array = jrdd.collect().to_a
-      # puts "1: #{-1*(time - (time=Time.now))*1000}ms"
-      Spark::Serializer::UTF8.load(bytes_array)
-      # it = jrdd.collect.iterator
-      # result = Spark::Serializer::UTF8.load_from_itr(it)
-      # puts "2: #{-1*(time - (time=Time.now))*1000}ms"
-      # result
-
-
-
-      # # time = Time.now
-      
-      # # bytes_itr = jrdd.collect.iterator
-      
-      # # puts "1: #{-1*(time - (time=Time.now))*1000}ms"
-      
-      # # collect_through_file(bytes_itr)
-
-
-      # file = Tempfile.new("bytes_from_java")
-      # file.close(false) # not unlink_now
-
-      # jrdd.collectToFile(file.path)
-
+      Spark::Serializer::UTF8.load(jrdd.collect.to_a)
+      # Spark::Serializer::UTF8.load_from_itr(jrdd.collect.iterator)
     end
 
 
