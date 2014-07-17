@@ -18,6 +18,26 @@ module Spark
         result
       end
 
+      def self.load_from_io(stream)
+        result = []
+        while true
+          begin
+            result << stream.read(stream.read(4).unpack("l>")[0])
+          rescue
+            break
+          end
+        end
+        result
+      end
+
+      def self.dump_for_io(data)
+        data.map! do|item|
+          serialized = Marshal.dump(item)
+
+          [serialized.size].pack("l>") + serialized
+        end
+      end
+
     end
   end
 end
