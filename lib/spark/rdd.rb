@@ -39,17 +39,44 @@ module Spark
     # jrdd.collect() -> ArrayList
     #     .to_a -> Arrays in Array
     def collect
+      time = Time.now
       bytes_array = jrdd.collect().to_a
-      Spark::Serializer::UTF8.load(bytes_array)
+      puts "1: #{-1*(time - (time=Time.now))*1000}ms"
+      result = Spark::Serializer::UTF8.load(bytes_array)
+      # it = jrdd.collect.iterator
+      # result = Spark::Serializer::UTF8.load_from_itr(it)
+      puts "2: #{-1*(time - (time=Time.now))*1000}ms"
+      result
+
+
+
+      # # time = Time.now
+      
+      # # bytes_itr = jrdd.collect.iterator
+      
+      # # puts "1: #{-1*(time - (time=Time.now))*1000}ms"
+      
+      # # collect_through_file(bytes_itr)
+
+
+      # file = Tempfile.new("bytes_from_java")
+      # file.close(false) # not unlink_now
+
+      # jrdd.collectToFile(file.path)
+
     end
 
+
+
+
     def map(f)
+      # function = [f, Proc.new {|split, iterator| Enumerator.new{|e| iterator.map{|i| e.yield(@_f.call(i))} }}]
       function = [f, Proc.new {|split, iterator| iterator.map{|i| @_f.call(i)} }]
       PipelinedRDD.new(self, function)
     end
 
     def flat_map(f)
-      function = [f, Proc.new {|split, iterator| iterator.map{|i| @_f.call(i)}.flatten }]
+      function = [f, Proc.new {|split, iterator| iterator.flat_map{|i| @_f.call(i)} }]
       map_partitions_with_index(function)
     end
 
@@ -72,6 +99,63 @@ module Spark
     alias_method :reduceByKey, :reduce_by_key
     alias_method :combineByKey, :combine_by_key
     alias_method :mapPartitionsWithIndex, :map_partitions_with_index
+
+
+    private
+
+      # def collect_through_file(iterator, &block)
+      #     # tempFile = NamedTemporaryFile(delete=False, dir=self.ctx._temp_dir)
+      #     # tempFile.close()
+      #     # self.ctx._writeToFile(iterator, tempFile.name)
+      #     # # Read the data into Python and deserialize it:
+      #     # with open(tempFile.name, 'rb') as tempFile:
+      #     #     for item in self._jrdd_deserializer.load_stream(tempFile):
+      #     #         yield item
+      #     # os.unlink(tempFile.name)
+
+      #   time = Time.now
+
+      #   file = Tempfile.new("bytes_from_java")
+      #   file.close(false) # not unlink_now
+
+
+      #   puts "2: #{-1*(time - (time=Time.now))*1000}ms"
+
+      #   PythonRDD.writeToFile(iterator, file.path)
+
+      #   puts "3: #{-1*(time - (time=Time.now))*1000}ms"
+
+      #   f = File.open(file.path, "rb")
+
+      #   # it = Enumerator.new do |e|
+      #   #   while !f.eof?
+      #   #     e.yield(
+      #   #       Marshal.load(
+      #   #         f.read(
+      #   #           f.read(4).unpack("l>")[0] 
+      #   #         )
+      #   #       )
+      #   #     )
+      #   #   end
+      #   # end.each(&block)
+
+      #   it = []
+      #   while !f.eof?
+      #     it << Marshal.load(
+      #             f.read(
+      #               f.read(4).unpack("l>")[0]
+      #             )
+      #           )
+      #   end
+
+      #   puts "4: #{-1*(time - (time=Time.now))*1000}ms"
+
+      #   file.unlink
+
+      #   it
+
+
+      # end
 
   end
 

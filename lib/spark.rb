@@ -14,6 +14,7 @@ module Spark
 
     java_import org.apache.spark.SparkConf
     java_import org.apache.spark.api.java.JavaSparkContext
+    java_import org.apache.spark.api.python.PythonRDD # for writeToFile
     java_import org.apache.spark.api.ruby.RubyRDD
   end
 

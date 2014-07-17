@@ -40,6 +40,7 @@ module Spark
     # TODO: add varible type to RubyRDD
     #       or as python => objects are written to a file and loaded through textFile
     #       or serialize to bytes
+    #       auto conversion from enum to array
     def parallelize(array, num_slices=default_parallelism)
       Spark::RDD.new(@jcontext.parallelize(array.map!(&:to_s), num_slices), self)
     end

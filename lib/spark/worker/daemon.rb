@@ -2,18 +2,20 @@
 
 # $stderr.reopen("/ruby_spark/err.txt", "w")
 
+
+
 require "socket"
-require "benchmark"
+# require "benchmark"
 
 def log(message=nil)
   puts %{==> [#{Process.pid}] [#{Time.now.strftime("%H:%M")}] RUBY WORKER: #{message}}
 end
 
-def realtime
-  t1 = Time.now
-  yield
-  Time.now - t1
-end
+# def realtime
+#   t1 = Time.now
+#   yield
+#   Time.now - t1
+# end
 
 # ==============================================================================
 # SocketHelper
@@ -39,7 +41,7 @@ class Master
 
   include SocketHelper
 
-  POOL_SIZE = 1
+  POOL_SIZE = 2
 
   attr_accessor :port, :server_socket, :pool
 
@@ -51,6 +53,9 @@ class Master
 
   def send_info
     $stdout.write(to_stream(port))
+
+    orig_stdout = $stdout.clone
+    $stdout.reopen $stderr
   end
 
   def run
@@ -59,6 +64,8 @@ class Master
     POOL_SIZE.times { create_pool_master }
     # server_socket.close
     pool.each {|t| t.join}
+
+    log "Master SHUTDOWN"
   end
 
   def create_pool_master
@@ -77,22 +84,26 @@ end
 
 class PoolMaster
 
-  attr_accessor :server_socket
+  attr_accessor :server_socket, :workers
   
   def initialize(server_socket)
     self.server_socket = server_socket
+    self.workers = []
   end
 
   def run
+    log "Init POOLMASTER [#{Thread.current.object_id}]"
     loop {
       client_socket = server_socket.accept
       create_worker(client_socket)
       # client_socket.close # not for thread
     }
+    workers.each {|t| t.join}
+    log "Shutdown POOLMASTER [#{Thread.current.object_id}]"
   end
 
   def create_worker(client_socket)
-    Thread.new do
+    workers << Thread.new do
       Worker.new(client_socket).run
     end
   end
@@ -115,50 +126,66 @@ class Worker
     self.client_socket = client_socket
 
     @iterator = []
+    # @queue = Queue.new
   end
 
   def run
+    log "Init WORKER [#{Thread.current.object_id}]"
 
     @split_index = read_int
 
-    Benchmark.bmbm do |bm|
-      bm.report("Load command") do
+    # Benchmark.bmbm do |bm|
+      # bm.report("Load command") do
         @command = Marshal.load(read(read_int))
-      end
+      # end
 
-      bm.report("Load iterator") do
+      # bm.report("Load iterator") do
         load_iterator
-      end
+      # end
 
-      bm.report("Compute") do
+      # bm.report("Compute") do
         eval(@command[0]) # original lambda
         @result = eval(@command[1]).call(@split_index, @iterator)
-      end
+      # end
 
-      bm.report("Marshal result") do
+      # bm.report("Marshal result") do
         @result.map!{|x|
-          Marshal.dump(x)
-        }
-      end
+          serialized = Marshal.dump(x)
 
-      bm.report("Send result") do
-        @result.each{|x|
-          write_int(x.size)
-          send(x)
+          [serialized.size].pack("l>") + serialized
         }
+      # end
+
+      # bm.report("Send result") do
+        # @result.each{|x|
+        #   # write_int(x.size)
+        #   send(x)
+        # }
+        send(@result.join)
+        # send(@result)
         write_int(0)
-      end
+      # end
       
-    end # end benchmark
+    # end # end benchmark
 
+    client_socket.flush
+
+    while true
+        # Empty string is returned upon EOF (and only then).
+      if client_socket.recv(4096) == ''
+        break
+      end
+    end
+
+    log "Shutdown WORKER [#{Thread.current.object_id}]"
   end
 
   private
 
-    def report(message)
-      log("#{message}: #{(Time.now - @point)*1000}ms")
-      @point = Time.now
-    end
+    # def report(message)
+    #   log("#{message}: #{(Time.now - @point)*1000}ms")
+    #   @point = Time.now
+    # end
 
     def read(size)
       client_socket.read(size)
@@ -187,7 +214,7 @@ class Worker
                      end
       }
 
-      # Enumerator.new do |e|
+      # @iterator = Enumerator.new do |e|
       #   while true
       #     begin
       #       e.yield(read(read_int))
@@ -195,18 +222,18 @@ class Worker
       #       break
       #     end
       #   end
-      # end.each(&block)
+      # end
 
     end
 
-    def write_stream
-      @result.each{|x|
-        serialized = Marshal.dump(x)
+    # def write_stream
+    #   @result.each{|x|
+    #     serialized = Marshal.dump(x)
 
-        write_int(serialized.size)
-        send(serialized)
-      }
-    end
+    #     write_int(serialized.size)
+    #     send(serialized)
+    #   }
+    # end
 
 end
 
