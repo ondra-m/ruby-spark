@@ -1,16 +1,25 @@
+require_relative "base.rb"
+
 module Spark
   module Serializer
-    class Simple
-      
-      def self.dump(data, stream)
-        data.map! do |item|
-          serialized = Marshal.dump(item)
+    class Simple < Base
 
-          [serialized.size].pack("l>") + serialized
+      # load => Base
+      # dump => Base
+
+      private
+
+        def self.load_from_io(io)
+          result = []
+          while true
+            begin
+              result << Marshal.load(io.read(io.read(4).unpack("l>")[0]))
+            rescue
+              break
+            end
+          end
+          result
         end
-
-        stream.write(data.join)
-      end
 
     end
   end
