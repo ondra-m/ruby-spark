@@ -154,7 +154,7 @@ class Worker
     end
 
     def load_iterator
-      @iterator = @serializer.load_from_io(client_socket)
+      @iterator = @serializer.load(client_socket)
     end
 
     def compute
