@@ -10,58 +10,85 @@ import org.apache.spark.util.Utils
 
 import org.apache.spark.api.python.RedirectThread
 
+
+
+/* =================================================================================================
+ * Class RubyWorkerFactory
+ * =================================================================================================
+ *
+ * Represent worker or daemon
+ */
+
 class RubyWorkerFactory(workerDir: String) extends Logging {
   
   val PROCESS_WAIT_TIMEOUT_MS = 10000
 
-  // def create(): Socket = {
-  //   var serverSocket: ServerSocket = null
-  //   try {
-  //     serverSocket = new ServerSocket(0, 1, InetAddress.getByAddress(Array(127, 0, 0, 1)))
-
-  //     // val execCommand = "ruby"
-  //     // val execOptions = ""
-  //     // val execScript  = "/vagrant_data/lib/spark/worker.rb"
-
-  //     // val args = List(execCommand, execOptions, execScript)
-
-  //     val pb = new ProcessBuilder(workerPath)
-  //     // val pb = new ProcessBuilder(args: _*)
-  //     // val pb = new ProcessBuilder(execCommand, execOptions, execScript)
-  //     // pb.environment().put("", "")
-  //     val worker = pb.start()
-
-  //     // Redirect worker stdout and stderr
-  //     redirectStreamsToStderr(worker.getInputStream, worker.getErrorStream)
-
-  //     // Tell the worker our port
-  //     val out = new OutputStreamWriter(worker.getOutputStream)
-  //     out.write(serverSocket.getLocalPort + "\n")
-  //     out.flush()
-
-  //     // Wait for it to connect to our socket
-  //     serverSocket.setSoTimeout(10000)
-  //     try {
-  //       return serverSocket.accept()
-  //     } catch {
-  //       case e: Exception =>
-  //         throw new SparkException("Worker did not connect back in time", e)
-  //     }
-  //   } finally {
-  //     if (serverSocket != null) {
-  //       serverSocket.close()
-  //     }
-  //   }
-  //   null
-  // }
+  val useDaemon = true
 
   var daemon: Process = null
   val daemonHost = InetAddress.getByAddress(Array(127, 0, 0, 1))
   var daemonPort: Int = 0
 
-  val daemonWorker = workerDir+"/daemon.rb"
-
+  /* -------------------------------------------------------------------------------------------- */
+  
   def create(): Socket = {
+    if(useDaemon){
+      createThroughDaemon()
+    } else {
+      createSimple()
+    }
+  }
+  
+  /* -------------------------------------------------------------------------------------------- */
+
+  def createSimple(): Socket = {
+    var serverSocket: ServerSocket = null
+    try {
+      serverSocket = new ServerSocket(0, 1, InetAddress.getByAddress(Array(127, 0, 0, 1)))
+
+      // val execCommand = "ruby"
+      // val execOptions = ""
+      // val execScript  = "/vagrant_data/lib/spark/worker.rb"
+
+      // val args = List(execCommand, execOptions, execScript)
+
+      val pb = new ProcessBuilder(workerDir)
+      // val pb = new ProcessBuilder(args: _*)
+      // val pb = new ProcessBuilder(execCommand, execOptions, execScript)
+      // pb.environment().put("", "")
+      val worker = pb.start()
+
+      // Redirect worker stdout and stderr
+      redirectStreamsToStderr(worker.getInputStream, worker.getErrorStream)
+
+      // Tell the worker our port
+      val out = new OutputStreamWriter(worker.getOutputStream)
+      out.write(serverSocket.getLocalPort + "\n")
+      out.flush()
+
+      // Wait for it to connect to our socket
+      serverSocket.setSoTimeout(10000)
+      try {
+        return serverSocket.accept()
+      } catch {
+        case e: Exception =>
+          throw new SparkException("Worker did not connect back in time", e)
+      }
+    } finally {
+      if (serverSocket != null) {
+        serverSocket.close()
+      }
+    }
+    null
+
+  }
+
+  /* -----------------------------------------------------------------------------------------------
+   * Create a background process that will listen on the socket and will create a 
+   * new workers. On jruby are workers represented by the threads.
+   */
+   
+  def createThroughDaemon(): Socket = {
     synchronized {
       // Start the daemon if it hasn't been started
       startDaemon()
@@ -79,20 +106,23 @@ class RubyWorkerFactory(workerDir: String) extends Logging {
     }
   }
 
+  /* -------------------------------------------------------------------------------------------- */
+
   private def startDaemon() {
     synchronized {
-      // Is it already running?
-      if (daemon != null) {
+      // Already running?
+      if(daemon != null) {
         return
       }
 
       try {
         // Create and start the daemon
-        // val pb = new ProcessBuilder(Seq("ruby", daemonWorker))
-        val pb = new ProcessBuilder(daemonWorker)
-        // pb.environment().put("", "")
+        // -C: change worker dir before execution
+        val pb = new ProcessBuilder(List("ruby", "-C", workerDir, "daemon.rb"))
+        pb.environment().put("SIMPLE_WORKER", "0")
         daemon = pb.start()
 
+        // Daemon create TCPServer and send back port
         val in = new DataInputStream(daemon.getInputStream)
         daemonPort = in.readInt()
 
@@ -110,13 +140,10 @@ class RubyWorkerFactory(workerDir: String) extends Logging {
 
           if (stderr != "") {
             val formattedStderr = stderr.replace("\n", "\n  ")
-            // val errorMessage = s"""
-            //   |Error from python worker:
-            //   |  $formattedStderr
-            //   |PYTHONPATH was:
-            //   |  $pythonPath
-            //   |$e"""
-            val errorMessage = ""
+            val errorMessage = s"""
+              |Error from daemon:
+              |  $formattedStderr
+              |$e"""
 
             // Append error message from python daemon, but keep original stack trace
             val wrappedException = new SparkException(errorMessage.stripMargin)
@@ -132,6 +159,8 @@ class RubyWorkerFactory(workerDir: String) extends Logging {
     }
   }
 
+  /* -------------------------------------------------------------------------------------------- */
+
   private def stopDaemon() {
     synchronized {
       // Request shutdown of existing daemon by sending SIGTERM
@@ -139,10 +168,20 @@ class RubyWorkerFactory(workerDir: String) extends Logging {
         daemon.destroy()
       }
 
+      // Clear previous signs of daemon
       daemon = null
       daemonPort = 0
     }
   }
+
+  /* -------------------------------------------------------------------------------------------- */
+
+  def stop() {
+    // Simple worker cannot be stopped
+    stopDaemon()
+  }
+
+  /* -------------------------------------------------------------------------------------------- */
 
   private def redirectStreamsToStderr(stdout: InputStream, stderr: InputStream) {
     try {
@@ -154,4 +193,5 @@ class RubyWorkerFactory(workerDir: String) extends Logging {
     }
   }
 
+  /* -------------------------------------------------------------------------------------------- */
 }

@@ -25,15 +25,36 @@ import org.apache.spark.api.python.PythonRDD
 
 import org.apache.spark.Logging
 
+
+
+/* =================================================================================================
+ * Object RubyWorker
+ * =================================================================================================
+ *
+ * Store all workers
+ */
+
 object RubyWorker extends Logging {
 
   private val workers = mutable.HashMap[(String), RubyWorkerFactory]()
 
-  def createWorker(workerDir: String): java.net.Socket = {
+  /* -------------------------------------------------------------------------------------------- */
+
+  def create(workerDir: String): java.net.Socket = {
     synchronized {
       workers.getOrElseUpdate(workerDir, new RubyWorkerFactory(workerDir)).create()
     }
   }
+
+  /* -------------------------------------------------------------------------------------------- */
+
+  def destroy(workerDir: String) {
+    synchronized {
+      workers(workerDir).stop()
+    }
+  }
+
+  /* -------------------------------------------------------------------------------------------- */
 
 }
 
