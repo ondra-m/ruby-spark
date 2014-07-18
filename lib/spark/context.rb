@@ -9,7 +9,7 @@ module Spark
 
     BATCH_SIZE = 2048
 
-    attr_reader :conf, :environment, :jcontext, :java_accumulator
+    attr_reader :conf, :environment, :jcontext, :java_accumulator, :temp_files
 
     def initialize(options={})
       @options = options
@@ -26,11 +26,21 @@ module Spark
       @conf.getAll.each do |tuple|
         @environment[EXECUTOR_ENV_KEY.size..-1] = tuple._2 if tuple._1.start_with?(EXECUTOR_ENV_KEY)
       end
+
+      @temp_files = []
     end
 
     def default_parallelism
       @jcontext.sc.defaultParallelism
     end
+
+    def clear_tempfiles
+      @temp_files.each {|file| f.unlink}
+      @temp_files = []
+    end
+
+
+
 
     def text_file(name, min_partitions=nil)
       min_partitions ||= [default_parallelism, 2].min
@@ -49,9 +59,10 @@ module Spark
         jrdd = jcontext.parallelize(data, num_slices)
       when :file
         file = Tempfile.new("to_parallelize")
+        @temp_files << file
         Spark::Serializer::Simple.dump(data, file)
         file.close # not unlink
-        
+
         jrdd = PythonRDD.readRDDFromFile(jcontext, file.path, num_slices)
       end
 
