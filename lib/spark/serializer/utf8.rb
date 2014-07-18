@@ -30,12 +30,14 @@ module Spark
         result
       end
 
-      def self.dump_for_io(data)
+      def self.dump(data, io)
         data.map! do|item|
           serialized = Marshal.dump(item)
 
           [serialized.size].pack("l>") + serialized
         end
+
+        io.write(data.join)
       end
 
     end

@@ -126,7 +126,6 @@ class Worker
 
     compute
 
-    serialize_result
     send_result
     finish
 
@@ -165,12 +164,8 @@ class Worker
       end
     end
 
-    def serialize_result
-      @serializer.dump_for_io(@iterator)
-    end
-
     def send_result
-      client_socket.write(@iterator.join)
+      @serializer.dump(@iterator, client_socket)
     end
 
     def finish
