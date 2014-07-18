@@ -8,7 +8,7 @@ dir = File.expand_path(File.join("..", "serializer"), File.dirname(__FILE__))
 Dir.glob(File.join(dir, "*.rb")) { |file| require file  }
 
 def log(message=nil)
-  puts %{==> [#{Process.pid}##{Thread.current.object_id}] [#{Time.now.strftime("%H:%M")}] #{message}}
+  puts %{==> [#{Process.pid}::#{Thread.current.object_id}] [#{Time.now.strftime("%H:%M")}] #{message}}
 end
 
 # ==============================================================================
