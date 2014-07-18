@@ -23,6 +23,8 @@ module Spark
 
       @jcontext = JavaSparkContext.new(@conf)
 
+      set_local_property("externalCallSite", "Ruby") # Description of stage
+
       @conf.getAll.each do |tuple|
         @environment[EXECUTOR_ENV_KEY.size..-1] = tuple._2 if tuple._1.start_with?(EXECUTOR_ENV_KEY)
       end
@@ -33,6 +35,15 @@ module Spark
     def default_parallelism
       @jcontext.sc.defaultParallelism
     end
+
+    def set_local_property(key, value)
+      jcontext.setLocalProperty(key, value)
+    end
+
+    def get_local_property(key)
+      jcontext.getLocalProperty(key)
+    end
+
 
     def clear_tempfiles
       @temp_files.each {|file| f.unlink}
@@ -74,6 +85,8 @@ module Spark
     # Aliases
     alias_method :textFile, :text_file
     alias_method :defaultParallelism, :default_parallelism
+    alias_method :setLocalProperty, :set_local_property
+    alias_method :getLocalProperty, :get_local_property
 
   end
 end
