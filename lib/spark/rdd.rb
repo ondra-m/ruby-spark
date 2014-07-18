@@ -52,24 +52,22 @@ module Spark
     # jrdd.collect() -> ArrayList
     #     .to_a -> Arrays in Array
     def collect
-      Spark::Serializer::UTF8.load(jrdd.collect.to_a)
-      # Spark::Serializer::UTF8.load_from_itr(jrdd.collect.iterator)
+      # @serializer.load(jrdd.collect.iterator)
+      @serializer.load(jrdd.collect.to_a)
     end
 
 
 
 
     def map(f)
-      f = to_source(f)
-
-      function = [f, "Proc.new {|_, iterator| iterator.map{|i| @__function__.call(i)} }"]
+      function = [to_source(f), "Proc.new {|_, iterator| iterator.map{|i| @__function__.call(i)} }"]
       PipelinedRDD.new(self, function)
     end
 
-    # def flat_map(f)
-    #   function = [f, Proc.new {|_, iterator| iterator.flat_map{|i| @_f.call(i)} }]
-    #   map_partitions_with_index(function)
-    # end
+    def flat_map(f)
+      function = [to_source(f), "Proc.new {|_, iterator| iterator.flat_map{|i| @__function__.call(i)} }"]
+      map_partitions_with_index(function)
+    end
 
     # def reduce_by_key(f, num_partitions=nil)
     #   combine_by_key(lambda {|x| x}, f, f, num_partitions)
@@ -79,17 +77,18 @@ module Spark
     #   num_partitions ||= default_reduce_partitions
     # end
 
-    # def map_partitions_with_index(f)
-    #   PipelinedRDD.new(self, f)
-    # end
+    def map_partitions_with_index(f)
+      # TODO: function
+      PipelinedRDD.new(self, f)
+    end
 
 
 
     # Aliases
-    # alias_method :flatMap, :flat_map
+    alias_method :flatMap, :flat_map
     # alias_method :reduceByKey, :reduce_by_key
     # alias_method :combineByKey, :combine_by_key
-    # alias_method :mapPartitionsWithIndex, :map_partitions_with_index
+    alias_method :mapPartitionsWithIndex, :map_partitions_with_index
 
     private
 
