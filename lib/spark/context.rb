@@ -37,27 +37,25 @@ module Spark
       Spark::RDD.new(@jcontext.textFile(name, min_partitions), self, Spark::Serializer::UTF8)
     end
 
-    # WORKAROUND to_s: PythonRDD.writeIteratorToStream works only with Array[Byte], String, Tuple2[_, _]
-    # [1,2,3] is convert as [java.lang.Long, ...]
-    #
-    # TODO: add varible type to RubyRDD
-    #       or as python => objects are written to a file and loaded through textFile
-    #       or serialize to bytes
-    #       auto conversion from enum to array
+    # use: memory => direct serialization
+    #      file => through file
+    def parallelize(data, num_slices=nil, use=:memory)
+      num_slices ||= default_parallelism
+      data = data.to_a
 
-    # to_a -> can be Range
-    def parallelize(data, num_slices=default_parallelism)
-      # Spark::RDD.new(@jcontext.parallelize(array.to_a, num_slices), self)
+      case use
+      when :memory
+        Spark::Serializer::Simple.dump_to_java(data)
+        jrdd = jcontext.parallelize(data, num_slices)
+      when :file
+        file = Tempfile.new("to_parallelize")
+        Spark::Serializer::Simple.dump(data, file)
+        file.close # not unlink
+        
+        jrdd = PythonRDD.readRDDFromFile(jcontext, file.path, num_slices)
+      end
 
-      file = Tempfile.new("to_parallelize")
-
-      Spark::Serializer::Simple.dump(data.to_a, file)
-
-
-      file.close # not unlink
-
-      jrdd = PythonRDD.readRDDFromFile(jcontext, file.path, num_slices)
-      Spark::RDD.new(jrdd, self)
+      Spark::RDD.new(jrdd, self, Spark::Serializer::Simple)
     end
 
 
