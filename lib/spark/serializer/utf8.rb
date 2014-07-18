@@ -1,3 +1,8 @@
+#
+# Used for file
+# 
+# File is sended as String but worker use serialization
+#
 module Spark
   module Serializer
     class UTF8
@@ -7,18 +12,10 @@ module Spark
           load_from_io(source)
         elsif source.is_a?(Array)
           load_from_array(source)
+        elsif source.respond_to?(:iterator)
+          load_from_iterator(source)
         end
       end
-
-      # def self.load_from_itr(iterator)
-      #   result = []
-
-      #   while iterator.hasNext
-      #     result << Marshal.load(iterator.next.to_a.pack("C*"))
-      #   end
-
-      #   result
-      # end
 
       def self.dump(data, io)
         data.map! do|item|
@@ -48,6 +45,15 @@ module Spark
           array.map! do |item|
             Marshal.load(item.pack("C*"))
           end
+        end
+
+        # Java iterator
+        def self.load_from_iterator(iterator)
+          result = []
+          while iterator.hasNext
+            result << Marshal.load(iterator.next.to_a.pack("C*"))
+          end
+          result
         end
 
     end
