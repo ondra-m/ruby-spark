@@ -13,6 +13,8 @@ module Spark
       end
 
       def self.dump(data, io)
+        data = [data] unless data.is_a?(Array)
+
         data.map! do|item|
           serialized = Marshal.dump(item)
 
