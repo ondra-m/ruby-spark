@@ -107,6 +107,18 @@ module Spark
       PipelinedRDD.new(self, function)
     end
 
+    #
+    # Return a new RDD containing only the elements that satisfy a predicate.
+    #
+    # rdd = $sc.parallelize(0..10)
+    # rdd.filter(lambda{|x| x.even?}).collect
+    # => [0, 2, 4, 6, 8, 10]
+    #
+    def filter(f)
+      function = [to_source(f), "Proc.new {|iterator| iterator.select{|i| @__function__.call(i)} }"]
+      PipelinedRDD.new(self, function)
+    end
+
 
     # def reduce_by_key(f, num_partitions=nil)
     #   combine_by_key(lambda {|x| x}, f, f, num_partitions)
