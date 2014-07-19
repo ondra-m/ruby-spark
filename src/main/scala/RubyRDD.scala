@@ -183,6 +183,12 @@ class RubyRDD[T: ClassTag](
               stream.readFully(obj)
               obj
             case 0 => null
+            case -1 =>
+              // Exception from worker
+              val length = stream.readInt()
+              val obj = new Array[Byte](length)
+              stream.readFully(obj)
+              throw new RubyException(new String(obj, "utf-8"), writerThread.exception.getOrElse(null))
           }
         } catch {
 
@@ -192,8 +198,6 @@ class RubyRDD[T: ClassTag](
         
         }
       }
-
-      // -------------------------------------------------------------------------------------------
 
     } // end StreamReader
 
@@ -225,8 +229,6 @@ class RubyRDD[T: ClassTag](
       }
     } // end MonitorThread
 
-    /* ------------------------------------------------------------------------------------------ */
-
   } // end RubyRDD
 
 
@@ -257,3 +259,13 @@ object RubyRDD extends Logging {
   }
 
 }
+
+
+
+/* =================================================================================================
+ * Class RubyException
+ * =================================================================================================
+ */
+
+class RubyException(msg: String, cause: Exception) extends RuntimeException(msg, cause)
+

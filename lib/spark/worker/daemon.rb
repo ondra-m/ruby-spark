@@ -1,9 +1,8 @@
 #!/usr/bin/env ruby
 
-# $stderr.reopen("/ruby_spark/err.txt", "w")
-
 require "socket"
 
+# Require all serializers
 dir = File.expand_path(File.join("..", "serializer"), File.dirname(__FILE__))
 Dir.glob(File.join(dir, "*.rb")) { |file| require file  }
 
@@ -118,7 +117,7 @@ class Worker
   end
 
   def run
-    log "Init WORKER"
+    # log "Init WORKER"
 
     load_split_index
     load_command
@@ -129,7 +128,7 @@ class Worker
     send_result
     finish
 
-    log "Shutdown WORKER"
+    # log "Shutdown WORKER"
   end
 
   private
@@ -149,7 +148,7 @@ class Worker
     def load_command
       command = Marshal.load(read(read_int))
 
-      @commands = command[0].map!{|x| [eval(x[0]), eval(x[1])]}
+      @commands = command[0]#.map!{|x| [eval(x[0]), eval(x[1])]}
       @serializer = eval(command[1])
     end
 
@@ -158,9 +157,17 @@ class Worker
     end
 
     def compute
-      @commands.each do |command|
-        @__function__ = command[0]
-        @iterator = command[1].call(@split_index, @iterator)
+      begin
+        @commands.each do |command|
+          eval(command[0])
+          @iterator = eval(command[1]).call(@iterator, @split_index)
+        end
+      rescue => e
+        client_socket.write(to_stream(-1))
+        client_socket.write(to_stream(e.message.size))
+        client_socket.write(e.message)
+
+        # Thread.kill
       end
     end
 
@@ -172,13 +179,7 @@ class Worker
       client_socket.write(to_stream(0))
       client_socket.flush
 
-      while true
-        # Empty string is returned upon EOF (and only then).
-        if client_socket.recv(4096) == ''
-          break
-        end
-      end
-
+      loop { break if client_socket.recv(4096) == '' }
     end
 
 end
