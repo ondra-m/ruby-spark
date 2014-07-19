@@ -131,6 +131,19 @@ module Spark
       PipelinedRDD.new(self, function)
     end
 
+    #
+    # Return a new RDD that is reduced into `numPartitions` partitions.
+    #
+    # rdd = $sc.parallelize(0..10, 3)
+    # rdd.coalesce(2).glom.collect
+    # => [[0, 1, 2], [3, 4, 5, 6, 7, 8, 9, 10]]
+    #
+    def coalesce(num_partitions)
+      new_jrdd = jrdd.coalesce(num_partitions)
+      RDD.new(new_jrdd, context, serializer)
+    end
+
+
 
     # def reduce_by_key(f, num_partitions=nil)
     #   combine_by_key(lambda {|x| x}, f, f, num_partitions)
