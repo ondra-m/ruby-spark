@@ -119,6 +119,18 @@ module Spark
       PipelinedRDD.new(self, function)
     end
 
+    #
+    # Return an RDD created by coalescing all elements within each partition into an array.
+    #
+    # rdd = $sc.parallelize(0..10, 3)
+    # rdd.glom.collect
+    # => [[0, 1, 2], [3, 4, 5, 6], [7, 8, 9, 10]]
+    #
+    def glom
+      function = ["", "Proc.new {|iterator| [iterator] }"]
+      PipelinedRDD.new(self, function)
+    end
+
 
     # def reduce_by_key(f, num_partitions=nil)
     #   combine_by_key(lambda {|x| x}, f, f, num_partitions)
