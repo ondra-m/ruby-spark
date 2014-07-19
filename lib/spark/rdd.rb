@@ -44,30 +44,59 @@ module Spark
 
 
 
-    # =======================================================================    
-    # Compute functions    
-    # =======================================================================        
+    # =======================================================================
+    # Computing functions
+    # =======================================================================     
 
-
-    # jrdd.collect() -> ArrayList
-    #     .to_a -> Arrays in Array
+    #
+    # Return an array that contains all of the elements in this RDD.
+    #
     def collect
       # @serializer.load(jrdd.collect.iterator)
       @serializer.load(jrdd.collect.to_a)
     end
 
 
-
-
+    #
+    # Return a new RDD by applying a function to all elements of this RDD.
+    #
+    # rdd = $sc.parallelize(0..5)
+    # rdd.map(lambda {|x| x*2}).collect
+    # => [0, 2, 4, 6, 8, 10]
+    #
     def map(f)
-      function = [to_source(f), "Proc.new {|_, iterator| iterator.map{|i| @__function__.call(i)} }"]
+      function = [to_source(f), "Proc.new {|iterator, index| iterator.map{|i| @__function__.call(i, index)} }"]
       PipelinedRDD.new(self, function)
     end
 
+    #
+    # Return a new RDD by first applying a function to all elements of this
+    # RDD, and then flattening the results.
+    #
+    # rdd = $sc.parallelize(0..5)
+    # rdd.flat_map(lambda {|x| [x, 1]}).collect
+    # => [0, 1, 2, 1, 4, 1, 6, 1, 8, 1, 10, 1]
+    #
     def flat_map(f)
-      function = [to_source(f), "Proc.new {|_, iterator| iterator.flat_map{|i| @__function__.call(i)} }"]
-      map_partitions_with_index(function)
+      function = [to_source(f), "Proc.new {|iterator, index| iterator.flat_map{|i| @__function__.call(i, index)} }"]
+      PipelinedRDD.new(self, function)
     end
+
+    #
+    # Return a new RDD by applying a function to each partition of this RDD.
+    #
+    # rdd = $sc.parallelize(0..10, 2)
+    # rdd.map_partitions(lambda{|part| part.reduce(:+)}).collect
+    # => [15, 40]
+    #
+    def map_partitions(f)
+      function = [to_source(f), "Proc.new {|iterator, index| @__function__.call(iterator, index) }"]
+      PipelinedRDD.new(self, function)
+    end
+
+
+
+
 
     # def reduce_by_key(f, num_partitions=nil)
     #   combine_by_key(lambda {|x| x}, f, f, num_partitions)
@@ -88,6 +117,7 @@ module Spark
     alias_method :flatMap, :flat_map
     # alias_method :reduceByKey, :reduce_by_key
     # alias_method :combineByKey, :combine_by_key
+    alias_method :mapPartitions, :map_partitions
     alias_method :mapPartitionsWithIndex, :map_partitions_with_index
 
     private
