@@ -65,7 +65,7 @@ module Spark
     # => [0, 2, 4, 6, 8, 10]
     #
     def map(f)
-      function = [to_source(f), "Proc.new {|iterator, index| iterator.map{|i| @__function__.call(i, index)} }"]
+      function = [to_source(f), "Proc.new {|iterator| iterator.map{|i| @__function__.call(i)} }"]
       PipelinedRDD.new(self, function)
     end
 
@@ -78,7 +78,7 @@ module Spark
     # => [0, 1, 2, 1, 4, 1, 6, 1, 8, 1, 10, 1]
     #
     def flat_map(f)
-      function = [to_source(f), "Proc.new {|iterator, index| iterator.flat_map{|i| @__function__.call(i, index)} }"]
+      function = [to_source(f), "Proc.new {|iterator| iterator.flat_map{|i| @__function__.call(i)} }"]
       PipelinedRDD.new(self, function)
     end
 
@@ -90,12 +90,22 @@ module Spark
     # => [15, 40]
     #
     def map_partitions(f)
-      function = [to_source(f), "Proc.new {|iterator, index| @__function__.call(iterator, index) }"]
+      function = [to_source(f), "Proc.new {|iterator| @__function__.call(iterator) }"]
       PipelinedRDD.new(self, function)
     end
 
-
-
+    #
+    # Return a new RDD by applying a function to each partition of this RDD, while tracking the index
+    # of the original partition.
+    #
+    # rdd = $sc.parallelize(0...4, 4)
+    # rdd.map_partitions_with_index(lambda{|part, index| part[0] * index}).collect
+    # => [0, 1, 4, 9]
+    #
+    def map_partitions_with_index(f)
+      function = [to_source(f), "Proc.new {|iterator, index| @__function__.call(iterator, index) }"]
+      PipelinedRDD.new(self, function)
+    end
 
 
     # def reduce_by_key(f, num_partitions=nil)
@@ -106,19 +116,14 @@ module Spark
     #   num_partitions ||= default_reduce_partitions
     # end
 
-    def map_partitions_with_index(f)
-      # TODO: function
-      PipelinedRDD.new(self, f)
-    end
-
 
 
     # Aliases
     alias_method :flatMap, :flat_map
-    # alias_method :reduceByKey, :reduce_by_key
-    # alias_method :combineByKey, :combine_by_key
     alias_method :mapPartitions, :map_partitions
     alias_method :mapPartitionsWithIndex, :map_partitions_with_index
+    # alias_method :reduceByKey, :reduce_by_key
+    # alias_method :combineByKey, :combine_by_key
 
     private
 
