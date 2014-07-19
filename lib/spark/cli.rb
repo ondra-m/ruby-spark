@@ -3,6 +3,9 @@ require "thor"
 module Spark
   class CLI < Thor
 
+    IRB_HISTORY_FILE = File.join(Dir.home, ".irb_spark_history")
+    IRB_HISTORY_SIZE = 100
+
     desc "install", "build spark and gem extensions"
     option :spark
     option :target
@@ -20,31 +23,34 @@ module Spark
     desc "irb", "start ruby shell for spark"
     option :spark
     def irb
-      to_load = options[:spark] || Spark.target_dir
-
-      require "irb"
-      require "java"
-      Dir.glob(File.join(to_load, "*")){|file| require file}
-      require Spark.ruby_spark_jar
-
+      # Load Java and Spark
+      Spark.load_lib(options[:spark])
       $sc = Spark::Context.new(app_name: "RubySpark", master: "local")
+      Spark.print_logo("Spark context is loaded as $sc")
 
-      puts <<-STRING
+      # Load IRB
+      require "irb"
+      require "irb/completion"
+      require "irb/ext/save-history"
 
-      Welcome to
-         ___       ____              __
-        |   \\     / __/__  ___ _____/ /__
-        | __/    _\\ \\/ _ \\/ _ `/ __/  '_/
-        | \\\\    /__ / .__/\\_,_/_/ /_/\\_\\   version 1.0.0-SNAPSHOT
-        |  \\\\      /_/
+      begin
+        file = File.expand_path(IRB_HISTORY_FILE)
+        if File.exists?(file)
+          lines = IO.readlines(file).collect { |line| line.chomp }
+          Readline::HISTORY.push(*lines)
+        end
+        Kernel.at_exit do
+          lines = Readline::HISTORY.to_a.reverse.uniq.reverse
+          lines = lines[-IRB_HISTORY_SIZE, IRB_HISTORY_SIZE] if lines.nitems > IRB_HISTORY_SIZE
+          File.open(IRB_HISTORY_FILE, File::WRONLY | File::CREAT | File::TRUNC) { |io| io.puts lines.join("\n") }
+        end
+      rescue
+      end
 
-      Spark context is loaded as $sc
-
-      STRING
-
-      ARGV.clear
+      ARGV.clear # Clear Thor ARGV, otherwise IRB will parse it
+      ARGV.concat ["--readline", "--prompt-mode", "simple"]
       IRB.start
     end
-    
+
   end
 end

@@ -9,13 +9,37 @@ module Spark
   autoload :Serializer, "spark/serializer"
 
   # Cannot load before CLI::install
-  def self.load_lib
+  def self.load_lib(spark_home=nil)
+    return if @loaded_lib
+
+    spark_home ||= Spark.target_dir
+
     require "java"
+    Dir.glob(File.join(spark_home, "*.jar")){|file| 
+      require file
+    }
+    require Spark.ruby_spark_jar
 
     java_import org.apache.spark.SparkConf
     java_import org.apache.spark.api.java.JavaSparkContext
-    java_import org.apache.spark.api.python.PythonRDD # for writeToFile
     java_import org.apache.spark.api.ruby.RubyRDD
+
+    @loaded_lib = true
+  end
+
+  def self.print_logo(message=nil)
+    puts <<-STRING
+
+    Welcome to
+       ___       ____              __
+      |   \\     / __/__  ___ _____/ /__
+      | __/    _\\ \\/ _ \\/ _ `/ __/  '_/
+      | \\\\    /__ / .__/\\_,_/_/ /_/\\_\\   version #{Spark::VERSION}
+      |  \\\\      /_/
+
+    #{message}
+
+    STRING
   end
 
   def self.root
