@@ -9,6 +9,7 @@ import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
 import scala.util.Try
 
+import org.apache.spark._
 import org.apache.spark.{SparkEnv, Partition, SparkException, TaskContext, SparkConf}
 import org.apache.spark.api.java.{JavaSparkContext, JavaRDD, JavaPairRDD}
 import org.apache.spark.broadcast.Broadcast
@@ -227,3 +228,32 @@ class RubyRDD[T: ClassTag](
     /* ------------------------------------------------------------------------------------------ */
 
   } // end RubyRDD
+
+
+
+/* =================================================================================================
+ * Object RubyRDD
+ * =================================================================================================
+ */
+
+object RubyRDD extends Logging {
+  
+  def readRDDFromFile(sc: JavaSparkContext, filename: String, parallelism: Int): JavaRDD[Array[Byte]] = {
+    // Too slow
+    // val file = new DataInputStream(new FileInputStream(filename))
+    val file = new DataInputStream(new BufferedInputStream(new FileInputStream(filename)))
+    val objs = new collection.mutable.ArrayBuffer[Array[Byte]]
+    try {
+      while (true) {
+        val length = file.readInt()
+        val obj = new Array[Byte](length)
+        file.readFully(obj)
+        objs.append(obj)
+      }
+    } catch {
+      case eof: EOFException => {}
+    }
+    JavaRDD.fromRDD(sc.sc.parallelize(objs, parallelism))
+  }
+
+}

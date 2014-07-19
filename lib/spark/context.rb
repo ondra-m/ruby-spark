@@ -28,8 +28,6 @@ module Spark
       @conf.getAll.each do |tuple|
         @environment[EXECUTOR_ENV_KEY.size..-1] = tuple._2 if tuple._1.start_with?(EXECUTOR_ENV_KEY)
       end
-
-      @temp_files = []
     end
 
     def default_parallelism
@@ -45,36 +43,28 @@ module Spark
     end
 
 
-    def clear_tempfiles
-      @temp_files.each {|file| f.unlink}
-      @temp_files = []
-    end
-
-
-
 
     def text_file(name, min_partitions=nil)
       min_partitions ||= [default_parallelism, 2].min
       Spark::RDD.new(@jcontext.textFile(name, min_partitions), self, Spark::Serializer::UTF8)
     end
 
-    # use: memory => direct serialization
+    # use: direct => direct serialization
     #      file => through file
-    def parallelize(data, num_slices=nil, use=:memory)
+    def parallelize(data, num_slices=nil, use=:direct)
       num_slices ||= default_parallelism
-      data = data.to_a
+      data = data.to_a # for enumerator
 
       case use
-      when :memory
+      when :direct
         Spark::Serializer::Simple.dump_to_java(data)
         jrdd = jcontext.parallelize(data, num_slices)
       when :file
         file = Tempfile.new("to_parallelize")
-        @temp_files << file
         Spark::Serializer::Simple.dump(data, file)
         file.close # not unlink
-
-        jrdd = PythonRDD.readRDDFromFile(jcontext, file.path, num_slices)
+        jrdd = RubyRDD.readRDDFromFile(jcontext, file.path, num_slices)
+        file.unlink
       end
 
       Spark::RDD.new(jrdd, self, Spark::Serializer::Simple)
