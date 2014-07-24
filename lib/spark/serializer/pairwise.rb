@@ -8,10 +8,10 @@ module Spark
         data = [data] unless data.is_a?(Array)
 
         data.map! do |key, item|
-          key = [key].pack("q>")
+          key = pack_long(key)
           serialized = Marshal.dump(item)
 
-          [key.size].pack("l>") + key + [serialized.size].pack("l>") + serialized
+          pack_int(key.size) + key + pack_int(serialized.size) + serialized
         end
 
         io.write(data.join)

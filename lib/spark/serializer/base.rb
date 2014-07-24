@@ -1,7 +1,9 @@
 module Spark
   module Serializer
     class Base
-      
+
+      extend Spark::Serializer::Helper
+
       def self.load(source)
         if source.is_a?(IO)
           load_from_io(source)
@@ -18,7 +20,7 @@ module Spark
         data.map! do|item|
           serialized = Marshal.dump(item)
 
-          [serialized.size].pack("l>") + serialized
+          pack_int(serialized.size) + serialized
         end
 
         io.write(data.join)
@@ -32,7 +34,7 @@ module Spark
 
         def self.load_from_array(array)
           array.map! do |item|
-            Marshal.load(item.pack("C*"))
+            Marshal.load(pack_unsigned_chars(item))
           end
         end
 
@@ -40,7 +42,7 @@ module Spark
         def self.load_from_iterator(iterator)
           result = []
           while iterator.hasNext
-            result << Marshal.load(iterator.next.to_a.pack("C*"))
+            result << Marshal.load(pack_unsigned_chars(iterator.next.to_a))
           end
           result
         end

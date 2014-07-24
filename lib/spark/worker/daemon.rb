@@ -11,20 +11,6 @@ def log(message=nil)
   puts %{==> [#{Process.pid}::#{Thread.current.object_id}] [#{Time.now.strftime("%H:%M")}] #{message}}
 end
 
-# ==============================================================================
-# SocketHelper
-# ==============================================================================
-
-module SocketHelper
-
-  def to_stream(data)
-    if data.is_a?(Integer)
-      [data].pack("l>")
-    end
-  end
-
-end
-
 
 
 # ==============================================================================
@@ -33,7 +19,7 @@ end
 
 class Master
 
-  include SocketHelper
+  include Spark::Serializer::Helper
 
   POOL_SIZE = 2
 
@@ -46,7 +32,7 @@ class Master
   end
 
   def send_info
-    $stdout.write(to_stream(port))
+    $stdout.write(pack_int(port))
   end
 
   def run
@@ -109,7 +95,7 @@ end
 
 class Worker
 
-  include SocketHelper
+  include Spark::Serializer::Helper
 
   attr_accessor :client_socket
 
@@ -118,8 +104,6 @@ class Worker
   end
 
   def run
-    # log "Init WORKER"
-
     load_split_index
     load_command
     load_iterator
@@ -128,8 +112,6 @@ class Worker
 
     send_result
     finish
-
-    # log "Shutdown WORKER"
   end
 
   private
@@ -139,7 +121,7 @@ class Worker
     end
 
     def read_int
-      read(4).unpack("l>")[0] 
+      unpack_int(read(4))
     end
 
     def load_split_index
@@ -164,8 +146,8 @@ class Worker
           @iterator = eval(stage.main).call(@iterator, @split_index)
         end
       rescue => e
-        client_socket.write(to_stream(-1))
-        client_socket.write(to_stream(e.message.size))
+        client_socket.write(pack_int(-1))
+        client_socket.write(pack_int(e.message.size))
         client_socket.write(e.message)
 
         # Thread.kill
@@ -177,18 +159,13 @@ class Worker
     end
 
     def finish
-      client_socket.write(to_stream(0))
+      client_socket.write(pack_int(0))
       client_socket.flush
 
       loop { break if client_socket.recv(4096) == '' }
     end
 
 end
-
-
-
-
-
 
 
 

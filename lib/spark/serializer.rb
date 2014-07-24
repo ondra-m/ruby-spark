@@ -5,5 +5,6 @@ module Spark
     autoload :Simple,   "spark/serializer/simple"
     autoload :Batched,  "spark/serializer/batched"
     autoload :Pairwise, "spark/serializer/pairwise"
+    autoload :Helper,   "spark/serializer/helper"
   end
 end

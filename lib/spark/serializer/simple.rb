@@ -19,7 +19,7 @@ module Spark
           result = []
           while true
             begin
-              result << Marshal.load(io.read(io.read(4).unpack("l>")[0]))
+              result << Marshal.load(io.read(unpack_int(io.read(4))))
             rescue
               break
             end

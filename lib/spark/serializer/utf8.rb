@@ -1,6 +1,5 @@
 require_relative "base.rb"
 
-#
 # Used for file
 #
 # File is sended as String but worker use serialization
@@ -18,7 +17,7 @@ module Spark
           result = []
           while true
             begin
-              result << io.read(io.read(4).unpack("l>")[0])
+              result << io.read(unpack_int(io.read(4)))
             rescue
               break
             end

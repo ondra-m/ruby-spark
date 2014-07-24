@@ -4,8 +4,10 @@ module Spark
   module Command
     class Builder
 
+      include Spark::Serializer::Helper
+
       attr_reader :template, :attached
-      
+
       def initialize(serializer, deserializer=nil)
         deserializer ||= serializer
 
@@ -23,9 +25,7 @@ module Spark
 
       def marshal
         # Java use signed number
-        # C is unsigned
-        # c is signed
-        Marshal.dump(@template).unpack("c*")
+        unpack_chars(Marshal.dump(@template))
       end
 
       def add(main, f=nil, options={})
