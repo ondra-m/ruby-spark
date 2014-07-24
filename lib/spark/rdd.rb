@@ -99,7 +99,7 @@ module Spark
     # => [0, 2, 4, 6, 8, 10]
     #
     def map(f, options={})
-      main = "Proc.new {|iterator| iterator.map{|i| @__main__.call(i)} }"
+      main = "Proc.new {|iterator| iterator.map!{|i| @__main__.call(i)} }"
       comm = add_command(main, f, options)
 
       PipelinedRDD.new(self, comm)
@@ -114,7 +114,7 @@ module Spark
     # => [0, 1, 2, 1, 4, 1, 6, 1, 8, 1, 10, 1]
     #
     def flat_map(f, options={})
-      main = "Proc.new {|iterator| iterator.flat_map{|i| @__main__.call(i)} }"
+      main = "Proc.new {|iterator| iterator.map!{|i| @__main__.call(i)}.flatten! }"
       comm = add_command(main, f, options)
 
       PipelinedRDD.new(self, comm)
