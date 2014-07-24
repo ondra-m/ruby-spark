@@ -7,5 +7,6 @@ gem 'thor'
 
 group :development do
   gem 'rspec'
+  gem 'fuubar'
   gem 'pry'
 end
