@@ -40,8 +40,6 @@ class RubyRDD[T: ClassTag](
 
     override def getPartitions = parent.partitions
 
-    // find path
-    // override val partitioner = if (preservePartitoning) parent.partitioner else None
     override val partitioner = None
 
     /* ------------------------------------------------------------------------------------------ */
@@ -113,13 +111,6 @@ class RubyRDD[T: ClassTag](
           // Partition index
           dataOut.writeInt(split.index)
 
-          // // sparkFilesDir
-          // PythonRDD.writeUTF(SparkFiles.getRootDirectory, dataOut)
-          // // Python includes (*.zip and *.egg files)
-          // dataOut.writeInt(pythonIncludes.length)
-          // for (include <- pythonIncludes) {
-          //   PythonRDD.writeUTF(include, dataOut)
-          // }
           // // Broadcast variables
           // dataOut.writeInt(broadcastVars.length)
           // for (broadcast <- broadcastVars) {

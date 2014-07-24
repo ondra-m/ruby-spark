@@ -91,7 +91,6 @@ module Spark
       Hash[collect]
     end
 
-
     #
     # Return a new RDD by applying a function to all elements of this RDD.
     #
@@ -340,13 +339,7 @@ module Spark
     def jrdd
       return @jrdd_values if @jrdd_values
 
-      # command = Marshal.dump([@function, @serializer.to_s]).unpack("C*")
       command = @command.marshal
-      # Avoid RangeError: too big for byte
-      # Java::byte is signed -128..127
-      # Move to serializer
-      # command.map!{|x| x > 127 ? x - 256 : x }
-
       env = @context.environment
       class_tag = @prev_jrdd.classTag
 
