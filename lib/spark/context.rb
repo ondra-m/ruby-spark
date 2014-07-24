@@ -12,8 +12,6 @@ module Spark
     attr_reader :conf, :environment, :jcontext, :java_accumulator, :temp_files
 
     def initialize(options={})
-      @options = options
-
       @environment = {}
 
       @conf = SparkConf.new(true)

@@ -42,7 +42,7 @@ class RubyRDD[T: ClassTag](
 
     // find path
     // override val partitioner = if (preservePartitoning) parent.partitioner else None
-    // override val partitioner = None
+    override val partitioner = None
 
     /* ------------------------------------------------------------------------------------------ */
 

@@ -7,6 +7,7 @@ module Spark
   autoload :CLI,        "spark/cli"
   autoload :Build,      "spark/build"
   autoload :Serializer, "spark/serializer"
+  autoload :Command,    "spark/command"
 
   # Cannot load before CLI::install
   def self.load_lib(spark_home=nil)
@@ -23,6 +24,8 @@ module Spark
     java_import org.apache.spark.SparkConf
     java_import org.apache.spark.api.java.JavaSparkContext
     java_import org.apache.spark.api.ruby.RubyRDD
+    java_import org.apache.spark.api.python.PairwiseRDD
+    java_import org.apache.spark.api.python.PythonPartitioner # for PairwiseRDD
 
     @loaded_lib = true
   end

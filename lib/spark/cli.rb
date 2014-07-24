@@ -52,5 +52,19 @@ module Spark
       IRB.start
     end
 
+    desc "pry", "start ruby shell for spark"
+    option :spark
+    def pry
+      # Load Java and Spark
+      Spark.load_lib(options[:spark])
+      $sc = Spark::Context.new(app_name: "RubySpark", master: "local")
+      Spark.print_logo("Spark context is loaded as $sc")
+
+      # Load IRB
+      require "pry"
+      Pry.start
+    end
+
+
   end
 end

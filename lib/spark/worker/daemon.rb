@@ -5,6 +5,7 @@ require "socket"
 # Require all serializers
 dir = File.expand_path(File.join("..", "serializer"), File.dirname(__FILE__))
 Dir.glob(File.join(dir, "*.rb")) { |file| require file  }
+require File.expand_path(File.join("..", "command", "template"), File.dirname(__FILE__))
 
 def log(message=nil)
   puts %{==> [#{Process.pid}::#{Thread.current.object_id}] [#{Time.now.strftime("%H:%M")}] #{message}}
@@ -146,21 +147,21 @@ class Worker
     end
 
     def load_command
-      command = Marshal.load(read(read_int))
-
-      @commands = command[0]#.map!{|x| [eval(x[0]), eval(x[1])]}
-      @serializer = eval(command[1])
+      @command = Marshal.load(read(read_int))
     end
 
     def load_iterator
-      @iterator = @serializer.load(client_socket)
+      @iterator = @command.deserializer.load(client_socket)
     end
 
     def compute
       begin
-        @commands.each do |command|
-          eval(command[0])
-          @iterator = eval(command[1]).call(@iterator, @split_index)
+        @command.library.each{|lib| require lib}
+        @command.pre.each{|pre| eval(pre)}
+
+        @command.stages.each do |stage|
+          eval(stage.pre)
+          @iterator = eval(stage.main).call(@iterator, @split_index)
         end
       rescue => e
         client_socket.write(to_stream(-1))
@@ -172,7 +173,7 @@ class Worker
     end
 
     def send_result
-      @serializer.dump(@iterator, client_socket)
+      @command.serializer.dump(@iterator, client_socket)
     end
 
     def finish
