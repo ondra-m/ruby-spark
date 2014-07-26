@@ -1,12 +1,21 @@
 require "sourcify"
 
-# Resilient Distributed Dataset
-
+# A Resilient Distributed Dataset (RDD), the basic abstraction in Spark. Represents an immutable,
+# partitioned collection of elements that can be operated on in parallel. This class contains the
+# basic operations available on all RDDs, such as `map`, `filter`, and `persist`.
+#
 module Spark
   class RDD
 
     attr_reader :jrdd, :context, :command
 
+    # Initializing RDD, this method is root of all Pipelined RDD - its unique
+    # If you call some operations on this class it will be computed in Java
+    #
+    #   jrdd: org.apache.spark.api.java.JavaRDD
+    #   context: Spark::Context
+    #   serializer: Spark::Serializer
+    #
     def initialize(jrdd, context, serializer)
       @jrdd = jrdd
       @context = context
@@ -18,21 +27,22 @@ module Spark
     end
 
 
+    # =============================================================================
+    # Commad
 
-    # =======================================================================    
-    # Commad 
-    # ======================================================================= 
-
+    # Attach method as Symbol or Proc
     def attach(*args)
       @command.add_pre(args)
       self
     end
 
+    # Add library which will be loaded on worker
     def add_library(*args)
       @command.add_library(args)
       self
     end
 
+    # Show attached methods, procs and libraries
     def attached
       @command.attached
     end
@@ -46,9 +56,8 @@ module Spark
     end
 
 
-    # =======================================================================    
-    # Variables 
-    # =======================================================================   
+    # =============================================================================
+    # Variables
 
     def default_reduce_partitions
       if @context.conf.contains("spark.default.parallelism")
@@ -58,6 +67,7 @@ module Spark
       end
     end
 
+    # A unique ID for this RDD (within its SparkContext).
     def id
       @jrdd.id
     end
@@ -71,12 +81,9 @@ module Spark
     end
 
 
-
-    # =======================================================================
+    # =============================================================================
     # Computing functions
-    # =======================================================================     
 
-    #
     # Return an array that contains all of the elements in this RDD.
     #
     def collect
@@ -84,14 +91,12 @@ module Spark
       @command.serializer.load(jrdd.collect.to_a)
     end
 
-    #
     # Convert an Array to Hash
     #
     def collect_as_hash
       Hash[collect]
     end
 
-    #
     # Return a new RDD by applying a function to all elements of this RDD.
     #
     # rdd = $sc.parallelize(0..5)
@@ -105,7 +110,6 @@ module Spark
       PipelinedRDD.new(self, comm)
     end
 
-    #
     # Return a new RDD by first applying a function to all elements of this
     # RDD, and then flattening the results.
     #
@@ -120,7 +124,6 @@ module Spark
       PipelinedRDD.new(self, comm)
     end
 
-    #
     # Return a new RDD by applying a function to each partition of this RDD.
     #
     # rdd = $sc.parallelize(0..10, 2)
@@ -134,7 +137,6 @@ module Spark
       PipelinedRDD.new(self, comm)
     end
 
-    #
     # Return a new RDD by applying a function to each partition of this RDD, while tracking the index
     # of the original partition.
     #
@@ -149,7 +151,6 @@ module Spark
       PipelinedRDD.new(self, comm)
     end
 
-    #
     # Return a new RDD containing only the elements that satisfy a predicate.
     #
     # rdd = $sc.parallelize(0..10)
@@ -163,7 +164,6 @@ module Spark
       PipelinedRDD.new(self, comm)
     end
 
-    #
     # Return an RDD created by coalescing all elements within each partition into an array.
     #
     # rdd = $sc.parallelize(0..10, 3)
@@ -177,8 +177,7 @@ module Spark
       PipelinedRDD.new(self, comm)
     end
 
-    #
-    # Return a new RDD that is reduced into `numPartitions` partitions.
+    # Return a new RDD that is reduced into num_partitions partitions.
     #
     # rdd = $sc.parallelize(0..10, 3)
     # rdd.coalesce(2).glom.collect
@@ -189,7 +188,6 @@ module Spark
       RDD.new(new_jrdd, context, @command.serializer)
     end
 
-    #
     # Merge the values for each key using an associative reduce function. This will also perform
     # the merging locally on each mapper before sending results to a reducer, similarly to a
     # "combiner" in MapReduce. Output will be hash-partitioned with the existing partitioner/
@@ -204,7 +202,6 @@ module Spark
       combine_by_key("lambda {|x| x}", f, f, num_partitions)
     end
 
-    #
     # Generic function to combine the elements for each key using a custom set of aggregation
     # functions. Turns a JavaPairRDD[(K, V)] into a result of type JavaPairRDD[(K, C)], for a
     # "combined type" C * Note that V and C can be different -- for example, one might group an
@@ -229,6 +226,8 @@ module Spark
     def combine_by_key(create_combiner, merge_value, merge_combiners, num_partitions=nil)
       num_partitions ||= default_reduce_partitions
 
+      # Not use combiners[key] ||= ..
+      # it tests nil and not has_key?
       _combine_ = <<-COMBINE
         Proc.new{|iterator|
           combiners = {}
@@ -262,7 +261,6 @@ module Spark
       shuffled.map_partitions(_merge_).attach(merge_combiners: merge_combiners)
     end
 
-    #
     # Return a copy of the RDD partitioned using the specified partitioner.
     #
     # rdd = $sc.parallelize(["1","2","3","4","5"]).map(lambda {|x| [x, 1]})
@@ -270,30 +268,30 @@ module Spark
     # => [[["3", 1], ["4", 1]], [["1", 1], ["2", 1], ["5", 1]]]
     #
     def partition_by(num_partitions, partition_func=nil)
-        num_partitions ||= default_reduce_partitions
-        partition_func ||= "lambda{|x| x.hash}"
+      num_partitions ||= default_reduce_partitions
+      partition_func ||= "lambda{|x| x.hash}"
 
-        _key_function_ = <<-KEY_FUNCTION
-          Proc.new{|iterator|
-            iterator.map! {|key, value|
-              [@__partition_func__.call(key), [key, value]]
-            }
+      _key_function_ = <<-KEY_FUNCTION
+        Proc.new{|iterator|
+          iterator.map! {|key, value|
+            [@__partition_func__.call(key), [key, value]]
           }
-        KEY_FUNCTION
+        }
+      KEY_FUNCTION
 
-        # RDD is transform from [key, value] to [hash, [key, value]]
-        keyed = map_partitions(_key_function_).attach(partition_func: partition_func)
-        keyed.command.serializer = Spark::Serializer::Pairwise
+      # RDD is transform from [key, value] to [hash, [key, value]]
+      keyed = map_partitions(_key_function_).attach(partition_func: partition_func)
+      keyed.command.serializer = Spark::Serializer::Pairwise
 
-        # PairwiseRDD and PythonPartitioner are borrowed from Python
-        # but works great on ruby too
-        pairwise_rdd = PairwiseRDD.new(keyed.jrdd.rdd).asJavaPairRDD
-        partitioner = PythonPartitioner.new(num_partitions, partition_func.object_id)
-        jrdd = pairwise_rdd.partitionBy(partitioner).values
+      # PairwiseRDD and PythonPartitioner are borrowed from Python
+      # but works great on ruby too
+      pairwise_rdd = PairwiseRDD.new(keyed.jrdd.rdd).asJavaPairRDD
+      partitioner = PythonPartitioner.new(num_partitions, partition_func.object_id)
+      jrdd = pairwise_rdd.partitionBy(partitioner).values
 
-        # Prev serializer was Pairwise
-        rdd = RDD.new(jrdd, context, Spark::Serializer::Simple)
-        rdd
+      # Prev serializer was Pairwise
+      rdd = RDD.new(jrdd, context, Spark::Serializer::Simple)
+      rdd
     end
 
 
@@ -308,16 +306,21 @@ module Spark
 
   end
 
-
+  # Pipelined Resilient Distributed Dataset, operations are pipelined and sended to worker
+  #
+  # RDD
+  # `-- map
+  #     `-- map
+  #         `-- map
+  #
+  # Code is executed from top to bottom
+  #
   class PipelinedRDD < RDD
 
     attr_reader :prev_jrdd, :serializer, :command
 
     def initialize(prev, command)
 
-      @command = command
-
-      # if !prev.is_a?(PipelinedRDD) || !prev.pipelinable?
       if prev.is_a?(PipelinedRDD) && prev.pipelinable?
         # Second, ... stages
         @prev_jrdd = prev.prev_jrdd
@@ -330,12 +333,14 @@ module Spark
       @checkpointed = false
 
       @context = prev.context
+      @command = command
     end
 
     def pipelinable?
       !(cached? || checkpointed?)
     end
 
+    # Serialization necessary things and sent it to RubyRDD (scala extension)
     def jrdd
       return @jrdd_values if @jrdd_values
 

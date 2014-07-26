@@ -9,7 +9,11 @@ module Spark
   autoload :Serializer, "spark/serializer"
   autoload :Command,    "spark/command"
 
+  # Load dependent libraries, can be use once
   # Cannot load before CLI::install
+  #
+  #   spark_home: path to directory where are located sparks .jar files
+  #
   def self.load_lib(spark_home=nil)
     return if @loaded_lib
 
@@ -45,18 +49,23 @@ module Spark
     STRING
   end
 
+  # Root of the gem
   def self.root
     @root ||= File.expand_path("..", File.dirname(__FILE__))
   end
 
+  # Default directory for java extensions
   def self.target_dir
     @target_dir ||= File.join(root, 'target')
   end
 
+  # Directory where is worker.rb
   def self.worker_dir
     @worker_dir ||= File.join(root, 'lib', 'spark', 'worker')
   end
 
+  # Full path of ruby spark extension
+  # used for build and load
   def self.ruby_spark_jar
     @ruby_spark_jar ||= File.join(target_dir, 'ruby-spark.jar')
   end

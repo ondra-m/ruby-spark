@@ -8,7 +8,7 @@ bin/ruby-spark pry
 ## Examples
 
 ```ruby
-rdd = $sc.textFile("test/inputs/numbers_1_10.txt")
+rdd = $sc.textFile("spec/inputs/numbers_1_10.txt")
 rdd = rdd.map(lambda {|x| x+'a'})
 rdd = rdd.map(lambda {|x| x+'b'})
 rdd = rdd.map(lambda {|x| x+'c'})

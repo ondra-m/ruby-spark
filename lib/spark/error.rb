@@ -1,4 +1,5 @@
 module Spark
+  # Extension cannot be built
   class BuildError < StandardError
   end
 
@@ -8,5 +9,9 @@ module Spark
 
   # Serializer method
   class NotImplemented < StandardError
+  end
+
+  # Missison app_name or master
+  class ConfigurationError < StandardError
   end
 end
