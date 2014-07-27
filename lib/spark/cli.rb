@@ -25,7 +25,7 @@ module Spark
     def irb
       # Load Java and Spark
       Spark.load_lib(options[:spark])
-      $sc = Spark::Context.new(app_name: "RubySpark", master: "local")
+      $sc = Spark::Context.new(app_name: "RubySpark", master: "local[*]")
       Spark.print_logo("Spark context is loaded as $sc")
 
       # Load IRB
@@ -57,7 +57,7 @@ module Spark
     def pry
       # Load Java and Spark
       Spark.load_lib(options[:spark])
-      $sc = Spark::Context.new(app_name: "RubySpark", master: "local")
+      $sc = Spark::Context.new(app_name: "RubySpark", master: "local[*]")
       Spark.print_logo("Spark context is loaded as $sc")
 
       # Load IRB
