@@ -29,12 +29,12 @@ import org.apache.spark.api.python.PythonRDD
 class RubyRDD[T: ClassTag](
   parent: RDD[T],
   command: Array[Byte],
-  envVars: JMap[String, String],
   workerDir: String)
 
   extends RDD[Array[Byte]](parent){
 
     val bufferSize = conf.getInt("spark.buffer.size", 65536)
+    val workerType = conf.get("ruby.worker.type")
 
     val asJavaRDD: JavaRDD[Array[Byte]] = JavaRDD.fromRDD(this)
 
@@ -48,7 +48,7 @@ class RubyRDD[T: ClassTag](
 
       val startTime = System.currentTimeMillis
       val env = SparkEnv.get
-      val worker: Socket = RubyWorker.create(workerDir)
+      val worker: Socket = RubyWorker.create(workerDir, workerType)
 
       // Start a thread to feed the process input from our parent's iterator
       val writerThread = new WriterThread(env, worker, split, context)

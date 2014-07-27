@@ -1,96 +1,93 @@
-#!/usr/bin/env ruby
+# ==============================================================================
+# Worker
+# ==============================================================================
 
-# -------------------------------------------------------------------------------
-#
-# TODO: create Serializer class
-# TODO: add constant for log, end stream
-#
-# -------------------------------------------------------------------------------
+class Worker
 
+  include Spark::Serializer::Helper
 
-require "socket"
+  attr_accessor :client_socket
 
-# -------------------------------------------------------------------------------
-# Function
-# -------------------------------------------------------------------------------
-
-def log(message=nil)
-  puts %{==> [#{Process.pid}] [#{Time.now.strftime("%H:%M")}] RUBY WORKER: #{message}}
-end
-
-class SparkSocket < TCPSocket
-  
-  def initialize(port, address='127.0.0.1', encoding='UTF-8')
-    @encoding = encoding
-
-    super(address, port)
-
-    set_encoding(@encoding)
+  def initialize(client_socket)
+    self.client_socket = client_socket
   end
 
-  # 4 byte, big endian
-  def read_int
-    read(4).unpack("l>")[0] 
+  def run
+    load_split_index
+    load_command
+    load_iterator
+
+    compute
+
+    send_result
+    finish
   end
 
-  def write_int(x)
-    send([x].pack("l>"), 0)
-  end
+  private
 
-  # first read size of item
-  # then load command
-  # TODO: too many rescue
-  def load_stream
-    result = []
-    loop { result << _next rescue break }
-    result
-  end
-
-  def _next
-    data = read(read_int).force_encoding(@encoding)
-    Marshal.load(data) rescue data
-  end
-
-  def write_stream(data)
-    data.each do |x|
-      serialized = Marshal.dump(x)
-
-      write_int(serialized.size)
-      send(serialized, 0)
+    def read(size)
+      client_socket.read(size)
     end
-  end
+
+    def read_int
+      unpack_int(read(4))
+    end
+
+    def load_split_index
+      @split_index = read_int
+    end
+
+    def load_command
+      @command = Marshal.load(read(read_int))
+    end
+
+    def load_iterator
+      @iterator = @command.deserializer.load(client_socket)
+    end
+
+    def compute
+      begin
+        @command.library.each{|lib| require lib}
+        @command.pre.each{|pre| eval(pre)}
+
+        @command.stages.each do |stage|
+          eval(stage.pre)
+          @iterator = eval(stage.main).call(@iterator, @split_index)
+        end
+      rescue => e
+        client_socket.write(pack_int(-1))
+        client_socket.write(pack_int(e.message.size))
+        client_socket.write(e.message)
+
+        # Thread.kill
+      end
+    end
+
+    def send_result
+      @command.serializer.dump(@iterator, client_socket)
+    end
+
+    def finish
+      client_socket.write(pack_int(0))
+      client_socket.flush
+
+      loop { break if client_socket.recv(4096) == '' }
+    end
 
 end
 
 
+class WorkerThread < Worker
+  
+  private
 
+    # Threads changing is very slow
+    # Faster way is do it one by one
+    def load_iterator
+      $mutex.synchronize{
+        @iterator = @command.deserializer.load(client_socket)
+      }
+    end
 
-# -------------------------------------------------------------------------------
-# Main
-# -------------------------------------------------------------------------------
+end
 
-log "INIT"
-
-port = $stdin.readline.to_i
-
-s = SparkSocket.new(port)
-
-split_index = s.read_int
-command_size = s.read_int
-command = Marshal.load(s.read(command_size))
-iterator = s.load_stream
-
-eval(command[0]) # original lambda
-
-result = eval(command[1]).call(split_index, iterator)
-
-# log "SPLIT INDEX: #{split_index}"
-# log "COMMAND SIZE: #{command_size}"
-# log "COMMAND: #{command}"
-# log "ITERATOR: #{iterator}"
-# log "RESULT: #{result}"
-
-s.write_stream(result)
-s.write_int(0)
-
-# s.close

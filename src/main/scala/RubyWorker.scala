@@ -40,9 +40,9 @@ object RubyWorker extends Logging {
 
   /* -------------------------------------------------------------------------------------------- */
 
-  def create(workerDir: String): java.net.Socket = {
+  def create(workerDir: String, workerType: String): java.net.Socket = {
     synchronized {
-      workers.getOrElseUpdate(workerDir, new RubyWorkerFactory(workerDir)).create()
+      workers.getOrElseUpdate(workerDir, new RubyWorkerFactory(workerDir, workerType)).create()
     }
   }
 

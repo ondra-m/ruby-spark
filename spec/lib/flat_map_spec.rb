@@ -27,9 +27,9 @@ describe "Spark::RDD.flat_map" do
 
       expect(result).to eq([0, 1, 2, 1, 4, 1, 6, 1, 8, 1, 10, 1, 12, 1, 14, 1, 16, 1, 18, 1, 20, 1])
     end
-    
-    it "3 worker" do
-      rdd = $sc.text_file(file, 3)
+
+    it "4 workers" do
+      rdd = $sc.text_file(file, 4)
       result = rdd.flat_map(lambda {|x| [x.to_i*2, 1]}).collect
 
       expect(result).to eq([0, 1, 2, 1, 4, 1, 6, 1, 8, 1, 10, 1, 12, 1, 14, 1, 16, 1, 18, 1, 20, 1])

@@ -8,7 +8,6 @@ GEM
   specs:
     coderay (1.1.0)
     diff-lcs (1.2.5)
-    ffi (1.9.3)
     ffi (1.9.3-java)
     file-tail (1.0.12)
       tins (~> 0.5)
@@ -26,6 +25,7 @@ GEM
       slop (~> 3.4)
       spoon (~> 0.0)
     rake (10.3.2)
+    rjb (1.4.9)
     rspec (3.0.0)
       rspec-core (~> 3.0.0)
       rspec-expectations (~> 3.0.0)
@@ -65,6 +65,7 @@ DEPENDENCIES
   fuubar
   pry
   rake
+  rjb
   rspec
   ruby-spark!
   sourcify (= 0.6.0.rc4)

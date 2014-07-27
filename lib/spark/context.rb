@@ -9,22 +9,24 @@ Spark.load_lib
 module Spark
   class Context
 
+    include Spark::Helper::Platform
+
     EXECUTOR_ENV_KEY = "spark.executorEnv."
 
     BATCH_SIZE = 2048
 
-    attr_reader :environment, :jcontext
+    attr_reader :jcontext
 
     # Constructor fo Ruby context
     # Required parameters: app_name and master
     #
     def initialize(options={})
-      @environment = {}
 
       # true - load default configuration
       @conf = SparkConf.new(true)
       @conf.setAppName(options[:app_name])
       @conf.setMaster(options[:master])
+      @conf.set("ruby.worker.type", default_worker_typ)
 
       raise Spark::ConfigurationError, "A master URL must be set in your configuration" unless @conf.contains("spark.master")
       raise Spark::ConfigurationError, "An application name must be set in your configuration" unless @conf.contains("spark.app.name")
@@ -32,15 +34,21 @@ module Spark
       @jcontext = JavaSparkContext.new(@conf)
 
       set_call_site("Ruby") # description of stage
-
-      @conf.getAll.each do |tuple|
-        @environment[EXECUTOR_ENV_KEY.size..-1] = tuple._2 if tuple._1.start_with?(EXECUTOR_ENV_KEY)
-      end
     end
 
     # Default level of parallelism to use when not given by user (e.g. parallelize and makeRDD)
     def default_parallelism
       @jcontext.sc.defaultParallelism
+    end
+
+    # Default level of worker type
+    # Fork doesn't work on jruby and windows
+    def default_worker_typ
+      if jruby? || windows?
+        "thread"
+      else
+        "fork"
+      end
     end
 
     # Set a local property that affects jobs submitted from this thread, such as the
@@ -65,6 +73,11 @@ module Spark
       jcontext.getCallSite
     end
 
+    # Get current config or Spark
+    def config
+      Hash[jcontext.conf.getAll.map{|tuple| [tuple._1, tuple._2]}]
+    end
+
     # Read a text file from HDFS, a local file system (available on all nodes), or any
     # Hadoop-supported file system URI, and return it as an RDD of Strings.
     #
@@ -84,6 +97,8 @@ module Spark
     def parallelize(data, num_slices=nil, use=:direct)
       num_slices ||= default_parallelism
       data = data.to_a # for enumerator
+
+      use = :file unless jruby?
 
       case use
       when :direct

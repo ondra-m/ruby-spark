@@ -11,7 +11,6 @@ import org.apache.spark.util.Utils
 import org.apache.spark.api.python.RedirectThread
 
 
-
 /* =================================================================================================
  * Class RubyWorkerFactory
  * =================================================================================================
@@ -19,8 +18,8 @@ import org.apache.spark.api.python.RedirectThread
  * Represent worker or daemon
  */
 
-class RubyWorkerFactory(workerDir: String) extends Logging {
-  
+class RubyWorkerFactory(workerDir: String, workerType: String) extends Logging {
+
   val PROCESS_WAIT_TIMEOUT_MS = 10000
 
   val useDaemon = true
@@ -118,8 +117,8 @@ class RubyWorkerFactory(workerDir: String) extends Logging {
       try {
         // Create and start the daemon
         // -C: change worker dir before execution
-        val pb = new ProcessBuilder(List("ruby", "-C", workerDir, "daemon.rb"))
-        pb.environment().put("SIMPLE_WORKER", "0")
+        val pb = new ProcessBuilder(List("ruby", "-C", workerDir, "master.rb"))
+        pb.environment().put("WORKER_TYPE", workerType)
         daemon = pb.start()
 
         // Daemon create TCPServer and send back port

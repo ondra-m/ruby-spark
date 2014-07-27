@@ -9,8 +9,10 @@ module Spark
           load_from_io(source)
         elsif source.is_a?(Array)
           load_from_array(source)
-        elsif source.respond_to?(:iterator)
-          load_from_iterator(source)
+        elsif try(source, :iterator)
+          # mri: respond_to?(:iterator) => false
+          # jruby: respond_to?(:iterator) => true
+          load_from_iterator(source.iterator)
         end
       end
 
@@ -34,7 +36,12 @@ module Spark
 
         def self.load_from_array(array)
           array.map! do |item|
-            Marshal.load(pack_unsigned_chars(item))
+            if item.is_a?(String)
+              # do nothing
+            else
+              item = pack_unsigned_chars(item)
+            end
+            Marshal.load(item)
           end
         end
 
@@ -42,11 +49,30 @@ module Spark
         def self.load_from_iterator(iterator)
           result = []
           while iterator.hasNext
-            result << Marshal.load(pack_unsigned_chars(iterator.next.to_a))
+            item = iterator.next
+            if item.is_a?(String)
+              # do nothing
+            else
+              item = pack_unsigned_chars(item.to_a)
+            end
+            result << Marshal.load(item)
           end
           result
         end
 
+        # Rescue cannot be defined
+        #
+        # mri => RuntimeError
+        # jruby => NoMethodError
+        #
+        def self.try(object, method)
+          begin
+            object.send(method)
+            return true
+          rescue
+            return false
+          end
+        end
 
     end
   end

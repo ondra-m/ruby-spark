@@ -86,9 +86,13 @@ module Spark
 
     # Return an array that contains all of the elements in this RDD.
     #
+    # toArray: mri => Array
+    #          jruby => ArrayList
+    #
     def collect
-      # @serializer.load(jrdd.collect.iterator)
-      @command.serializer.load(jrdd.collect.to_a)
+      @command.serializer.load(jrdd.collect)
+      # @command.serializer.load(jrdd.collect.toArray.to_a)
+      # jrdd.collect
     end
 
     # Convert an Array to Hash
@@ -345,10 +349,9 @@ module Spark
       return @jrdd_values if @jrdd_values
 
       command = @command.marshal
-      env = @context.environment
       class_tag = @prev_jrdd.classTag
 
-      ruby_rdd = RubyRDD.new(@prev_jrdd.rdd, command, env, Spark.worker_dir, class_tag)
+      ruby_rdd = RubyRDD.new(@prev_jrdd.rdd, command, Spark.worker_dir, class_tag)
       @jrdd_values = ruby_rdd.asJavaRDD
       @jrdd_values
     end
