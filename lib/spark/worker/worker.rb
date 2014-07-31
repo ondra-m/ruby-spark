@@ -24,6 +24,7 @@ module Worker
       compute
 
       send_result
+      finish
 
       before_end
     end
@@ -34,11 +35,6 @@ module Worker
       end
 
       def before_end
-        # 0 = end of stream
-        write(pack_int(0))
-        flush
-
-        # loop { break if client_socket.recv(4096) == '' }
       end
 
       def read(size)
@@ -89,6 +85,14 @@ module Worker
         @command.serializer.dump(@iterator, client_socket)
       end
 
+      def finish
+        # 0 = end of stream
+        write(pack_int(0))
+        flush
+
+        # loop { break if client_socket.recv(4096) == '' }
+      end
+
   end
 
   # ===============================================================================================
@@ -119,7 +123,19 @@ module Worker
   # Worker::Thread
   #
   class Thread < Base
+
+    # Worker is killed from outside
+    # Spark need get 0 otherwise StreamReader will raise exception
+    def before_kill
+      finish
+    end
+
     private
+
+      # Worker is called before kill
+      def before_start
+        ::Thread.current[:worker] = self
+      end
 
       # Threads changing is very slow
       # Faster way is do it one by one

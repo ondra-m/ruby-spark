@@ -68,12 +68,18 @@ module Master
 
       # This is controll socket
       self.controll_socket = server_socket.accept
+
+      # Master received SIGTERM
+      # all workers must be closed
+      Signal.trap("TERM") {
+        @shutdown = true
+      }
     end
 
     # Create PollMasters
     def run
-      log "Master INIT"
       before_start
+      log "Master INIT"
 
       POOL_SIZE.times do
         create_pool_master
@@ -81,29 +87,32 @@ module Master
 
       loop {
         sleep(2)
-        # log "1"
-        if $stdin.closed?
-          log "STDIN CLOSED"
+        if $stdin.closed? || shutdown?
           break;
         end
-        # log "2"
+
         begin
           type = unpack_int(controll_socket.read_nonblock(4))
           handle_signal(type)
         rescue IO::WaitReadable
-        #   IO.select([controll_socket])
+          # IO.select([controll_socket])
         end
       }
 
-      before_end
       log "Master SHUTDOWN"
+      before_end
     end
 
     private
+      
       def before_start
       end
 
       def before_end
+      end
+
+      def shutdown?
+        @shutdown
       end
 
       def handle_signal(type)
@@ -123,32 +132,19 @@ module Master
   # Available only on UNIX on non-java ruby
   #
   class Process < Base
-
-    attr_accessor :pids
-
     private
-
-      def before_start
-        self.pids = []
-
-        Signal.trap("TERM") { 
-          ::Process.kill("HUP", 0)
-          exit
-        }
-      end
 
       def before_end
         ::Process.kill("HUP", 0)
       end
 
       def create_pool_master
-        pids << fork {
-                  PoolMaster::Process.new(server_socket).run
-                }
+        fork do
+          PoolMaster::Process.new(server_socket).run
+        end
       end
 
       def kill_worker(id)
-        log "TRY TO KILL WORKER: #{id}"
         ::Process.kill("HUP", id)
       end
 
@@ -166,6 +162,8 @@ module Master
     private
 
       def before_start
+        ::Thread.abort_on_exception = true
+
         self.pool_threads = []
 
         # For synchronous access to socket IO
@@ -177,9 +175,15 @@ module Master
       end
 
       def create_pool_master
-        pool_threads << Thread.new {
+        pool_threads << ::Thread.new {
                           PoolMaster::Thread.new(server_socket).run
                         }
+      end
+
+      def kill_worker(id)
+        thread = ObjectSpace._id2ref(id)
+        thread[:worker].before_kill
+        thread.kill
       end
 
   end
