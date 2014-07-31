@@ -20,6 +20,10 @@ module Spark
         unpack(data, :int)
       end
 
+      def unpack_long(data)
+        unpack(data, :long)
+      end
+
       def unpack_chars(data)
         unpack(data, :chars)
       end
@@ -43,6 +47,8 @@ module Spark
           data.unpack("c*")
         when :int
           data.unpack("l>")[0]
+        when :long
+          data.unpack("q>")[0]
         else
           raise "Unknow type: #{type}."
         end

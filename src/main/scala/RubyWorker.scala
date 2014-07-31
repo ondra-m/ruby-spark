@@ -1,6 +1,6 @@
 package org.apache.spark.api.ruby
 
-import java.io.{DataInputStream, InputStream}
+import java.io.{DataInputStream, InputStream, DataOutputStream, BufferedOutputStream}
 import java.net.{InetAddress, Socket, SocketException}
 
 import scala.collection.mutable
@@ -23,9 +23,14 @@ object RubyWorker extends Logging {
 
   val PROCESS_WAIT_TIMEOUT_MS = 10000
 
+  val COMMAND_KILL_WORKER = 0
+
   private var master: Process = null
   private val masterHost = InetAddress.getByAddress(Array(127, 0, 0, 1))
   private var masterPort: Int = 0
+
+  private var commandSocket: Socket = null
+  private var commandStream: DataOutputStream = null
 
   def create(workerDir: String, workerType: String): Socket = {
     synchronized {
@@ -42,10 +47,12 @@ object RubyWorker extends Logging {
 
   /* -------------------------------------------------------------------------------------------- */
 
-  def destroy() {
+  def destroy(workerId: Long) {
     synchronized {
-      // Simple worker cannot be stopped
-      stopMaster()
+      // Send master id of worker to kill
+      commandStream.writeInt(COMMAND_KILL_WORKER)
+      commandStream.writeLong(workerId)
+      commandStream.flush()
     }
   }
 
@@ -100,13 +107,16 @@ object RubyWorker extends Logging {
         pb.environment().put("WORKER_TYPE", workerType)
         master = pb.start()
 
-        // master create TCPServer and send back port
+        // Master create TCPServer and send back port
         val in = new DataInputStream(master.getInputStream)
         masterPort = in.readInt()
 
         // Redirect master stdout and stderr
         redirectStreamsToStderr(in, master.getErrorStream)
 
+        commandSocket = new Socket(masterHost, masterPort)
+        commandStream = new DataOutputStream(new BufferedOutputStream(commandSocket.getOutputStream))
+    
       } catch {
         case e: Exception =>
 

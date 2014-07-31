@@ -17,7 +17,7 @@ require_relative "pool_master"
 require_relative "worker"
 
 def log(message=nil)
-  $stdout.write %{==> [#{Process.pid}::#{Thread.current.object_id}] [#{Time.now.strftime("%H:%M")}] #{message}}
+  $stdout.write %{==> [#{Process.pid}::#{Thread.current.object_id}] [#{Time.now.strftime("%H:%M")}] #{message}\n}
   $stdout.flush
 end
 
@@ -53,7 +53,9 @@ module Master
 
     POOL_SIZE = 2
 
-    attr_accessor :port, :server_socket
+    COMMAND_KILL_WORKER = 0
+
+    attr_accessor :port, :server_socket, :controll_socket
 
     # Create new Socket server
     def initialize(address, port)
@@ -64,7 +66,8 @@ module Master
       $stdout.write(pack_int(self.port))
       $stdout.flush
 
-      # $stderr.reopen($stdout)
+      # This is controll socket
+      self.controll_socket = server_socket.accept
     end
 
     # Create PollMasters
@@ -76,6 +79,22 @@ module Master
         create_pool_master
       end
 
+      loop {
+        sleep(2)
+        # log "1"
+        if $stdin.closed?
+          log "STDIN CLOSED"
+          break;
+        end
+        # log "2"
+        begin
+          type = unpack_int(controll_socket.read_nonblock(4))
+          handle_signal(type)
+        rescue IO::WaitReadable
+        #   IO.select([controll_socket])
+        end
+      }
+
       before_end
       log "Master SHUTDOWN"
     end
@@ -85,6 +104,14 @@ module Master
       end
 
       def before_end
+      end
+
+      def handle_signal(type)
+        case type
+        when COMMAND_KILL_WORKER
+          id = unpack_long(controll_socket.read(8))
+          kill_worker(id)
+        end
       end
 
   end
@@ -103,28 +130,26 @@ module Master
 
       def before_start
         self.pids = []
-      end
-
-      def before_end
-        server_socket.close
 
         Signal.trap("TERM") { 
           ::Process.kill("HUP", 0)
           exit
         }
+      end
 
-        loop {
-          sleep(2)
-          if $stdin.closed?
-            ::Process.kill("HUP", 0)
-          end
-        }
+      def before_end
+        ::Process.kill("HUP", 0)
       end
 
       def create_pool_master
         pids << fork {
                   PoolMaster::Process.new(server_socket).run
                 }
+      end
+
+      def kill_worker(id)
+        log "TRY TO KILL WORKER: #{id}"
+        ::Process.kill("HUP", id)
       end
 
   end
@@ -148,7 +173,7 @@ module Master
       end
 
       def before_end
-        pool_threads.each {|t| t.join}
+        pool_threads.each {|t| t.kill}
       end
 
       def create_pool_master

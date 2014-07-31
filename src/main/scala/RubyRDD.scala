@@ -52,7 +52,7 @@ class RubyRDD[T: ClassTag](
       context.addOnCompleteCallback { () =>
         writerThread.shutdownOnTaskCompletion()
 
-        // Cleanup the worker socket. This will also cause the Python worker to exit.
+        // Cleanup the worker socket. This will also cause the worker to exit.
         try {
           worker.close()
         } catch {
@@ -60,13 +60,18 @@ class RubyRDD[T: ClassTag](
         }
       }
 
+      val stream = new DataInputStream(new BufferedInputStream(worker.getInputStream, bufferSize))
+
+      // Get worker ID
+      val workerId = stream.readLong()
+
+      // Send data
       writerThread.start()
 
       // For violent termination of worker
-      new MonitorThread(env, worker, context).start()
+      new MonitorThread(workerId, worker, context).start()
 
       // Return an iterator that read lines from the process's stdout
-      val stream = new DataInputStream(new BufferedInputStream(worker.getInputStream, bufferSize))
       val stdoutIterator = new StreamReader(stream, writerThread)
 
       // An iterator that wraps around an existing iterator to provide task killing functionality.
@@ -194,7 +199,7 @@ class RubyRDD[T: ClassTag](
      * the threads can block indefinitely.
      */
 
-    class MonitorThread(env: SparkEnv, worker: Socket, context: TaskContext)
+    class MonitorThread(workerId: Long, worker: Socket, context: TaskContext)
       extends Thread("Worker Monitor for worker") {
 
       setDaemon(true)
@@ -206,8 +211,8 @@ class RubyRDD[T: ClassTag](
         }
         if (!context.completed) {
           try {
-            logWarning("Incomplete task interrupted: Attempting to kill Worker")
-            RubyWorker.destroy()
+            logWarning("Incomplete task interrupted: Attempting to kill Worker "+workerId.toString())
+            RubyWorker.destroy(workerId)
           } catch {
             case e: Exception =>
               logError("Exception when trying to kill worker", e)

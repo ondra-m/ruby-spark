@@ -11,6 +11,7 @@ module Worker
 
     def initialize(client_socket)
       self.client_socket = client_socket
+      write(pack_long(id))
     end
 
     def run
@@ -33,8 +34,9 @@ module Worker
       end
 
       def before_end
-        client_socket.write(pack_int(0))
-        client_socket.flush
+        # 0 = end of stream
+        write(pack_int(0))
+        flush
 
         # loop { break if client_socket.recv(4096) == '' }
       end
@@ -43,8 +45,16 @@ module Worker
         client_socket.read(size)
       end
 
+      def write(data)
+        client_socket.write(data)
+      end
+
       def read_int
         unpack_int(read(4))
+      end
+
+      def flush
+        client_socket.flush
       end
 
       def load_split_index
@@ -69,11 +79,9 @@ module Worker
             @iterator = eval(stage.main).call(@iterator, @split_index)
           end
         rescue => e
-          client_socket.write(pack_int(-1))
-          client_socket.write(pack_int(e.message.size))
-          client_socket.write(e.message)
-
-          # Thread.kill
+          write(pack_int(-1))
+          write(pack_int(e.message.size))
+          write(e.message)
         end
       end
 
@@ -88,12 +96,22 @@ module Worker
   #
   class Process < Base
     private
-    
+
       def before_start
         $PROGRAM_NAME = "RubySparkWorker"
 
         Signal.trap("HUP", "DEFAULT")
         Signal.trap("CHLD", "DEFAULT")
+
+        Signal.trap("HUP"){
+          write(pack_int(0))
+          client_socket.close
+          exit
+        }
+      end
+
+      def id
+        ::Process.pid
       end
   end
 
@@ -102,11 +120,15 @@ module Worker
   #
   class Thread < Base
     private
-    
+
       # Threads changing is very slow
       # Faster way is do it one by one
       def load_iterator
         $mutex.synchronize{ super }
+      end
+
+      def id
+        ::Thread.current.object_id
       end
   end
 
