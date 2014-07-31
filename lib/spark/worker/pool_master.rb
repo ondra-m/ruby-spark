@@ -38,13 +38,6 @@ module PoolMaster
   class Process < Base
     private
 
-      def create_worker(client_socket)
-        fork do
-          Worker::Process.new(client_socket).run
-        end
-        client_socket.close
-      end
-
       def before_start
         $PROGRAM_NAME = "RubySparkPoolMaster"
 
@@ -58,6 +51,13 @@ module PoolMaster
 
           # Process.wait(0, Process::WNOHANG)
         }
+      end
+      
+      def create_worker(client_socket)
+        fork do
+          Worker::Process.new(client_socket).run
+        end
+        client_socket.close
       end
 
   end

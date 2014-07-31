@@ -80,6 +80,7 @@ module Spark
     java_import org.apache.spark.SparkConf
     java_import org.apache.spark.api.java.JavaSparkContext
     java_import org.apache.spark.api.ruby.RubyRDD
+    java_import org.apache.spark.api.ruby.RubyWorker
     java_import org.apache.spark.api.python.PairwiseRDD
     java_import org.apache.spark.api.python.PythonPartitioner
   end
@@ -96,8 +97,16 @@ module Spark
     Object.const_set(:SparkConf,         Rjb::import("org.apache.spark.SparkConf"))
     Object.const_set(:JavaSparkContext,  Rjb::import("org.apache.spark.api.java.JavaSparkContext"))
     Object.const_set(:RubyRDD,           Rjb::import("org.apache.spark.api.ruby.RubyRDD"))
+    Object.const_set(:RubyWorker,        Rjb::import("org.apache.spark.api.ruby.RubyWorker"))
     Object.const_set(:PairwiseRDD,       Rjb::import("org.apache.spark.api.python.PairwiseRDD"))
     Object.const_set(:PythonPartitioner, Rjb::import("org.apache.spark.api.python.PythonPartitioner"))
   end
 
+end
+
+Kernel::at_exit do
+  begin
+    RubyWorker.destroyAll
+  rescue NameError
+  end
 end

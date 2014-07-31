@@ -50,9 +50,21 @@ object RubyWorker extends Logging {
   }
 
   /* -----------------------------------------------------------------------------------------------
+   * Destroy all process, threads and simple workers
+   * Method is user when program is ready to close
+   */
+
+  def destroyAll() {
+    synchronized {
+      // Simple worker cannot be stopped
+      stopMaster()
+    }
+  }
+
+  /* -----------------------------------------------------------------------------------------------
    * Connect to master a get socket to new worker which will listen on port
    */
-   
+
   def createThroughMaster(workerDir: String, workerType: String): Socket = {
     synchronized {
       // Start the master if it hasn't been started

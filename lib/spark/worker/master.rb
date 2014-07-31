@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+# TODO: restart poolmaster if crash
+
 $PROGRAM_NAME = "RubySparkMaster"
 
 require "socket"
@@ -19,7 +21,8 @@ def log(message=nil)
   $stdout.flush
 end
 
-# Process.setpgrp
+# New process group
+Process.setpgrp
 
 
 # =================================================================================================
@@ -56,28 +59,29 @@ module Master
     def initialize(address, port)
       self.server_socket = TCPServer.new(address, port)
       self.port = server_socket.addr[1]
+
+      # Send to Spark port of Socket server
+      $stdout.write(pack_int(self.port))
+      $stdout.flush
+
+      # $stderr.reopen($stdout)
     end
 
     # Create PollMasters
     def run
-      before_start
       log "Master INIT"
+      before_start
 
       POOL_SIZE.times do
         create_pool_master
       end
 
-      log "Master SHUTDOWN"
       before_end
+      log "Master SHUTDOWN"
     end
 
     private
-      # Send to Spark port of Socket server
       def before_start
-        $stdout.write(pack_int(port))
-        $stdout.flush
-
-        # $stderr.reopen($stdout)
       end
 
       def before_end
@@ -92,42 +96,37 @@ module Master
   # Available only on UNIX on non-java ruby
   #
   class Process < Base
+
+    attr_accessor :pids
+
     private
 
-      def create_pool_master
-        fork do
-          PoolMaster::Process.new(server_socket).run
-        end
+      def before_start
+        self.pids = []
       end
 
       def before_end
         server_socket.close
 
-        # Signal.trap("TERM") { puts "MASTER TERM"; $stdout.flush }
-        # Signal.trap("HUP") { puts "MASTER HUP"; $stdout.flush }
-
-        # # do not block if no child available
-        # Signal.trap("CHLD") { 
-        #   puts "MASTER CHLD 1"
-        #   $stdout.flush
-        #   Process.wait(0, Process::WNOHANG)
-        #   puts "MASTER CHLD 2"
-        #   $stdout.flush
-        # }
-
-        # Signal.list.keys.each do |key|
-        #   next if ["ILL", "FPE", "BUS", "SEGV", "VTALRM"].include?(key)
-        #   Signal.trap(key){ puts key; $stdout.flush }
-        # end
+        Signal.trap("TERM") { 
+          ::Process.kill("HUP", 0)
+          exit
+        }
 
         loop {
           sleep(2)
           if $stdin.closed?
-            Signal.trap("TERM", "DEFAULT")
-            Process.kill("HUP", 0)
+            ::Process.kill("HUP", 0)
           end
         }
       end
+
+      def create_pool_master
+        pids << fork {
+                  PoolMaster::Process.new(server_socket).run
+                }
+      end
+
   end
 
   # ===============================================================================================
