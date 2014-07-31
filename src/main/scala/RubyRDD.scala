@@ -2,23 +2,19 @@ package org.apache.spark.api.ruby
 
 import java.io._
 import java.net._
-import java.nio.charset.Charset
-import java.util.{ List => JList, ArrayList => JArrayList, Map => JMap, Collections }
 
-import scala.collection.JavaConversions._
-import scala.reflect.ClassTag
 import scala.util.Try
+import scala.reflect.ClassTag
+import scala.collection.JavaConversions._
 
 import org.apache.spark._
-import org.apache.spark.{SparkEnv, Partition, SparkException, TaskContext, SparkConf}
-import org.apache.spark.api.java.{JavaSparkContext, JavaRDD, JavaPairRDD}
-import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.{SparkEnv, Partition, SparkException, TaskContext}
+import org.apache.spark.api.java.{JavaSparkContext, JavaRDD}
+// import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.util.Utils
-import org.apache.spark.api.python.RedirectThread
 import org.apache.spark.InterruptibleIterator
 import org.apache.spark.api.python.PythonRDD
-
 
 
 /* =================================================================================================
@@ -211,7 +207,7 @@ class RubyRDD[T: ClassTag](
         if (!context.completed) {
           try {
             logWarning("Incomplete task interrupted: Attempting to kill Worker")
-            RubyWorker.destroy(workerDir)
+            RubyWorker.destroy()
           } catch {
             case e: Exception =>
               logError("Exception when trying to kill worker", e)
@@ -259,4 +255,3 @@ object RubyRDD extends Logging {
  */
 
 class RubyException(msg: String, cause: Exception) extends RuntimeException(msg, cause)
-
