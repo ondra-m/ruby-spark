@@ -48,7 +48,10 @@ module PoolMaster
       def before_start
         $PROGRAM_NAME = "RubySparkPoolMaster"
 
-        Signal.trap("CHLD") {
+        trap(:TERM, :DEFAULT)
+        trap(:HUP, :DEFAULT)
+
+        trap(:CHLD) {
 
           pid, status = nil, nil
 

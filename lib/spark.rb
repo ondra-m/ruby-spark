@@ -86,6 +86,8 @@ module Spark
   end
 
   def self.other_load_lib(spark_home)
+    raise Spark::ConfigurationError, "Environment variable JAVA_HOME is not set" unless ENV.has_key?("JAVA_HOME")
+
     require "rjb"
 
     jars = []
@@ -102,11 +104,16 @@ module Spark
     Object.const_set(:PythonPartitioner, Rjb::import("org.apache.spark.api.python.PythonPartitioner"))
   end
 
+  def self.destroy_all
+    RubyWorker.destroyAll
+    Process.wait
+  end
+
 end
 
 Kernel::at_exit do
   begin
-    RubyWorker.destroyAll
-  rescue NameError
+    Spark.destroy_all
+  rescue
   end
 end

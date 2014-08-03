@@ -104,10 +104,7 @@ module Worker
       def before_start
         $PROGRAM_NAME = "RubySparkWorker"
 
-        Signal.trap("HUP", "DEFAULT")
-        Signal.trap("CHLD", "DEFAULT")
-
-        Signal.trap("HUP"){
+        trap(:HUP){
           write(pack_int(0))
           client_socket.close
           exit

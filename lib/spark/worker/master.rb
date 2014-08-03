@@ -22,7 +22,7 @@ def log(message=nil)
 end
 
 # New process group
-Process.setpgrp
+Process.setsid
 
 
 # =================================================================================================
@@ -71,9 +71,7 @@ module Master
 
       # Master received SIGTERM
       # all workers must be closed
-      Signal.trap("TERM") {
-        @shutdown = true
-      }
+      trap(:TERM) { @shutdown = true }
     end
 
     # Create PollMasters
@@ -136,6 +134,7 @@ module Master
 
       def before_end
         ::Process.kill("HUP", 0)
+        ::Process.wait
       end
 
       def create_pool_master
@@ -146,6 +145,7 @@ module Master
 
       def kill_worker(id)
         ::Process.kill("HUP", id)
+        ::Process.wait
       end
 
   end
