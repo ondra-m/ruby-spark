@@ -11,10 +11,6 @@ module Spark
 
     include Spark::Helper::Platform
 
-    EXECUTOR_ENV_KEY = "spark.executorEnv."
-
-    BATCH_SIZE = 2048
-
     attr_reader :jcontext
 
     # Constructor fo Ruby context
@@ -47,7 +43,7 @@ module Spark
       if jruby? || windows?
         "thread"
       else
-        "fork"
+        "process"
       end
     end
 
