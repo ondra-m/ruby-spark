@@ -55,8 +55,11 @@ module PoolMaster
 
           pid, status = nil, nil
 
-          while pid != 0 && status != 0
-            pid, status = ::Process.waitpid2 0, ::Process::WNOHANG
+          begin
+            while pid != 0 && status != 0
+              pid, status = ::Process.waitpid2 0, ::Process::WNOHANG
+            end
+          rescue Errno::ECHILD
           end
 
           # Process.wait(0, Process::WNOHANG)
