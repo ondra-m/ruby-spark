@@ -1,6 +1,8 @@
+# # TODO: count with index
+
 require "spec_helper"
 
-RSpec::describe "Spark::RDD.map_partitions" do
+RSpec::describe "Spark::RDD.map_partitions_with_index" do
 
   context "throught parallelize" do
     let(:example_1) do
@@ -28,6 +30,8 @@ RSpec::describe "Spark::RDD.map_partitions" do
     end
 
     it "default parallelism" do
+      # puts example_1.rdd.command.inspect
+
       example_1.run
       example_2.run
     end

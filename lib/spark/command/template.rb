@@ -1,3 +1,4 @@
+# Just declaration
 module Spark; end
 module Spark::Command; end
 

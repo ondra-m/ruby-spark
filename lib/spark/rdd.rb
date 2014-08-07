@@ -16,14 +16,14 @@ module Spark
     #   context: Spark::Context
     #   serializer: Spark::Serializer
     #
-    def initialize(jrdd, context, serializer)
+    def initialize(jrdd, context, serializer, deserializer=nil)
       @jrdd = jrdd
       @context = context
 
       @cached = false
       @checkpointed = false
 
-      @command = Spark::Command::Builder.new(serializer)
+      @command = Spark::Command::Builder.new(serializer, deserializer)
     end
 
 

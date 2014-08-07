@@ -13,7 +13,7 @@ module Spark
 
         @template = Spark::Command::Template.new
         @template.serializer   = serializer
-        @template.deserializer = deserializer
+        @template.deserializer = deserializer || serializer
 
         @attached = []
       end

@@ -79,7 +79,7 @@ module Spark
     #
     def text_file(path, min_partitions=nil)
       min_partitions ||= default_parallelism
-      Spark::RDD.new(@jcontext.textFile(path, min_partitions), self, Spark::Serializer::UTF8)
+      Spark::RDD.new(@jcontext.textFile(path, min_partitions), self, Spark::Serializer::Simple, Spark::Serializer::UTF8)
     end
 
     # Distribute a local Ruby collection to form an RDD
