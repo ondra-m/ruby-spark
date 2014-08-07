@@ -118,7 +118,7 @@ module Spark
 
   def self.destroy_all
     RubyWorker.destroyAll
-    Process.wait
+    Process.wait rescue nil
   end
 
 end

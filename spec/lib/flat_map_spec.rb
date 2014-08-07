@@ -1,38 +1,86 @@
 require "spec_helper"
 
-describe "Spark::RDD.flat_map" do
+RSpec.describe "Spark::RDD.flat_map" do
 
   context "throught parallelize" do
-    it "one worker" do
-      rdd = $sc.parallelize(0..5)
-      result = rdd.flat_map(lambda {|x| [x*2, x]}).collect
-
-      expect(result).to eq([0, 0, 2, 1, 4, 2, 6, 3, 8, 4, 10, 5])
+    let(:example_1) do
+      data = 0..100
+      function = lambda {|x| [x*2, x*3, x*4]}
+      result = data.flat_map{|x| function.call(x)}
+      Example.new(function, data, result)
     end
-    
-    it "5 worker" do
-      rdd = $sc.parallelize(0..100, 5)
-      result = rdd.flat_map(lambda {|x| [x*2, x]}).collect
 
-      expect(result).to eq((0..100).to_a.map{|x| [x*2, x]}.flatten)
+    let!(:example_2) do
+      data = (0..100).map{(97+rand(26)).chr}
+      function = lambda {|x| [x.upcase, x]}
+      result = data.flat_map{|x| function.call(x)}
+      Example.new(function, data, result)
+    end
+
+    it "default parallelism" do
+      result = $sc.parallelize(example_1.task).flat_map(example_1.function).collect
+      expect(result).to eq(example_1.result)
+
+      result = $sc.parallelize(example_2.task).flat_map(example_2.function).collect
+      expect(result).to eq(example_2.result)
+    end
+
+    it "one worker" do
+      result = $sc.parallelize(example_1.task, 1).flat_map(example_1.function).collect
+      expect(result).to eq(example_1.result)
+
+      result = $sc.parallelize(example_2.task, 1).flat_map(example_2.function).collect
+      expect(result).to eq(example_2.result)
+    end
+
+    it "5 worker" do
+      result = $sc.parallelize(example_1.task, 5).flat_map(example_1.function).collect
+      expect(result).to eq(example_1.result)
+
+      result = $sc.parallelize(example_2.task, 5).flat_map(example_2.function).collect
+      expect(result).to eq(example_2.result)
     end
   end
 
   context "throught text_file" do
-    let(:file) { File.join("spec", "inputs", "numbers_0_10.txt") }
+    let(:file) { File.join("spec", "inputs", "numbers_0_100.txt") }
 
-    it "one worker" do
-      rdd = $sc.text_file(file)
-      result = rdd.flat_map(lambda {|x| [x.to_i*2, 1]}).collect
-
-      expect(result).to eq([0, 1, 2, 1, 4, 1, 6, 1, 8, 1, 10, 1, 12, 1, 14, 1, 16, 1, 18, 1, 20, 1])
+    let(:example_1) do
+      data = File.readlines(file).map(&:strip)
+      function = lambda {|x| [x.to_i*2, x+'a']}
+      result = data.flat_map{|x| function.call(x)}
+      Example.new(function, file, result)
     end
 
-    it "4 workers" do
-      rdd = $sc.text_file(file, 4)
-      result = rdd.flat_map(lambda {|x| [x.to_i*2, 1]}).collect
+    let(:example_2) do
+      data = File.readlines(file).map(&:strip)
+      function = lambda {|x| [x, 'a', 'b', 'c']}
+      result = data.flat_map{|x| function.call(x)}
+      Example.new(function, file, result)
+    end
 
-      expect(result).to eq([0, 1, 2, 1, 4, 1, 6, 1, 8, 1, 10, 1, 12, 1, 14, 1, 16, 1, 18, 1, 20, 1])
+    it "default parallelism" do
+      result = $sc.text_file(example_1.task).flat_map(example_1.function).collect
+      expect(result).to eq(example_1.result)
+
+      result = $sc.text_file(example_2.task).flat_map(example_2.function).collect
+      expect(result).to eq(example_2.result)
+    end
+
+    it "one worker" do
+      result = $sc.text_file(example_1.task, 1).flat_map(example_1.function).collect
+      expect(result).to eq(example_1.result)
+
+      result = $sc.text_file(example_2.task, 1).flat_map(example_2.function).collect
+      expect(result).to eq(example_2.result)
+    end
+
+    it "7 worker" do
+      result = $sc.text_file(example_1.task, 7).flat_map(example_1.function).collect
+      expect(result).to eq(example_1.result)
+
+      result = $sc.text_file(example_2.task, 7).flat_map(example_2.function).collect
+      expect(result).to eq(example_2.result)
     end
   end
 
