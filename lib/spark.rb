@@ -69,10 +69,18 @@ module Spark
     @ruby_spark_jar ||= File.join(target_dir, 'ruby-spark.jar')
   end
 
+  # Disable Spark log
+  def self.disable_log
+    load_lib
+    JLogger.getLogger("org").setLevel(JLevel.OFF)
+    JLogger.getLogger("akka").setLevel(JLevel.OFF)
+    JLogger.getRootLogger().setLevel(JLevel.OFF);
+  end
+
   def self.jruby_load_lib(spark_home)
     require "java"
-    
-    Dir.glob(File.join(spark_home, "*.jar")){|file| 
+
+    Dir.glob(File.join(spark_home, "*.jar")){|file|
       require file
     }
     require Spark.ruby_spark_jar
@@ -83,6 +91,8 @@ module Spark
     java_import org.apache.spark.api.ruby.RubyWorker
     java_import org.apache.spark.api.python.PairwiseRDD
     java_import org.apache.spark.api.python.PythonPartitioner
+    Object.const_set(:JLogger, org.apache.log4j.Logger)
+    Object.const_set(:JLevel,  org.apache.log4j.Level)
   end
 
   def self.other_load_lib(spark_home)
@@ -102,6 +112,8 @@ module Spark
     Object.const_set(:RubyWorker,        Rjb::import("org.apache.spark.api.ruby.RubyWorker"))
     Object.const_set(:PairwiseRDD,       Rjb::import("org.apache.spark.api.python.PairwiseRDD"))
     Object.const_set(:PythonPartitioner, Rjb::import("org.apache.spark.api.python.PythonPartitioner"))
+    Object.const_set(:JLogger,           Rjb::import("org.apache.log4j.Logger"))
+    Object.const_set(:JLevel,            Rjb::import("org.apache.log4j.Level"))
   end
 
   def self.destroy_all

@@ -8,7 +8,8 @@ RSpec.configure do |config|
   config.tty = true
 
   config.before(:suite) do
-    $sc = Spark::Context.new(app_name: "RubySpark", master: "local")
+    Spark.disable_log
+    $sc = Spark::Context.new(app_name: "RubySpark", master: "local[*]")
   end
   config.after(:suite) do
     # Spark.destroy_all
