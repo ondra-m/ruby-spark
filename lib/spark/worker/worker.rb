@@ -68,12 +68,16 @@ module Worker
       def compute
         begin
           @command.library.each{|lib| require lib}
-          @command.pre.each{|pre| eval(pre)}
+          @command.before.each{|x| eval(x)}
 
           @command.stages.each do |stage|
-            eval(stage.pre)
+            eval(stage.before)
             @iterator = eval(stage.main).call(@iterator, @split_index)
+            eval(stage.after)
           end
+
+          # Cam be important for threaded workers
+          @command.after.each{|x| eval(x)}
         rescue => e
           write(pack_int(-1))
           write(pack_int(e.message.size))

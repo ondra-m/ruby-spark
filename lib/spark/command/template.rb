@@ -1,29 +1,25 @@
-module Spark
-  module Command
-    class Template
-      
-      attr_accessor :serializer, :deserializer, :stages, :library, :pre
+module Spark; end
+module Spark::Command; end
 
-      def initialize
-        @serializer = @deserializer = nil
-        @stages, @library, @pre = [], [], []
-      end
+class Spark::Command::Template
+  attr_accessor :serializer, :deserializer, :stages, :library, :before, :after
 
-    end
+  def initialize
+    @serializer   = nil
+    @deserializer = nil
+    @stages  = []
+    @library = []
+    @before  = []
+    @after   = []
   end
 end
 
-module Spark
-  module Command
-    class Stage
-      
-      attr_accessor :pre, :main
+class Spark::Command::Stage
+  attr_accessor :before, :after, :main
 
-      def initialize
-        @main = nil
-        @pre = []
-      end
-
-    end
+  def initialize
+    @main = nil
+    @before = ""
+    @after  = ""
   end
 end

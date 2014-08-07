@@ -348,7 +348,7 @@ module Spark
     def jrdd
       return @jrdd_values if @jrdd_values
 
-      command = @command.marshal
+      command = @command.build
       class_tag = @prev_jrdd.classTag
 
       ruby_rdd = RubyRDD.new(@prev_jrdd.rdd, command, Spark.worker_dir, class_tag)

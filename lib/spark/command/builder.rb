@@ -23,21 +23,23 @@ module Spark
       def deserializer;     @template.deserializer;     end
       def deserializer=(x); @template.deserializer = x; end
 
-      def marshal
-        # Java use signed number
+      # Serialize Command template
+      # Java use signed number
+      def build
         unpack_chars(Marshal.dump(@template))
       end
 
+      # Add new stage (stage should be equal with PipelinedRDD)
       def add(main, f=nil, options={})
         stage = Spark::Command::Stage.new
         stage.main = main
-        stage.pre = [serialize(:main, f)].flatten.join(";")
+        stage.before = [serialize(:main, f)].flatten.join(";")
 
         @template.stages << stage
       end
 
-      def add_pre(*args)
-        @template.pre << parse_attach(args).flatten.join(";")
+      def add_before(*args)
+        @template.before << parse_attach(args).flatten.join(";")
       end
 
       def add_library(*args)
