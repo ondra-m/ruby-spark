@@ -1,7 +1,7 @@
 require "spec_helper"
 
 def func4(item)
-  item.start_with?("a") && item[1].to_s.ord > 106 && item.size > 3
+  item.start_with?("a") && item.size > 3 && item[1].to_s.ord > 106
 end
 
 RSpec::shared_examples "a filtering" do |workers|

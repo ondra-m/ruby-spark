@@ -73,9 +73,9 @@ module Spark
   # Disable Spark log
   def self.disable_log
     load_lib
-    JLogger.getLogger("org").setLevel(JLevel.OFF)
-    JLogger.getLogger("akka").setLevel(JLevel.OFF)
-    JLogger.getRootLogger().setLevel(JLevel.OFF);
+    JLogger.getLogger("org").setLevel(JLevel_OFF)
+    JLogger.getLogger("akka").setLevel(JLevel_OFF)
+    JLogger.getRootLogger().setLevel(JLevel_OFF)
   end
 
   def self.jruby_load_lib(spark_home)
@@ -93,7 +93,7 @@ module Spark
     java_import org.apache.spark.api.python.PairwiseRDD
     java_import org.apache.spark.api.python.PythonPartitioner
     Object.const_set(:JLogger, org.apache.log4j.Logger)
-    Object.const_set(:JLevel,  org.apache.log4j.Level)
+    Object.const_set(:JLevel_OFF,  org.apache.log4j.Level::OFF)
   end
 
   def self.other_load_lib(spark_home)
@@ -114,7 +114,7 @@ module Spark
     Object.const_set(:PairwiseRDD,       Rjb::import("org.apache.spark.api.python.PairwiseRDD"))
     Object.const_set(:PythonPartitioner, Rjb::import("org.apache.spark.api.python.PythonPartitioner"))
     Object.const_set(:JLogger,           Rjb::import("org.apache.log4j.Logger"))
-    Object.const_set(:JLevel,            Rjb::import("org.apache.log4j.Level"))
+    Object.const_set(:JLevel_OFF,        Rjb::import("org.apache.log4j.Level").OFF)
   end
 
   def self.destroy_workers
