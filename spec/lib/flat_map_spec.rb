@@ -1,82 +1,56 @@
 require "spec_helper"
 
-RSpec.describe "Spark::RDD.flat_map" do
+RSpec::shared_examples "a flat mapping" do |workers|
+  it "with #{workers || 'default'} worker" do
+    rdd2 = rdd(workers).map(func1)
+    result = numbers.flat_map(&func1)
+
+    expect(rdd2.collect).to eql(result)
+
+    rdd3 = rdd(workers)
+    rdd3 = rdd3.flat_map(func1)
+    rdd3 = rdd3.flat_map(func2)
+    rdd3 = rdd3.flat_map(func3)
+    result = numbers.flat_map(&func1).flat_map(&func2).flat_map(&func3)
+
+    expect(rdd3.collect).to eql(result)
+
+    rdd4 = rdd(workers)
+    rdd4 = rdd4.flat_map(func1)
+    rdd4 = rdd4.flat_map(func2)
+    rdd4 = rdd4.flat_map(func3)
+
+    expect(rdd4.collect).to eql(rdd3.collect)
+  end
+end
+
+RSpec::describe "Spark::RDD.flat_map" do
+  let(:func1) { lambda{|x| x*2} }
+  let(:func2) { lambda{|x| [x*3, 1, 1]} }
+  let(:func3) { lambda{|x| [x*4, 2, 2]} }
 
   context "throught parallelize" do
-    let(:example_1) do
-      func = lambda {|x| [x*2, x*3, x*4]}
+    let(:numbers) { 0..10 }
 
-      e = Example.new
-      e.data      = 0..100
-      e.function << [:flat_map, func] 
-      e.result    = e.data.flat_map(&func)
-      e
+    def rdd(workers)
+      $sc.parallelize(numbers, workers)
     end
 
-    let!(:example_2) do
-      func = lambda {|x| [x.upcase, x]}
-
-      e = Example.new
-      e.data      = (0..100).map{(97+rand(26)).chr}
-      e.function << [:flat_map, func]
-      e.result    = e.data.flat_map(&func)
-      e
-    end
-
-    it "default parallelism" do
-      example_1.run
-      example_2.run
-    end
-
-    it "one worker" do
-      example_1.workers(1).run
-      example_2.workers(1).run
-    end
-
-    it "5 worker" do
-      example_1.workers(5).run
-      example_2.workers(5).run
-    end
+    it_behaves_like "a flat mapping", nil
+    it_behaves_like "a flat mapping", 1
+    it_behaves_like "a flat mapping", rand(10)+1
   end
 
   context "throught text_file" do
     let(:file) { File.join("spec", "inputs", "numbers_0_100.txt") }
-    let(:data) { File.readlines(file).map(&:strip) }
+    let(:numbers) { File.readlines(file).map(&:strip) }
 
-    let(:example_1) do
-      func = lambda {|x| [x.to_i*2, x+'a']}
-
-      e = Example.new
-      e.file      = file
-      e.function << [:flat_map, func] 
-      e.result    = data.flat_map(&func)
-      e
+    def rdd(workers)
+      $sc.text_file(file, workers)
     end
 
-    let(:example_2) do
-      func = lambda {|x| [x, 'a', 'b', 'c']}
-
-      e = Example.new
-      e.file      = file
-      e.function << [:flat_map, func] 
-      e.result    = data.flat_map(&func)
-      e
-    end
-
-    it "default parallelism" do
-      example_1.run
-      example_2.run
-    end
-
-    it "one worker" do
-      example_1.workers(1).run
-      example_2.workers(1).run
-    end
-
-    it "7 worker" do
-      example_1.workers(7).run
-      example_2.workers(7).run
-    end
+    it_behaves_like "a flat mapping", nil
+    it_behaves_like "a flat mapping", 1
+    it_behaves_like "a flat mapping", rand(10)+1
   end
-
 end
