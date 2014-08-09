@@ -44,7 +44,7 @@ generated_letters = (0..100).map{(97+rand(26)).chr}
 
 keyyed = generated_letters.map{|x| [x,1]}
 ruby_result = keyyed.reduce({}){|memo, item|
-  key = item[0]
+  key   = item[0]
   value = item[1]
 
   memo[key] ||= 0
