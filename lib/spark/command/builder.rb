@@ -29,6 +29,10 @@ module Spark
         unpack_chars(Marshal.dump(@template))
       end
 
+      def deep_copy
+         Marshal.load(Marshal.dump(self))
+      end
+
       # Add new stage (stage should be equal with PipelinedRDD)
       def add(main, f=nil, options={})
         stage = Spark::Command::Stage.new

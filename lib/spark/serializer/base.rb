@@ -19,7 +19,7 @@ module Spark
       def self.dump(data, io)
         data = [data] unless data.is_a?(Array)
 
-        data.map! do|item|
+        data.map! do |item|
           serialized = Marshal.dump(item)
 
           pack_int(serialized.size) + serialized

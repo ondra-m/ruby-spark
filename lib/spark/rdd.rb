@@ -32,7 +32,7 @@ module Spark
 
     # Attach method as Symbol or Proc
     def attach(*args)
-      @command.add_pre(args)
+      @command.add_before(args)
       self
     end
 
@@ -50,7 +50,7 @@ module Spark
     # Make a copy of command for new PipelinedRDD
     # .dup and .clone does not do deep copy of @command.template
     def add_command(main, f=nil, options={})
-      command = Marshal.load(Marshal.dump(@command))
+      command = @command.deep_copy
       command.add(main, f, options)
       command
     end
@@ -60,11 +60,11 @@ module Spark
     # Variables
 
     def default_reduce_partitions
-      if @context.conf.contains("spark.default.parallelism")
-        @context.default_parallelism
-      else
-        @jrdd.partitions.size
-      end
+      @context.config["spark.default.parallelism"] || partitions_size
+    end
+
+    def partitions_size
+      jrdd.rdd.partitions.size
     end
 
     # A unique ID for this RDD (within its SparkContext).
@@ -122,7 +122,7 @@ module Spark
     # => [0, 1, 2, 1, 4, 1, 6, 1, 8, 1, 10, 1]
     #
     def flat_map(f, options={})
-      main = "Proc.new {|iterator| iterator.map!{|i| @__main__.call(i)}.flatten! }"
+      main = "Proc.new {|iterator| iterator.map!{|i| @__main__.call(i)}.flatten }"
       comm = add_command(main, f, options)
 
       PipelinedRDD.new(self, comm)
@@ -300,6 +300,9 @@ module Spark
 
 
     # Aliases
+    alias_method :partitionsSize, :partitions_size
+    alias_method :defaultReducePartitions, :default_reduce_partitions
+
     alias_method :flatMap, :flat_map
     alias_method :mapPartitions, :map_partitions
     alias_method :mapPartitionsWithIndex, :map_partitions_with_index

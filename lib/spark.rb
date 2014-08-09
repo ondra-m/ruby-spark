@@ -1,3 +1,4 @@
+require "spark/ext/array"
 require "spark/version"
 require "spark/error"
 
@@ -116,7 +117,7 @@ module Spark
     Object.const_set(:JLevel,            Rjb::import("org.apache.log4j.Level"))
   end
 
-  def self.destroy_all
+  def self.destroy_workers
     RubyWorker.destroyAll
     Process.wait rescue nil
   end
@@ -125,7 +126,7 @@ end
 
 Kernel::at_exit do
   begin
-    Spark.destroy_all
+    Spark.destroy_workers
   rescue
   end
 end

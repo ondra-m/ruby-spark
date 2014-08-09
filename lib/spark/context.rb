@@ -22,7 +22,8 @@ module Spark
       @conf = SparkConf.new(true)
       @conf.setAppName(options[:app_name])
       @conf.setMaster(options[:master])
-      @conf.set("ruby.worker.type", default_worker_typ)
+      @conf.set("ruby.worker.type", default_worker_type)
+      @conf.set("ruby.parallelize.strategy", options[:parallelize_strategy] || default_parallelize_strategy)
 
       raise Spark::ConfigurationError, "A master URL must be set in your configuration" unless @conf.contains("spark.master")
       raise Spark::ConfigurationError, "An application name must be set in your configuration" unless @conf.contains("spark.app.name")
@@ -39,12 +40,16 @@ module Spark
 
     # Default level of worker type
     # Fork doesn't work on jruby and windows
-    def default_worker_typ
+    def default_worker_type
       if jruby? || windows?
         "thread"
       else
         "process"
       end
+    end
+
+    def default_parallelize_strategy
+      "inplace"
     end
 
     # Set a local property that affects jobs submitted from this thread, such as the
@@ -70,8 +75,12 @@ module Spark
     end
 
     # Get current config or Spark
-    def config
-      Hash[jcontext.conf.getAll.map{|tuple| [tuple._1, tuple._2]}]
+    def config(key=nil)
+      if key
+        config[key]
+      else
+        Hash[jcontext.conf.getAll.map{|tuple| [tuple._1, tuple._2]}]
+      end
     end
 
     # Read a text file from HDFS, a local file system (available on all nodes), or any
@@ -90,9 +99,14 @@ module Spark
     #   user: direct => direct serialization
     #         file => through file
     #
-    def parallelize(data, num_slices=nil, use=:direct)
+    def parallelize(data, num_slices=nil, use=:file)
       num_slices ||= default_parallelism
-      data = data.to_a # for enumerator
+
+      if data.is_a?(Array) && config("ruby.parallelize.strategy") == "deep_copy"
+        data = data.deep_copy
+      else
+        data = data.to_a # for enumerator or range
+      end
 
       use = :file unless jruby?
 
