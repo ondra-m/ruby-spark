@@ -93,8 +93,9 @@ module Spark
       jrdd.setName(name)
     end
 
+
     # =============================================================================
-    # Retrieving and manipulation data
+    # Actions which return value
 
     # Return an array that contains all of the elements in this RDD.
     #
@@ -112,62 +113,77 @@ module Spark
       Hash[collect]
     end
 
-    # Return an RDD created by coalescing all elements within each partition into an array.
+    # Reduces the elements of this RDD using the specified lambda or method.
     #
-    # rdd = $sc.parallelize(0..10, 3)
-    # rdd.glom.collect
-    # => [[0, 1, 2], [3, 4, 5, 6], [7, 8, 9, 10]]
+    # rdd = $sc.parallelize(0..10)
+    # rdd.reduce(lambda{|sum, x| sum+x}).collect
+    # => 55
     #
-    def glom
-      main = "Proc.new {|iterator| [iterator] }"
-      comm = add_command(main)
+    def reduce(f, skip_phase_one=false, options={})
+      main = "Proc.new {|iterator| iterator.reduce(&@__main__) }"
 
-      PipelinedRDD.new(self, comm)
-    end
-
-    # Return a new RDD that is reduced into num_partitions partitions.
-    #
-    # rdd = $sc.parallelize(0..10, 3)
-    # rdd.coalesce(2).glom.collect
-    # => [[0, 1, 2], [3, 4, 5, 6, 7, 8, 9, 10]]
-    #
-    def coalesce(num_partitions)
-      new_jrdd = jrdd.coalesce(num_partitions)
-      RDD.new(new_jrdd, context, @command.serializer, @command.deserializer)
-    end
-
-    # Return a new RDD containing the distinct elements in this RDD.
-    # Ordering is not preserved because of reducing
-    #
-    # rdd = $sc.parallelize([1,1,1,2,3])
-    # rdd.distinct.collect
-    # => [1, 2, 3]
-    #
-    def distinct
-      self.map("lambda{|x| [x, nil]}")
-          .reduce_by_key("lambda{|x,_| x}")
-          .map("lambda{|x| x[0]}")
-    end
-
-    # Return the union of this RDD and another one. Any identical elements will appear multiple
-    # times (use .distinct to eliminate them).
-    #
-    # rdd = $sc.parallelize([1, 2, 3])
-    # rdd.union(rdd).collect
-    # => [1, 2, 3, 1, 2, 3]
-    #
-    def union(other)
-      if command.deserializer == other.command.deserializer
-        new_jrdd = jrdd.union(other.jrdd)
-        RDD.new(new_jrdd, context, @command.serializer, @command.deserializer)
+      if skip_phase_one
+        # All items are send to one worker
+        rdd = self
       else
-        # not yet
+        comm = add_command(main, f, options)
+        rdd = PipelinedRDD.new(self, comm)
       end
+
+      # Send all results to one worker and run reduce again
+      rdd = rdd.coalesce(1)
+
+      # Add the same function to new RDD
+      comm = rdd.add_command(main, f, options)
+      comm.deserializer = @command.serializer
+
+      # Value is returned in array
+      PipelinedRDD.new(rdd, comm).collect[0]
+    end
+
+    # Return the max of this RDD
+    #
+    # rdd = $sc.parallelize(0..10)
+    # rdd.max
+    # => 10
+    #
+    def max(skip_phase_one=false)
+      self.reduce("lambda{|memo, item| memo > item ? memo : item }", skip_phase_one)
+    end
+
+    # Return the min of this RDD
+    #
+    # rdd = $sc.parallelize(0..10)
+    # rdd.min
+    # => 0
+    #
+    def min(skip_phase_one=false)
+      self.reduce("lambda{|memo, item| memo < item ? memo : item }", skip_phase_one)
+    end
+
+    # Return the sum of this RDD
+    #
+    # rdd = $sc.parallelize(0..10)
+    # rdd.sum
+    # => 55
+    #
+    def sum(skip_phase_one=false)
+      self.reduce("lambda{|sum, item| sum + item }", skip_phase_one)
+    end
+
+    # Return the number of values in this RDD
+    #
+    # rdd = $sc.parallelize(0..10)
+    # rdd.count
+    # => 11
+    #
+    def count
+      self.map_partitions("lambda{|iterator| iterator.size }").sum(true)
     end
 
 
     # =============================================================================
-    # Computing functions
+    # Transformations of RDD
 
     # Return a new RDD by applying a function to all elements of this RDD.
     #
@@ -236,6 +252,59 @@ module Spark
       PipelinedRDD.new(self, comm)
     end
 
+    # Return an RDD created by coalescing all elements within each partition into an array.
+    #
+    # rdd = $sc.parallelize(0..10, 3)
+    # rdd.glom.collect
+    # => [[0, 1, 2], [3, 4, 5, 6], [7, 8, 9, 10]]
+    #
+    def glom
+      main = "Proc.new {|iterator| [iterator] }"
+      comm = add_command(main)
+
+      PipelinedRDD.new(self, comm)
+    end
+
+    # Return a new RDD that is reduced into num_partitions partitions.
+    #
+    # rdd = $sc.parallelize(0..10, 3)
+    # rdd.coalesce(2).glom.collect
+    # => [[0, 1, 2], [3, 4, 5, 6, 7, 8, 9, 10]]
+    #
+    def coalesce(num_partitions)
+      new_jrdd = jrdd.coalesce(num_partitions)
+      RDD.new(new_jrdd, context, @command.serializer, @command.deserializer)
+    end
+
+    # Return a new RDD containing the distinct elements in this RDD.
+    # Ordering is not preserved because of reducing
+    #
+    # rdd = $sc.parallelize([1,1,1,2,3])
+    # rdd.distinct.collect
+    # => [1, 2, 3]
+    #
+    def distinct
+      self.map("lambda{|x| [x, nil]}")
+          .reduce_by_key("lambda{|x,_| x}")
+          .map("lambda{|x| x[0]}")
+    end
+
+    # Return the union of this RDD and another one. Any identical elements will appear multiple
+    # times (use .distinct to eliminate them).
+    #
+    # rdd = $sc.parallelize([1, 2, 3])
+    # rdd.union(rdd).collect
+    # => [1, 2, 3, 1, 2, 3]
+    #
+    def union(other)
+      if command.deserializer == other.command.deserializer
+        new_jrdd = jrdd.union(other.jrdd)
+        RDD.new(new_jrdd, context, @command.serializer, @command.deserializer)
+      else
+        # not yet
+      end
+    end
+
     # Return a copy of the RDD partitioned using the specified partitioner.
     #
     # rdd = $sc.parallelize(["1","2","3","4","5"]).map(lambda {|x| [x, 1]})
@@ -267,74 +336,6 @@ module Spark
       # Prev serializer was Pairwise
       rdd = RDD.new(jrdd, context, Spark::Serializer::Simple)
       rdd
-    end
-
-    # Reduces the elements of this RDD using the specified lambda or method.
-    #
-    # rdd = $sc.parallelize(0..10)
-    # rdd.reduce(lambda{|sum, x| sum+x}).collect
-    # => 55
-    #
-    def reduce(f, skip_phase_one=false, options={})
-      main = "Proc.new {|iterator| iterator.reduce(&@__main__) }"
-
-      if skip_phase_one
-        # All items are send to one worker
-        rdd = self
-      else
-        comm = add_command(main, f, options)
-        rdd = PipelinedRDD.new(self, comm)
-      end
-
-      # Send all results to one worker and run reduce again
-      rdd = rdd.coalesce(1)
-
-      # Add the same function to new RDD
-      comm = rdd.add_command(main, f, options)
-      comm.deserializer = @command.serializer
-
-      # Value is returned in array
-      PipelinedRDD.new(rdd, comm).collect[0]
-    end
-
-    # Return the max of this RDD
-    #
-    # rdd = $sc.parallelize(0..10)
-    # rdd.max
-    # => 10
-    #
-    def max(skip_phase_one=false)
-      self.reduce("lambda{|memo, item| memo > item ? memo : item }", skip_phase_one)
-    end
-
-    # Return the min of this RDD
-    #
-    # rdd = $sc.parallelize(0..10)
-    # rdd.min
-    # => 0
-    #
-    def min(skip_phase_one=false)
-      self.reduce("lambda{|memo, item| memo < item ? memo : item }", skip_phase_one)
-    end
-
-    # Return the sum of this RDD
-    #
-    # rdd = $sc.parallelize(0..10)
-    # rdd.sum
-    # => 55
-    #
-    def sum(skip_phase_one=false)
-      self.reduce("lambda{|sum, item| sum + item }", skip_phase_one)
-    end
-
-    # Return the number of values in this RDD
-    #
-    # rdd = $sc.parallelize(0..10)
-    # rdd.count
-    # => 55
-    #
-    def count
-      self.map_partitions("lambda{|iterator| iterator.size }").sum(true)
     end
 
 
