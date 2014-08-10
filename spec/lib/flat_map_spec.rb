@@ -30,7 +30,7 @@ RSpec::describe "Spark::RDD.flat_map" do
   let(:func3) { lambda{|x| [x*4, 2, 2]} }
 
   context "throught parallelize" do
-    let(:numbers) { 0..10 }
+    let(:numbers) { Generator.numbers_with_zero }
 
     def rdd(workers)
       $sc.parallelize(numbers, workers)
@@ -38,11 +38,11 @@ RSpec::describe "Spark::RDD.flat_map" do
 
     it_behaves_like "a flat mapping", nil
     it_behaves_like "a flat mapping", 1
-    it_behaves_like "a flat mapping", rand(10)+1
+    it_behaves_like "a flat mapping", rand(2..10)
   end
 
   context "throught text_file" do
-    let(:file) { File.join("spec", "inputs", "numbers_0_100.txt") }
+    let(:file)    { File.join("spec", "inputs", "numbers_0_100.txt") }
     let(:numbers) { File.readlines(file).map(&:strip) }
 
     def rdd(workers)
@@ -51,6 +51,6 @@ RSpec::describe "Spark::RDD.flat_map" do
 
     it_behaves_like "a flat mapping", nil
     it_behaves_like "a flat mapping", 1
-    it_behaves_like "a flat mapping", rand(10)+1
+    it_behaves_like "a flat mapping", rand(2..10)
   end
 end

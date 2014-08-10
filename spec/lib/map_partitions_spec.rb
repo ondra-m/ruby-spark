@@ -66,11 +66,11 @@ RSpec::describe "Spark::RDD.map_partitions(_with_index)" do
 
     it_behaves_like "a map partitions", nil
     it_behaves_like "a map partitions", 1
-    it_behaves_like "a map partitions", rand(10)+1
+    it_behaves_like "a map partitions", rand(2..10)
   end
 
   context "throught text_file" do
-    let(:file) { File.join("spec", "inputs", "numbers_0_100.txt") }
+    let(:file)    { File.join("spec", "inputs", "numbers_0_100.txt") }
     let(:numbers) { File.readlines(file).map(&:strip) }
 
     def rdd(workers)
@@ -79,6 +79,6 @@ RSpec::describe "Spark::RDD.map_partitions(_with_index)" do
 
     it_behaves_like "a map partitions", nil
     it_behaves_like "a map partitions", 1
-    it_behaves_like "a map partitions", rand(10)+1
+    it_behaves_like "a map partitions", rand(2..10)
   end
 end

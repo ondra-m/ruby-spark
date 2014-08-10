@@ -30,7 +30,7 @@ RSpec::describe "Spark::RDD.map" do
   let(:func3) { lambda{|x| x*4} }
 
   context "throught parallelize" do
-    let(:numbers) { 0..1000 }
+    let(:numbers) { Generator.numbers }
 
     def rdd(workers)
       $sc.parallelize(numbers, workers)
@@ -38,7 +38,7 @@ RSpec::describe "Spark::RDD.map" do
 
     it_behaves_like "a mapping", nil
     it_behaves_like "a mapping", 1
-    it_behaves_like "a mapping", rand(10)+1
+    it_behaves_like "a mapping", rand(2..10)
   end
 
   context "throught text_file" do
@@ -51,6 +51,6 @@ RSpec::describe "Spark::RDD.map" do
 
     it_behaves_like "a mapping", nil
     it_behaves_like "a mapping", 1
-    it_behaves_like "a mapping", rand(10)+1
+    it_behaves_like "a mapping", rand(2..10)
   end
 end

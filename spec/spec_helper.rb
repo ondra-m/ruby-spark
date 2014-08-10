@@ -1,5 +1,6 @@
 $:.unshift File.dirname(__FILE__) + '/../lib'
 require "ruby-spark"
+require "generator"
 
 RSpec.configure do |config|
   config.default_formatter = "doc"

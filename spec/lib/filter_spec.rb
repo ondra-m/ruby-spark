@@ -20,16 +20,16 @@ RSpec::shared_examples "a filtering" do |workers|
       expect(rdd3.collect).to eql([])
     end
 
-    it "when chars" do
-      rdd2 = rdd_chars(workers)
+    it "when words" do
+      rdd2 = rdd_words(workers)
       rdd2 = rdd2.filter(func3)
-      result = chars.select{|x| func3.call(x)}  
+      result = words.select{|x| func3.call(x)}
 
       expect(rdd2.collect).to eql(result)
 
-      rdd3 = rdd_chars(workers)
+      rdd3 = rdd_words(workers)
       rdd3 = rdd3.filter(:func4)
-      result = chars.select{|x| func4(x)}
+      result = words.select{|x| func4(x)}
 
       expect(rdd3.collect).to eql(result)
     end
@@ -42,43 +42,39 @@ RSpec::describe "Spark::RDD.filter" do
   let(:func3) { lambda{|x| x.to_s.start_with?("b")} }
 
   context "throught parallelize" do
-    let(:numbers) { 0..1000 }
-    let(:chars) do
-      Array.new(10){ 
-        Array.new(rand(1..10)){(97+rand(26)).chr}.join
-      }
-    end
+    let(:numbers) { Generator.numbers_with_zero }
+    let(:words)   { Generator.words }
 
     def rdd_numbers(workers)
       $sc.parallelize(numbers, workers)
     end
 
-    def rdd_chars(workers)
-      $sc.parallelize(chars, workers)
+    def rdd_words(workers)
+      $sc.parallelize(words, workers)
     end
 
     it_behaves_like "a filtering", nil
     it_behaves_like "a filtering", 1
-    it_behaves_like "a filtering", rand(1..10)
+    it_behaves_like "a filtering", rand(2..10)
   end
 
   context "throught text_file" do
     let(:file_numbers) { File.join("spec", "inputs", "numbers_0_100.txt") }
-    let(:file_chars)   { File.join("spec", "inputs", "lorem_300.txt") }
+    let(:file_words)   { File.join("spec", "inputs", "lorem_300.txt") }
 
     let(:numbers) { File.readlines(file_numbers).map(&:strip) }
-    let(:chars)   { File.readlines(file_chars).map(&:strip) }
+    let(:words)   { File.readlines(file_words).map(&:strip) }
 
     def rdd_numbers(workers)
       $sc.text_file(file_numbers, workers)
     end
 
-    def rdd_chars(workers)
-      $sc.text_file(file_chars, workers)
+    def rdd_words(workers)
+      $sc.text_file(file_words, workers)
     end
 
     it_behaves_like "a filtering", nil
     it_behaves_like "a filtering", 1
-    it_behaves_like "a filtering", rand(1..10)
+    it_behaves_like "a filtering", rand(2..10)
   end
 end

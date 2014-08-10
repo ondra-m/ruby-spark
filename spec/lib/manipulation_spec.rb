@@ -2,7 +2,7 @@ require "spec_helper"
 
 RSpec::describe "Spark::RDD" do
   let(:numbers) { 1..100 }
-  let(:rand_numbers) { Array.new(100){ rand(1000000) } }
+  let(:rand_numbers) { Generator.numbers }
 
   it ".glom" do
     rdd = $sc.parallelize(numbers, 1).glom
