@@ -14,6 +14,10 @@ module Worker
       write(pack_long(id))
     end
 
+    def name
+      "Worker"
+    end
+
     def run
       before_start
 
@@ -103,10 +107,15 @@ module Worker
   # Worker::Process
   #
   class Process < Base
+
+    def id
+      ::Process.pid
+    end
+
     private
 
       def before_start
-        $PROGRAM_NAME = "RubySparkWorker"
+        $PROGRAM_NAME = "RubySpark#{name}"
 
         trap(:HUP){
           write(pack_int(0))
@@ -115,9 +124,6 @@ module Worker
         }
       end
 
-      def id
-        ::Process.pid
-      end
   end
 
   # ===============================================================================================
@@ -129,6 +135,10 @@ module Worker
     # Spark need get 0 otherwise StreamReader will raise exception
     def before_kill
       finish
+    end
+
+    def id
+      ::Thread.current.object_id
     end
 
     private
@@ -144,9 +154,6 @@ module Worker
         $mutex.synchronize{ super }
       end
 
-      def id
-        ::Thread.current.object_id
-      end
   end
 
 end

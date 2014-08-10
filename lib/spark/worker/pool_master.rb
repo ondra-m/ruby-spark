@@ -11,16 +11,20 @@ module PoolMaster
       self.server_socket = server_socket
     end
 
+    def name
+      "PoolMaster"
+    end
+
     def run
       before_start
-      log "Init POOLMASTER"
+      log self, "INIT"
 
       loop {
         client_socket = server_socket.accept
         create_worker(client_socket)
       }
 
-      log "Shutdown POOLMASTER"
+      log self, "SHUTDOWN"
       before_end
     end
 
@@ -36,6 +40,11 @@ module PoolMaster
   # PoolMaster::Process
   #
   class Process < Base
+
+    def id
+      ::Process.pid
+    end
+
     private
 
       def create_worker(client_socket)
@@ -46,7 +55,7 @@ module PoolMaster
       end
 
       def before_start
-        $PROGRAM_NAME = "RubySparkPoolMaster"
+        $PROGRAM_NAME = "RubySpark#{name}"
 
         trap(:TERM, :DEFAULT)
         trap(:HUP, :DEFAULT)
@@ -72,6 +81,10 @@ module PoolMaster
   # PoolMaster::Thread
   #
   class Thread < Base
+    def id
+      ::Thread.current.object_id
+    end
+
     private
 
       def create_worker(client_socket)

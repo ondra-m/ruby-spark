@@ -2,7 +2,7 @@
 
 # TODO: restart poolmaster if crash
 
-$PROGRAM_NAME = "RubySparkMaster"
+$PROGRAM_NAME = "RubySparkWorker"
 
 require "socket"
 
@@ -16,8 +16,8 @@ require File.expand_path(File.join("..", "command", "template.rb"), File.dirname
 require_relative "pool_master"
 require_relative "worker"
 
-def log(message=nil)
-  $stdout.write %{==> [#{Process.pid}::#{Thread.current.object_id}] [#{Time.now.strftime("%H:%M")}] #{message}\n}
+def log(klass, message=nil)
+  $stdout.write %{==> #{Time.now.strftime("%H:%M:%S")} [#{klass.id}] #{klass.name} #{message}\n}
   $stdout.flush
 end
 
@@ -74,10 +74,14 @@ module Master
       trap(:TERM) { @shutdown = true }
     end
 
+    def name
+      "Master"
+    end
+
     # Create PollMasters
     def run
       before_start
-      log "Master INIT"
+      log self, "INIT"
 
       POOL_SIZE.times do
         create_pool_master
@@ -97,7 +101,7 @@ module Master
         end
       }
 
-      log "Master SHUTDOWN"
+      log self, "SHUTDOWN"
       before_end
     end
 
@@ -130,7 +134,16 @@ module Master
   # Available only on UNIX on non-java ruby
   #
   class Process < Base
+
+    def id
+      ::Process.pid
+    end
+
     private
+
+      def before_start
+        $PROGRAM_NAME = "RubySpark#{name}"
+      end
 
       def before_end
         ::Process.kill("HUP", 0)
@@ -158,6 +171,10 @@ module Master
   #
   class Thread < Base
     attr_accessor :pool_threads
+
+    def id
+      ::Thread.current.object_id
+    end
 
     private
 
