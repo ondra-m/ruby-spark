@@ -181,6 +181,34 @@ module Spark
       self.map_partitions("lambda{|iterator| iterator.size }").sum(true)
     end
 
+    # Applies a function f to all elements of this RDD.
+    #
+    # rdd = $sc.parallelize(0..5)
+    # rdd.foreach(lambda{|x| puts x})
+    # => nil
+    #
+    def foreach(f, options={})
+      main = "Proc.new {|iterator| iterator.each {|_item_| @__main__.call(_item_)}; nil}"
+      comm = add_command(main, f, options)
+
+      PipelinedRDD.new(self, comm).collect
+      nil
+    end
+
+    # Applies a function f to each partition of this RDD.
+    #
+    # rdd = $sc.parallelize(0..5)
+    # rdd.foreachPartition(lambda{|x| puts x.to_s})
+    # => nil
+    #
+    def foreach_partition(f, options={})
+      main = "Proc.new {|iterator| @__main__.call(iterator); nil }"
+      comm = add_command(main, f, options)
+
+      PipelinedRDD.new(self, comm).collect
+      nil
+    end
+
 
     # =============================================================================
     # Transformations of RDD
@@ -449,6 +477,7 @@ module Spark
     alias_method :combineByKey, :combine_by_key
     alias_method :partitionBy, :partition_by
     alias_method :defaultReducePartitions, :default_reduce_partitions
+    alias_method :foreachPartition, :foreach_partition
 
   end
 
