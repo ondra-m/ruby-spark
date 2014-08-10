@@ -41,6 +41,20 @@ RSpec::shared_examples "a reducing" do |workers|
       expect(rdd_result).to eql(result)
     end
 
+    it ".aggregate" do
+      rdd2 = rdd_numbers(workers)
+      rdd2 = rdd2.map(to_i)
+
+      # Sum of items + their count
+      seq = lambda{|x,y| [x[0] + y, x[1] + 1]}
+      com = lambda{|x,y| [x[0] + y[0], x[1] + y[1]]}
+      rdd_result = rdd2.aggregate([0,0], seq, com)
+
+      result = [numbers.reduce(:+), numbers.size]
+
+      expect(rdd_result).to eql(result)
+    end
+
     it ".max" do
       rdd2 = rdd_numbers(workers)
       rdd2 = rdd2.map(to_i)
@@ -71,7 +85,7 @@ RSpec::shared_examples "a reducing" do |workers|
   end
 end
 
-RSpec::describe "Spark::RDD.reduce" do
+RSpec::describe "Spark::RDD" do
   let(:func1) { lambda{|sum, x| sum+x} }
   let(:func2) { lambda{|product, x| product*x} }
 
@@ -99,7 +113,7 @@ RSpec::describe "Spark::RDD.reduce" do
     let(:file)       { File.join("spec", "inputs", "numbers_0_100.txt") }
     let(:file_lines) { File.join("spec", "inputs", "lorem_300.txt") }
 
-    let(:numbers) { File.readlines(file).map(&:strip) }
+    let(:numbers) { File.readlines(file).map(&:strip).map(&:to_i) }
     let(:lines)   { File.readlines(file_lines).map(&:strip) }
 
     def rdd_numbers(workers)

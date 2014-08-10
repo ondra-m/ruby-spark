@@ -126,7 +126,6 @@ module Spark
     end
 
 
-
     # Aliases
     alias_method :textFile, :text_file
     alias_method :defaultParallelism, :default_parallelism

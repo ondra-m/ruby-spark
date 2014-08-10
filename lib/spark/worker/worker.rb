@@ -80,7 +80,7 @@ module Worker
             eval(stage.after)
           end
 
-          # Cam be important for threaded workers
+          # Can be important for threaded workers
           @command.after.each{|x| eval(x)}
         rescue => e
           write(pack_int(-1))

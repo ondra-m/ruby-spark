@@ -63,6 +63,7 @@ module Spark
       @context.config["spark.default.parallelism"] || partitions_size
     end
 
+    # Count of ParallelCollectionPartition
     def partitions_size
       jrdd.rdd.partitions.size
     end
@@ -119,9 +120,9 @@ module Spark
     # rdd.reduce(lambda{|sum, x| sum+x})
     # => 55
     #
-    def reduce(f, skip_phase_one=false, options={})
-      main = "Proc.new {|iterator| iterator.reduce(&@__main__) }"
-      _reduce(main, f, skip_phase_one, options)
+    def reduce(f, options={})
+      main = "Proc.new {|iterator| [iterator.reduce(&@__main__)] }"
+      _reduce(main, f, f, options)
     end
 
     # Aggregate the elements of each partition, and then the results for all the partitions, using a
@@ -136,13 +137,36 @@ module Spark
     # rdd.fold(1, lambda{|sum, x| sum+x})
     # => 58
     #
-    def fold(zero_value, f, skip_phase_one=false, options={})
+    def fold(zero_value, f, options={})
+      self.aggregate(zero_value, f, f, options)
+    end
+
+    # Aggregate the elements of each partition, and then the results for all the partitions, using
+    # given combine functions and a neutral "zero value".
+    #
+    # This function can return a different result type. We need one operation for merging.
+    #
+    # Result must be an Array otherwise Serializer Array's zero value will be send
+    # as multiple values and not just one.
+    #
+    # 1 2 3 4 5  => 15 + 1 = 16
+    # 6 7 8 9 10 => 40 + 1 = 41
+    # 16 * 41 = 656
+    #
+    # seq = lambda{|x,y| x+y}
+    # com = lambda{|x,y| x*y}
+    #
+    # rdd = $sc.parallelize(1..10, 2)
+    # rdd.aggregate(1, seq, com)
+    # => 656
+    #
+    def aggregate(zero_value, seq_op, comb_op, options={})
       main = <<-MAIN
-        Proc.new { |iterator| 
-          iterator.reduce(Marshal.load("#{Marshal.dump(zero_value)}"), &@__main__)
+        Proc.new { |iterator|
+          [iterator.reduce(Marshal.load("#{Marshal.dump(zero_value)}"), &@__main__)]
         }
       MAIN
-      _reduce(main, f, skip_phase_one, options)
+      _reduce(main, seq_op, comb_op, options)
     end
 
     # Return the max of this RDD
@@ -151,8 +175,8 @@ module Spark
     # rdd.max
     # => 10
     #
-    def max(skip_phase_one=false)
-      self.reduce("lambda{|memo, item| memo > item ? memo : item }", skip_phase_one)
+    def max
+      self.reduce("lambda{|memo, item| memo > item ? memo : item }")
     end
 
     # Return the min of this RDD
@@ -161,8 +185,8 @@ module Spark
     # rdd.min
     # => 0
     #
-    def min(skip_phase_one=false)
-      self.reduce("lambda{|memo, item| memo < item ? memo : item }", skip_phase_one)
+    def min
+      self.reduce("lambda{|memo, item| memo < item ? memo : item }")
     end
 
     # Return the sum of this RDD
@@ -171,8 +195,8 @@ module Spark
     # rdd.sum
     # => 55
     #
-    def sum(skip_phase_one=false)
-      self.reduce("lambda{|sum, item| sum + item }", skip_phase_one)
+    def sum
+      self.reduce("lambda{|sum, item| sum + item}")
     end
 
     # Return the number of values in this RDD
@@ -182,7 +206,8 @@ module Spark
     # => 11
     #
     def count
-      self.map_partitions("lambda{|iterator| iterator.size }").sum(true)
+      self.map_partitions("lambda{|iterator| iterator.size }")
+          .aggregate(0, nil, "lambda{|sum, item| sum + item }")
     end
 
     # Applies a function f to all elements of this RDD.
@@ -484,23 +509,23 @@ module Spark
 
     private
 
-      # This is base method for reduce operation. Is used by reduce and fold.
+      # This is base method for reduce operation. Is used by reduce, fold and aggregation.
       # Only difference is that fold has zero value.
       #
-      def _reduce(main, f, skip_phase_one=false, options={})
-        if skip_phase_one
-          # All items are send to one worker
+      def _reduce(main, seq_op, comb_op, options={})
+        if seq_op.nil?
+          # Partitions are already reduced
           rdd = self
         else
-          comm = add_command(main, f, options)
+          comm = add_command(main, seq_op, options)
           rdd = PipelinedRDD.new(self, comm)
         end
 
-        # Send all results to one worker and run reduce again
+        # Send all results to one worker and combine results
         rdd = rdd.coalesce(1)
 
         # Add the same function to new RDD
-        comm = rdd.add_command(main, f, options)
+        comm = rdd.add_command(main, comb_op, options)
         comm.deserializer = @command.serializer
 
         # Value is returned in array
