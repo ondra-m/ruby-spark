@@ -269,6 +269,26 @@ module Spark
       rdd
     end
 
+    # Reduces the elements of this RDD using the specified lambda or method.
+    #
+    # rdd = $sc.parallelize(0..10)
+    # rdd.reduce(lambda{|sum, x| sum+x}).collect
+    # => [55]
+    #
+    def reduce(f, options={})
+      main = "Proc.new {|iterator| iterator.reduce(&@__main__) }"
+      comm = add_command(main, f, options)
+
+      # Send all results to one worker and run reduce again
+      rdd = PipelinedRDD.new(self, comm)
+      rdd = rdd.coalesce(1)
+
+      # Add the same function to new RDD
+      comm = rdd.add_command(main, f, options)
+      comm.deserializer = @command.serializer
+      PipelinedRDD.new(rdd, comm)
+    end
+
 
     # =============================================================================
     # Pair functions

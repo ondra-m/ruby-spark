@@ -1,92 +1,76 @@
 require "spec_helper"
 
-def flat_map(line)
-  line.split
+def longest_words(memo, word)
+  memo.length > word.length ? memo : word
 end
 
-def map(item)
-  [item, 1]
-end
+RSpec::shared_examples "a reducing" do |workers|
+  it "with #{workers || 'default'} worker" do
+    rdd2 = rdd_numbers(workers)
+    rdd2 = rdd2.map(to_i)
+    rdd2 = rdd2.reduce(func1)
+    result = numbers.map(&:to_i).reduce(&func1)
 
-def reduce(x,y)
-  x+y
-end
+    expect(rdd2.collect).to eql([result])
 
-RSpec::shared_examples "a words counting" do |workers|
-  context "with #{workers || 'default'} worker" do
-    let(:result) do
-      keyyed = lines.flat_map{|x| x.split}.map{|x| [x,1]}
-      result = keyyed.reduce({}){|memo, item|
-        key   = item[0]
-        value = item[1]
+    rdd3 = rdd_numbers(workers)
+    rdd3 = rdd3.map(to_i)
+    rdd3 = rdd3.reduce(func2)
+    result = numbers.map(&:to_i).reduce(&func2)
 
-        memo[key] ||= 0
-        memo[key] += value
-        memo
-      }
-      result
-    end
+    expect(rdd3.collect).to eql([result])
 
-    it "when lambda" do
-      rdd2 = rdd(workers)
-      rdd2 = rdd2.flat_map(lambda{|line| line.split})
-      rdd2 = rdd2.map(lambda{|word| [word, 1]})
-      rdd2 = rdd2.reduce_by_key(lambda{|x,y| x+y})
+    rdd4 = rdd_lines(workers)
+    rdd4 = rdd4.flat_map(split)
+    rdd4 = rdd4.reduce(:longest_words)
 
-      expect(rdd2.collect_as_hash).to eql(result)
-    end
+    result = lines.flat_map(&split).reduce(&lambda(&method(:longest_words)))
 
-    it "when method" do
-      rdd2 = rdd(workers)
-      rdd2 = rdd2.flat_map(:flat_map)
-      rdd2 = rdd2.map(:map)
-      rdd2 = rdd2.reduce_by_key(:reduce)
-
-      expect(rdd2.collect_as_hash).to eql(result)
-    end
-
-    it "keys, values" do
-      rdd2 = rdd(workers)
-      rdd2 = rdd2.flat_map(:flat_map)
-      rdd2 = rdd2.map(:map)
-      rdd2 = rdd2.reduce_by_key(:reduce)
-
-      expect(rdd2.keys.collect.sort).to eql(result.keys.sort)
-      expect { rdd2.values.collect.reduce(:+) }.to_not raise_error
-    end
+    expect(rdd4.collect).to eql([result])
   end
 end
 
-RSpec::describe "Spark::RDD reducing" do
+RSpec::describe "Spark::RDD.reduce" do
+  let(:func1) { lambda{|sum, x| sum+x} }
+  let(:func2) { lambda{|product, x| product*x} }
+
+  let(:to_i)  { lambda{|item| item.to_i} }
+  let(:split) { lambda{|item| item.split} }
+
   context "throught parallelize" do
-    let(:lines) do
-      Array.new(1000){ 
-        Array.new(rand(50..100)){
-          # (97+rand(26)).chr + (" " * (rand(10) == 0 ? 1 : 0))
-          (97+rand(3)).chr + (" " * (rand(10) == 0 ? 1 : 0))
-        }.join
-      }
+    let(:numbers) { Generator.numbers }
+    let(:lines)   { Generator.lines }
+
+    def rdd_numbers(workers)
+      $sc.parallelize(numbers, workers)
     end
 
-    def rdd(workers)
+    def rdd_lines(workers)
       $sc.parallelize(lines, workers)
     end
 
-    it_behaves_like "a words counting", nil
-    it_behaves_like "a words counting", 1
-    it_behaves_like "a words counting", rand(1..10)
+    it_behaves_like "a reducing", nil
+    it_behaves_like "a reducing", 1
+    it_behaves_like "a reducing", rand(2..10)
   end
 
   context "throught text_file" do
-    let(:file) { File.join("spec", "inputs", "lorem_300.txt") }
-    let(:lines) { File.readlines(file).map(&:strip) }
+    let(:file)       { File.join("spec", "inputs", "numbers_0_100.txt") }
+    let(:file_lines) { File.join("spec", "inputs", "lorem_300.txt") }
 
-    def rdd(workers)
+    let(:numbers) { File.readlines(file).map(&:strip) }
+    let(:lines)   { File.readlines(file_lines).map(&:strip) }
+
+    def rdd_numbers(workers)
       $sc.text_file(file, workers)
     end
 
-    it_behaves_like "a words counting", nil
-    it_behaves_like "a words counting", 1
-    it_behaves_like "a words counting", rand(1..10)
+    def rdd_lines(workers)
+      $sc.text_file(file_lines, workers)
+    end
+
+    it_behaves_like "a reducing", nil
+    it_behaves_like "a reducing", 1
+    it_behaves_like "a reducing", rand(2..10)
   end
 end
