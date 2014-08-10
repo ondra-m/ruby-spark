@@ -31,16 +31,14 @@ RSpec::shared_examples "a reducing" do |workers|
     end
 
     it ".fold" do
-      skip if workers.nil?
-
       rdd2 = rdd_numbers(workers)
       rdd2 = rdd2.map(to_i)
-      rdd2 = rdd2.fold(1, func1)
+      rdd_result = rdd2.fold(1, func1)
 
       # all workers add 1 + last reducing phase
-      result = numbers.map(&:to_i).reduce(&func1) + workers + 1
+      result = numbers.map(&:to_i).reduce(&func1) + rdd2.partitions_size + 1
 
-      expect(rdd2).to eql(result)
+      expect(rdd_result).to eql(result)
     end
 
     it ".max" do
