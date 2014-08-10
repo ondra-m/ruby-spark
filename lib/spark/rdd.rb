@@ -57,7 +57,7 @@ module Spark
 
 
     # =============================================================================
-    # Variables
+    # Variables and non-computing functions
 
     def default_reduce_partitions
       @context.config["spark.default.parallelism"] || partitions_size
@@ -80,9 +80,21 @@ module Spark
       @checkpointed
     end
 
+    # Return the name of this RDD.
+    #
+    def name
+      _name = jrdd.name
+      _name && _name.encode(Encoding::UTF_8)
+    end
+
+    # Assign a name to this RDD.
+    #
+    def set_name(name)
+      jrdd.setName(name)
+    end
 
     # =============================================================================
-    # Computing functions
+    # Retrieving and manipulation data
 
     # Return an array that contains all of the elements in this RDD.
     #
@@ -90,9 +102,8 @@ module Spark
     #          jruby => ArrayList
     #
     def collect
-      @command.serializer.load(jrdd.collect)
       # @command.serializer.load(jrdd.collect.toArray.to_a)
-      # jrdd.collect
+      @command.serializer.load(jrdd.collect)
     end
 
     # Convert an Array to Hash
@@ -100,6 +111,63 @@ module Spark
     def collect_as_hash
       Hash[collect]
     end
+
+    # Return an RDD created by coalescing all elements within each partition into an array.
+    #
+    # rdd = $sc.parallelize(0..10, 3)
+    # rdd.glom.collect
+    # => [[0, 1, 2], [3, 4, 5, 6], [7, 8, 9, 10]]
+    #
+    def glom
+      main = "Proc.new {|iterator| [iterator] }"
+      comm = add_command(main)
+
+      PipelinedRDD.new(self, comm)
+    end
+
+    # Return a new RDD that is reduced into num_partitions partitions.
+    #
+    # rdd = $sc.parallelize(0..10, 3)
+    # rdd.coalesce(2).glom.collect
+    # => [[0, 1, 2], [3, 4, 5, 6, 7, 8, 9, 10]]
+    #
+    def coalesce(num_partitions)
+      new_jrdd = jrdd.coalesce(num_partitions)
+      RDD.new(new_jrdd, context, @command.serializer, @command.deserializer)
+    end
+
+    # Return a new RDD containing the distinct elements in this RDD.
+    # Ordering is not preserved because of reducing
+    #
+    # rdd = $sc.parallelize([1,1,1,2,3])
+    # rdd.distinct.collect
+    # => [1, 2, 3]
+    #
+    def distinct
+      self.map("lambda{|x| [x, nil]}")
+          .reduce_by_key("lambda{|x,_| x}")
+          .map("lambda{|x| x[0]}")
+    end
+
+    # Return the union of this RDD and another one. Any identical elements will appear multiple
+    # times (use .distinct to eliminate them).
+    #
+    # rdd = $sc.parallelize([1, 2, 3])
+    # rdd.union(rdd).collect
+    # => [1, 2, 3, 1, 2, 3]
+    #
+    def union(other)
+      if command.deserializer == other.command.deserializer
+        new_jrdd = jrdd.union(other.jrdd)
+        RDD.new(new_jrdd, context, @command.serializer, @command.deserializer)
+      else
+        # not yet
+      end
+    end
+
+
+    # =============================================================================
+    # Computing functions
 
     # Return a new RDD by applying a function to all elements of this RDD.
     #
@@ -168,29 +236,42 @@ module Spark
       PipelinedRDD.new(self, comm)
     end
 
-    # Return an RDD created by coalescing all elements within each partition into an array.
+    # Return a copy of the RDD partitioned using the specified partitioner.
     #
-    # rdd = $sc.parallelize(0..10, 3)
-    # rdd.glom.collect
-    # => [[0, 1, 2], [3, 4, 5, 6], [7, 8, 9, 10]]
+    # rdd = $sc.parallelize(["1","2","3","4","5"]).map(lambda {|x| [x, 1]})
+    # rdd.partitionBy(2).glom.collect
+    # => [[["3", 1], ["4", 1]], [["1", 1], ["2", 1], ["5", 1]]]
     #
-    def glom
-      main = "Proc.new {|iterator| [iterator] }"
-      comm = add_command(main)
+    def partition_by(num_partitions, partition_func=nil)
+      num_partitions ||= default_reduce_partitions
+      partition_func ||= "lambda{|x| x.hash}"
 
-      PipelinedRDD.new(self, comm)
+      _key_function_ = <<-KEY_FUNCTION
+        Proc.new{|iterator|
+          iterator.map! {|key, value|
+            [@__partition_func__.call(key), [key, value]]
+          }
+        }
+      KEY_FUNCTION
+
+      # RDD is transform from [key, value] to [hash, [key, value]]
+      keyed = map_partitions(_key_function_).attach(partition_func: partition_func)
+      keyed.command.serializer = Spark::Serializer::Pairwise
+
+      # PairwiseRDD and PythonPartitioner are borrowed from Python
+      # but works great on ruby too
+      pairwise_rdd = PairwiseRDD.new(keyed.jrdd.rdd).asJavaPairRDD
+      partitioner = PythonPartitioner.new(num_partitions, partition_func.object_id)
+      jrdd = pairwise_rdd.partitionBy(partitioner).values
+
+      # Prev serializer was Pairwise
+      rdd = RDD.new(jrdd, context, Spark::Serializer::Simple)
+      rdd
     end
 
-    # Return a new RDD that is reduced into num_partitions partitions.
-    #
-    # rdd = $sc.parallelize(0..10, 3)
-    # rdd.coalesce(2).glom.collect
-    # => [[0, 1, 2], [3, 4, 5, 6, 7, 8, 9, 10]]
-    #
-    def coalesce(num_partitions)
-      new_jrdd = jrdd.coalesce(num_partitions)
-      RDD.new(new_jrdd, context, @command.serializer)
-    end
+
+    # =============================================================================
+    # Pair functions
 
     # Merge the values for each key using an associative reduce function. This will also perform
     # the merging locally on each mapper before sending results to a reducer, similarly to a
@@ -265,43 +346,32 @@ module Spark
       shuffled.map_partitions(_merge_).attach(merge_combiners: merge_combiners)
     end
 
-    # Return a copy of the RDD partitioned using the specified partitioner.
+    # Return an RDD with the first element of PairRDD
     #
-    # rdd = $sc.parallelize(["1","2","3","4","5"]).map(lambda {|x| [x, 1]})
-    # rdd.partitionBy(2).glom.collect
-    # => [[["3", 1], ["4", 1]], [["1", 1], ["2", 1], ["5", 1]]]
+    # rdd = $sc.parallelize([[1,2], [3,4], [5,6]])
+    # rdd.keys.collect
+    # => [1, 3, 5]
     #
-    def partition_by(num_partitions, partition_func=nil)
-      num_partitions ||= default_reduce_partitions
-      partition_func ||= "lambda{|x| x.hash}"
-
-      _key_function_ = <<-KEY_FUNCTION
-        Proc.new{|iterator|
-          iterator.map! {|key, value|
-            [@__partition_func__.call(key), [key, value]]
-          }
-        }
-      KEY_FUNCTION
-
-      # RDD is transform from [key, value] to [hash, [key, value]]
-      keyed = map_partitions(_key_function_).attach(partition_func: partition_func)
-      keyed.command.serializer = Spark::Serializer::Pairwise
-
-      # PairwiseRDD and PythonPartitioner are borrowed from Python
-      # but works great on ruby too
-      pairwise_rdd = PairwiseRDD.new(keyed.jrdd.rdd).asJavaPairRDD
-      partitioner = PythonPartitioner.new(num_partitions, partition_func.object_id)
-      jrdd = pairwise_rdd.partitionBy(partitioner).values
-
-      # Prev serializer was Pairwise
-      rdd = RDD.new(jrdd, context, Spark::Serializer::Simple)
-      rdd
+    def keys
+      self.map(lambda{|key, value| key})
     end
+
+    # Return an RDD with the second element of PairRDD
+    #
+    # rdd = $sc.parallelize([[1,2], [3,4], [5,6]])
+    # rdd.keys.collect
+    # => [2, 4, 6]
+    #
+    def values
+      self.map(lambda{|key, value| value})
+    end
+
 
 
     # Aliases
     alias_method :partitionsSize, :partitions_size
     alias_method :defaultReducePartitions, :default_reduce_partitions
+    alias_method :setName, :set_name
 
     alias_method :flatMap, :flat_map
     alias_method :mapPartitions, :map_partitions

@@ -44,6 +44,16 @@ RSpec::shared_examples "a words counting" do |workers|
 
       expect(rdd2.collect_as_hash).to eql(result)
     end
+
+    it "keys, values" do
+      rdd2 = rdd(workers)
+      rdd2 = rdd2.flat_map(:flat_map)
+      rdd2 = rdd2.map(:map)
+      rdd2 = rdd2.reduce_by_key(:reduce)
+
+      expect(rdd2.keys.collect.sort).to eql(result.keys.sort)
+      expect { rdd2.values.collect.reduce(:+) }.to_not raise_error
+    end
   end
 end
 
