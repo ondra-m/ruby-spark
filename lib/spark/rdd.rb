@@ -273,20 +273,68 @@ module Spark
     #
     # rdd = $sc.parallelize(0..10)
     # rdd.reduce(lambda{|sum, x| sum+x}).collect
-    # => [55]
+    # => 55
     #
-    def reduce(f, options={})
+    def reduce(f, skip_phase_one=false, options={})
       main = "Proc.new {|iterator| iterator.reduce(&@__main__) }"
-      comm = add_command(main, f, options)
+
+      if skip_phase_one
+        # All items are send to one worker
+        rdd = self
+      else
+        comm = add_command(main, f, options)
+        rdd = PipelinedRDD.new(self, comm)
+      end
 
       # Send all results to one worker and run reduce again
-      rdd = PipelinedRDD.new(self, comm)
       rdd = rdd.coalesce(1)
 
       # Add the same function to new RDD
       comm = rdd.add_command(main, f, options)
       comm.deserializer = @command.serializer
-      PipelinedRDD.new(rdd, comm)
+
+      # Value is returned in array
+      PipelinedRDD.new(rdd, comm).collect[0]
+    end
+
+    # Return the max of this RDD
+    #
+    # rdd = $sc.parallelize(0..10)
+    # rdd.max
+    # => 10
+    #
+    def max(skip_phase_one=false)
+      self.reduce("lambda{|memo, item| memo > item ? memo : item }", skip_phase_one)
+    end
+
+    # Return the min of this RDD
+    #
+    # rdd = $sc.parallelize(0..10)
+    # rdd.min
+    # => 0
+    #
+    def min(skip_phase_one=false)
+      self.reduce("lambda{|memo, item| memo < item ? memo : item }", skip_phase_one)
+    end
+
+    # Return the sum of this RDD
+    #
+    # rdd = $sc.parallelize(0..10)
+    # rdd.sum
+    # => 55
+    #
+    def sum(skip_phase_one=false)
+      self.reduce("lambda{|sum, item| sum + item }", skip_phase_one)
+    end
+
+    # Return the number of values in this RDD
+    #
+    # rdd = $sc.parallelize(0..10)
+    # rdd.count
+    # => 55
+    #
+    def count
+      self.map_partitions("lambda{|iterator| iterator.size }").sum(true)
     end
 
 

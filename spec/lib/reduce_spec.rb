@@ -5,28 +5,58 @@ def longest_words(memo, word)
 end
 
 RSpec::shared_examples "a reducing" do |workers|
-  it "with #{workers || 'default'} worker" do
-    rdd2 = rdd_numbers(workers)
-    rdd2 = rdd2.map(to_i)
-    rdd2 = rdd2.reduce(func1)
-    result = numbers.map(&:to_i).reduce(&func1)
+  context "with #{workers || 'default'} worker" do
+    it ".reduce" do
+      rdd2 = rdd_numbers(workers)
+      rdd2 = rdd2.map(to_i)
+      rdd2 = rdd2.reduce(func1)
+      result = numbers.map(&:to_i).reduce(&func1)
 
-    expect(rdd2.collect).to eql([result])
+      expect(rdd2).to eql(result)
 
-    rdd3 = rdd_numbers(workers)
-    rdd3 = rdd3.map(to_i)
-    rdd3 = rdd3.reduce(func2)
-    result = numbers.map(&:to_i).reduce(&func2)
+      rdd3 = rdd_numbers(workers)
+      rdd3 = rdd3.map(to_i)
+      rdd3 = rdd3.reduce(func2)
+      result = numbers.map(&:to_i).reduce(&func2)
 
-    expect(rdd3.collect).to eql([result])
+      expect(rdd3).to eql(result)
 
-    rdd4 = rdd_lines(workers)
-    rdd4 = rdd4.flat_map(split)
-    rdd4 = rdd4.reduce(:longest_words)
+      rdd4 = rdd_lines(workers)
+      rdd4 = rdd4.flat_map(split)
+      rdd4 = rdd4.reduce(:longest_words)
 
-    result = lines.flat_map(&split).reduce(&lambda(&method(:longest_words)))
+      result = lines.flat_map(&split).reduce(&lambda(&method(:longest_words)))
 
-    expect(rdd4.collect).to eql([result])
+      expect(rdd4).to eql(result)
+    end
+
+    it ".max" do
+      rdd2 = rdd_numbers(workers)
+      rdd2 = rdd2.map(to_i)
+
+      expect(rdd2.max).to eql(numbers.map(&:to_i).max)
+    end
+
+    it ".min" do
+      rdd2 = rdd_numbers(workers)
+      rdd2 = rdd2.map(to_i)
+
+      expect(rdd2.min).to eql(numbers.map(&:to_i).min)
+    end
+
+    it ".sum" do
+      rdd2 = rdd_numbers(workers)
+      rdd2 = rdd2.map(to_i)
+
+      expect(rdd2.sum).to eql(numbers.map(&:to_i).reduce(:+))
+    end
+
+    it ".count" do
+      rdd2 = rdd_numbers(workers)
+      rdd2 = rdd2.map(to_i)
+
+      expect(rdd2.count).to eql(numbers.size)
+    end
   end
 end
 
