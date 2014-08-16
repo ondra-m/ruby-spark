@@ -2,14 +2,14 @@ require_relative "marshal.rb"
 
 module Spark
   module Serializer
-    class MessagePack < Marshal
+    class Oj < Marshal
 
       def self.serialize(data)
-        ::MessagePack::dump(data)
+        ::Oj::dump(data)
       end
 
       def self.deserialize(data)
-        ::MessagePack::load(data)
+        ::Oj::load(data)
       end
 
     end
@@ -17,7 +17,7 @@ module Spark
 end
 
 begin
-  require "msgpack"
+  require "oj"
 rescue LoadError
-  Spark::Serializer::MessagePack = Spark::Serializer::Marshal
+  Spark::Serializer::Oj = Spark::Serializer::Marshal
 end

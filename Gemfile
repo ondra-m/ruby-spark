@@ -11,6 +11,7 @@ gem 'pry'
 platform :mri do
   gem 'rjb'
   gem 'msgpack'
+  gem 'oj'
 end
 
 platform :jruby do
