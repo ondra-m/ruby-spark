@@ -9,7 +9,7 @@ import scala.collection.JavaConversions._
 
 import org.apache.spark._
 import org.apache.spark.{SparkEnv, Partition, SparkException, TaskContext}
-import org.apache.spark.api.java.{JavaSparkContext, JavaRDD}
+import org.apache.spark.api.java.{JavaSparkContext, JavaPairRDD, JavaRDD}
 // import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.util.Utils
@@ -222,6 +222,28 @@ class RubyRDD[T: ClassTag](
     } // end MonitorThread
 
   } // end RubyRDD
+
+
+
+/* =================================================================================================
+ * Class PairwiseRDD
+ * =================================================================================================
+ *
+ * Form an RDD[(Array[Byte], Array[Byte])] from key-value pairs returned from Ruby.
+ * This is used by PySpark's shuffle operations.
+ * Borrowed from Python Package -> need new deserializeLongValue -> 
+ *   Marshal will add the same 4b header
+ */
+
+class PairwiseRDD(prev: RDD[Array[Byte]]) extends RDD[(Long, Array[Byte])](prev) {
+  override def getPartitions = prev.partitions
+  override def compute(split: Partition, context: TaskContext) =
+    prev.iterator(split, context).grouped(2).map {
+      case Seq(a, b) => (Utils.deserializeLongValue(a.reverse), b)
+      case x => throw new SparkException("PairwiseRDD: unexpected value: " + x)
+    }
+  val asJavaPairRDD : JavaPairRDD[Long, Array[Byte]] = JavaPairRDD.fromRDD(this)
+}
 
 
 

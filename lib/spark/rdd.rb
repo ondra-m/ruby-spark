@@ -375,14 +375,14 @@ module Spark
       _key_function_ = <<-KEY_FUNCTION
         Proc.new{|iterator|
           iterator.map! {|key, value|
-            [@__partition_func__.call(key), [key, value]]
-          }
+            [pack_long(@__partition_func__.call(key)), [key, value]]
+          }.flatten(1)
         }
       KEY_FUNCTION
 
       # RDD is transform from [key, value] to [hash, [key, value]]
       keyed = map_partitions(_key_function_).attach(partition_func: partition_func)
-      keyed.command.serializer = Spark::Serializer::Pairwise
+      keyed.command.serializer = Spark::Serializer::Simple
 
       # PairwiseRDD and PythonPartitioner are borrowed from Python
       # but works great on ruby too

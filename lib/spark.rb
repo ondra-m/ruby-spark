@@ -75,7 +75,7 @@ module Spark
     "org.apache.spark.api.java.JavaSparkContext",
     "org.apache.spark.api.ruby.RubyRDD",
     "org.apache.spark.api.ruby.RubyWorker",
-    "org.apache.spark.api.python.PairwiseRDD",
+    "org.apache.spark.api.ruby.PairwiseRDD",
     "org.apache.spark.api.python.PythonPartitioner",
     :JLogger => "org.apache.log4j.Logger",
     :JLevel  => "org.apache.log4j.Level"
