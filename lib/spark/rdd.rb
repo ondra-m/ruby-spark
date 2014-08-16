@@ -382,17 +382,15 @@ module Spark
 
       # RDD is transform from [key, value] to [hash, [key, value]]
       keyed = map_partitions(_key_function_).attach(partition_func: partition_func)
-      keyed.command.serializer = Spark::Serializer::Simple
 
       # PairwiseRDD and PythonPartitioner are borrowed from Python
       # but works great on ruby too
       pairwise_rdd = PairwiseRDD.new(keyed.jrdd.rdd).asJavaPairRDD
       partitioner = PythonPartitioner.new(num_partitions, partition_func.object_id)
-      jrdd = pairwise_rdd.partitionBy(partitioner).values
+      new_jrdd = pairwise_rdd.partitionBy(partitioner).values
 
-      # Prev serializer was Pairwise
-      rdd = RDD.new(jrdd, context, Spark::Serializer::Simple)
-      rdd
+      # Reset deserializer
+      RDD.new(new_jrdd, context, @command.serializer)
     end
 
 
@@ -468,7 +466,7 @@ module Spark
       MERGE
 
       combined = map_partitions(_combine_).attach(merge_value: merge_value, create_combiner: create_combiner)
-      shuffled = combined.partitionBy(num_partitions)
+      shuffled = combined.partition_by(num_partitions)
       shuffled.map_partitions(_merge_).attach(merge_combiners: merge_combiners)
     end
 
