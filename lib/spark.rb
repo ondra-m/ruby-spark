@@ -85,8 +85,7 @@ module Spark
   # Cannot load before CLI::install
   #
   #   spark_home: path to directory where are located sparks .jar files
-  #
-  # TODO: check if spark_home is file or directory
+  #               or single Spark jar
   #
   def self.load_lib(spark_home=nil)
     return if @loaded_lib
@@ -114,7 +113,6 @@ module Spark
 
   def self.rjb_load_lib(spark_home)
     raise Spark::ConfigurationError, "Environment variable JAVA_HOME is not set" unless ENV.has_key?("JAVA_HOME")
-
     require "rjb"
 
     separator = windows? ? ';' : ':'

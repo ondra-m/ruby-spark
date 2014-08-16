@@ -5,6 +5,7 @@
 $PROGRAM_NAME = "RubySparkWorker"
 
 require "socket"
+require "io/wait"
 
 # Require all serializers
 dir = File.expand_path(File.join("..", "serializer"), File.dirname(__FILE__))
@@ -19,6 +20,10 @@ require_relative "worker"
 def log(klass, message=nil)
   $stdout.write %{==> #{Time.now.strftime("%H:%M:%S")} [#{klass.id}] #{klass.name} #{message}\n}
   $stdout.flush
+end
+
+def jruby?
+  RbConfig::CONFIG['ruby_install_name'] == 'jruby'
 end
 
 # New process group

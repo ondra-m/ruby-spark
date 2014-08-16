@@ -148,10 +148,17 @@ module Worker
         ::Thread.current[:worker] = self
       end
 
-      # Threads changing is very slow
+      # Threads changing for reading is very slow
       # Faster way is do it one by one
       def load_iterator
-        $mutex.synchronize{ super }
+        # Prevent deadlock
+        if jruby?
+          client_socket.io_wait
+        else
+          client_socket.wait_readable
+        end
+
+        $mutex.synchronize { super }
       end
 
   end
