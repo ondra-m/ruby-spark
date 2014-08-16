@@ -32,7 +32,7 @@ module Spark
 
       set_call_site("Ruby") # description of stage
 
-      @serializer = default_serializer
+      @default_serializer = Spark::Serializer::Marshal
     end
 
     # Default level of parallelism to use when not given by user (e.g. parallelize and makeRDD)
@@ -56,16 +56,12 @@ module Spark
       "inplace"
     end
 
-    def default_serializer
-      Spark::Serializer::Marshal
-    end
-
-    def serializer(klass=nil)
+    def default_serializer(klass=nil)
       if klass.nil?
-        return @serializer
+        return @default_serializer
       end
 
-      @serializer = klass
+      @default_serializer = klass
     end
 
     # Set a local property that affects jobs submitted from this thread, such as the
@@ -99,12 +95,18 @@ module Spark
       end
     end
 
+    def get_serializer(suggestion)
+      Spark::Serializer.get(suggestion) || default_serializer
+    end
+
     # Read a text file from HDFS, a local file system (available on all nodes), or any
     # Hadoop-supported file system URI, and return it as an RDD of Strings.
     #
-    def text_file(path, min_partitions=nil)
+    def text_file(path, min_partitions=nil, options={})
       min_partitions ||= default_parallelism
-      Spark::RDD.new(@jcontext.textFile(path, min_partitions), self, @serializer, Spark::Serializer::UTF8)
+      serializer = get_serializer(options[:serializer])
+
+      Spark::RDD.new(@jcontext.textFile(path, min_partitions), self, serializer, Spark::Serializer::UTF8)
     end
 
     # Distribute a local Ruby collection to form an RDD
@@ -119,7 +121,7 @@ module Spark
       num_slices ||= default_parallelism
 
       use = jruby? ? (options[:use] || :direct) : :file
-      _serializer = options[:serializer] || @serializer
+      serializer = get_serializer(options[:serializer])
 
       if data.is_a?(Array) && config("ruby.parallelize.strategy") == "deep_copy"
         data = data.deep_copy
@@ -130,17 +132,17 @@ module Spark
 
       case use
       when :direct
-        _serializer.dump_to_java(data)
+        serializer.dump_to_java(data)
         jrdd = jcontext.parallelize(data, num_slices)
       when :file
         file = Tempfile.new("to_parallelize")
-        _serializer.dump(data, file)
+        serializer.dump(data, file)
         file.close # not unlink
         jrdd = RubyRDD.readRDDFromFile(jcontext, file.path, num_slices)
         file.unlink
       end
 
-      Spark::RDD.new(jrdd, self, _serializer)
+      Spark::RDD.new(jrdd, self, serializer)
     end
 
 
