@@ -13,27 +13,6 @@ module Spark
 
   extend Helper::Platform
 
-  # Load dependent libraries, can be use once
-  # Cannot load before CLI::install
-  #
-  #   spark_home: path to directory where are located sparks .jar files
-  #
-  # TODO: check if spark_home is file or directory
-  #
-  def self.load_lib(spark_home=nil)
-    return if @loaded_lib
-
-    spark_home ||= Spark.target_dir
-
-    if jruby?
-      jruby_load_lib(spark_home)
-    else
-      other_load_lib(spark_home)
-    end
-
-    @loaded_lib = true
-  end
-
   def self.print_logo(message=nil)
     puts <<-STRING
 
@@ -70,56 +49,107 @@ module Spark
     @ruby_spark_jar ||= File.join(target_dir, 'ruby-spark.jar')
   end
 
-  # Disable Spark log
+  # ===============================================================================
+  # Global Spark actions
+
+  # Disable all Spark log
   def self.disable_log
     load_lib
-    JLogger.getLogger("org").setLevel(JLevel_OFF)
-    JLogger.getLogger("akka").setLevel(JLevel_OFF)
-    JLogger.getRootLogger().setLevel(JLevel_OFF)
+    JLogger.getLogger("org").setLevel(JLevel.toLevel("OFF"))
+    JLogger.getLogger("akka").setLevel(JLevel.toLevel("OFF"))
+    JLogger.getRootLogger().setLevel(JLevel.toLevel("OFF"))
+  end
+
+  # Term all masters, pool masters and workers
+  def self.destroy_workers
+    load_lib
+    RubyWorker.destroyAll
+    Process.wait rescue nil
+  end
+
+  # ===============================================================================
+  # Load JVM and jars
+
+  JAVA_OBJECTS = [
+    "org.apache.spark.SparkConf",
+    "org.apache.spark.api.java.JavaSparkContext",
+    "org.apache.spark.api.ruby.RubyRDD",
+    "org.apache.spark.api.ruby.RubyWorker",
+    "org.apache.spark.api.python.PairwiseRDD",
+    "org.apache.spark.api.python.PythonPartitioner",
+    :JLogger => "org.apache.log4j.Logger",
+    :JLevel  => "org.apache.log4j.Level"
+  ]
+
+  # Load dependent libraries, can be use once
+  # Cannot load before CLI::install
+  #
+  #   spark_home: path to directory where are located sparks .jar files
+  #
+  # TODO: check if spark_home is file or directory
+  #
+  def self.load_lib(spark_home=nil)
+    return if @loaded_lib
+
+    spark_home ||= Spark.target_dir
+
+    if jruby?
+      jruby_load_lib(spark_home)
+    else
+      rjb_load_lib(spark_home)
+    end
+
+    @loaded_lib = true
   end
 
   def self.jruby_load_lib(spark_home)
     require "java"
 
-    Dir.glob(File.join(spark_home, "*.jar")){|file|
-      require file
-    }
-    require Spark.ruby_spark_jar
+    get_jars(spark_home).each {|jar| require jar}
 
-    java_import org.apache.spark.SparkConf
-    java_import org.apache.spark.api.java.JavaSparkContext
-    java_import org.apache.spark.api.ruby.RubyRDD
-    java_import org.apache.spark.api.ruby.RubyWorker
-    java_import org.apache.spark.api.python.PairwiseRDD
-    java_import org.apache.spark.api.python.PythonPartitioner
-    Object.const_set(:JLogger, org.apache.log4j.Logger)
-    Object.const_set(:JLevel_OFF,  org.apache.log4j.Level::OFF)
+    java_objects_as_hash.each do |key, value|
+      Object.const_set(key, eval(value))
+    end
   end
 
-  def self.other_load_lib(spark_home)
+  def self.rjb_load_lib(spark_home)
     raise Spark::ConfigurationError, "Environment variable JAVA_HOME is not set" unless ENV.has_key?("JAVA_HOME")
 
     require "rjb"
 
-    jars = []
-    jars << Dir.glob(File.join(spark_home, "*.jar"))
-    jars << Spark.ruby_spark_jar
-    Rjb::load(jars.flatten.join(":"))
+    separator = windows? ? ';' : ':'
+
+    jars = get_jars(spark_home).join(separator)
+    Rjb::load(jars)
     Rjb::primitive_conversion = true
 
-    Object.const_set(:SparkConf,         Rjb::import("org.apache.spark.SparkConf"))
-    Object.const_set(:JavaSparkContext,  Rjb::import("org.apache.spark.api.java.JavaSparkContext"))
-    Object.const_set(:RubyRDD,           Rjb::import("org.apache.spark.api.ruby.RubyRDD"))
-    Object.const_set(:RubyWorker,        Rjb::import("org.apache.spark.api.ruby.RubyWorker"))
-    Object.const_set(:PairwiseRDD,       Rjb::import("org.apache.spark.api.python.PairwiseRDD"))
-    Object.const_set(:PythonPartitioner, Rjb::import("org.apache.spark.api.python.PythonPartitioner"))
-    Object.const_set(:JLogger,           Rjb::import("org.apache.log4j.Logger"))
-    Object.const_set(:JLevel_OFF,        Rjb::import("org.apache.log4j.Level").OFF)
+    java_objects_as_hash.each do |key, value|
+      Object.const_set(key, Rjb::import(value))
+    end
   end
 
-  def self.destroy_workers
-    RubyWorker.destroyAll
-    Process.wait rescue nil
+  def self.get_jars(spark_home)
+    jars = []
+    if File.file?(spark_home)
+      jars << spark_home
+    else
+      jars << Dir.glob(File.join(spark_home, "*.jar"))
+    end
+    jars << Spark.ruby_spark_jar
+    jars.flatten
+  end
+
+  def self.java_objects_as_hash
+    hash = {}
+    JAVA_OBJECTS.each do |object|
+      if object.is_a?(Hash)
+        hash.merge!(object)
+      else
+        key = object.split(".").last.to_sym
+        hash[key] = object
+      end
+    end
+    hash
   end
 
 end
