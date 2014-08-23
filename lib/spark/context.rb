@@ -16,24 +16,18 @@ module Spark
     # Constructor fo Ruby context
     # Required parameters: app_name and master
     #
-    def initialize(options={})
+    def initialize(arg=nil)
+      if arg.is_a?(Spark::Config)
+        config = arg
+      else
+        config = Spark::Config.new
+        config.parse(arg)
+      end
+      config.valid!
 
-      # true - load default configuration
-      @conf = SparkConf.new(true)
-      @conf.setAppName(options[:app_name])
-      @conf.setMaster(options[:master])
-      @conf.set("ruby.worker.type", default_worker_type)
-      @conf.set("ruby.parallelize.strategy", options[:parallelize_strategy] || default_parallelize_strategy)
-
-      raise Spark::ConfigurationError, "A master URL must be set in your configuration" unless @conf.contains("spark.master")
-      raise Spark::ConfigurationError, "An application name must be set in your configuration" unless @conf.contains("spark.app.name")
-
-      @jcontext = JavaSparkContext.new(@conf)
+      @jcontext = JavaSparkContext.new(config.spark_conf)
 
       set_call_site("Ruby") # description of stage
-
-      default_serializer("marshal")
-      default_batch_size(Spark::Serializer::DEFAULT_BATCH_SIZE)
     end
 
     # Default level of parallelism to use when not given by user (e.g. parallelize and makeRDD)
@@ -42,79 +36,46 @@ module Spark
       @jcontext.sc.defaultParallelism
     end
 
-    # Default level of worker type. Fork doesn't work on jruby and windows.
-    #
-    #   Thread: all workers are created via thread
-    #   Process: workers are created by fork
-    #   Simple: workers are created by Spark as single process
-    #
-    def default_worker_type
-      if jruby? || windows?
-        "thread"
-      else
-        "process"
-      end
-    end
-
-    # How to handle with data in method parallelize.
-    #
-    #   inplace: data are changed directly to save memory
-    #   deep_copy: data are cloned fist
-    #
-    def default_parallelize_strategy
-      "inplace"
-    end
-
-    def default_serializer(suggestion=nil)
-      if suggestion.nil?
-        return @default_serializer
-      end
-
-      @default_serializer = Spark::Serializer.get!(suggestion)
-    end
-
-    def default_batch_size(size=-1)
-      if size == -1
-        return @default_batch_size
-      end
-
-      @default_batch_size = size
-    end
-
     def get_serializer(serializer, batch_size=nil)
       serializer   = Spark::Serializer.get(serializer)
-      serializer ||= default_serializer
-      serializer.new(batch_size || default_batch_size)
+      serializer ||= Spark::Serializer.get(config("ruby.serializer.default"))
+      serializer.new(batch_size || config("ruby.serializer.batch_size"))
     end
 
     # Set a local property that affects jobs submitted from this thread, such as the
     # Spark fair scheduler pool.
+    #
     def set_local_property(key, value)
       jcontext.setLocalProperty(key, value)
     end
 
     # Get a local property set in this thread, or null if it is missing
+    #
     def get_local_property(key)
       jcontext.getLocalProperty(key)
     end
 
     # Support function for API backtraces.
+    #
     def set_call_site(site)
       set_local_property("externalCallSite", site)
     end
 
     # Capture the current user callsite and return a formatted version for printing. If the user
     # has overridden the call site, this will return the user's version.
+    #
     def get_call_site
       jcontext.getCallSite
     end
 
-    # Get current config or Spark
+    # Return a copy of this SparkContext's configuration. The configuration *cannot*
+    # be changed at runtime.
+    #
     def config(key=nil)
       if key
         config[key]
       else
-        Hash[jcontext.conf.getAll.map{|tuple| [tuple._1, tuple._2]}]
+        @config ||= Spark::Config.show(jcontext.conf)
       end
     end
 

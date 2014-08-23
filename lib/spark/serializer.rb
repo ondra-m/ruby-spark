@@ -7,7 +7,8 @@ module Spark
     autoload :MessagePack, "spark/serializer/message_pack"
     autoload :Oj,          "spark/serializer/oj"
 
-    DEFAULT_BATCH_SIZE = 1024
+    DEFAULT_BATCH_SIZE = "1024"
+    DEFAULT_SERIALIZER_NAME = "marshal"
 
     def self.camelize(text)
       text.to_s.gsub(/\/(.?)/) { "::#{$1.upcase}" }.gsub(/(?:^|_)(.)/) { $1.upcase }
