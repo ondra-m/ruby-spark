@@ -13,7 +13,7 @@ RSpec.configure do |config|
 
   config.before(:suite) do
     Spark.disable_log
-    $sc = Spark::Context.new(app_name: "RubySpark", master: "local[*]", parallelize_strategy: "deep_copy")
+    $sc = Spark::Context.new("spark.ruby.parallelize_strategy" => "deep_copy")
   end
   config.after(:suite) do
     Spark.destroy_workers
