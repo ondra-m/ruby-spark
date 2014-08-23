@@ -13,11 +13,10 @@ module Spark
     def self.show(spark_conf)
       Hash[spark_conf.getAll.map{|tuple| [tuple._1, tuple._2]}]
     end
-    
-    def initialize
-      # true - load default configuration
-      @spark_conf = SparkConf.new(true)
 
+    def initialize
+      # true => load default configuration
+      @spark_conf = SparkConf.new(true)
       set_default
     end
 
@@ -83,11 +82,11 @@ module Spark
     end
 
     def default_serializer
-      Spark::Serializer::DEFAULT_SERIALIZER_NAME
+      ENV["SPARK_RUBY_SERIALIZER"] || Spark::Serializer::DEFAULT_SERIALIZER_NAME
     end
 
     def default_batch_size
-      Spark::Serializer::DEFAULT_BATCH_SIZE
+      ENV["SPARK_RUBY_BATCH_SIZE"] || Spark::Serializer::DEFAULT_BATCH_SIZE.to_s
     end
 
     # Default level of worker type. Fork doesn't work on jruby and windows.
@@ -97,10 +96,12 @@ module Spark
     #   Simple: workers are created by Spark as single process
     #
     def default_worker_type
-      if jruby? || windows?
-        "thread"
-      else
-        "process"
+      ENV["SPARK_RUBY_WORKER_TYPE"] || begin
+        if jruby? || windows?
+          "thread"
+        else
+          "process"
+        end
       end
     end
 
@@ -110,7 +111,7 @@ module Spark
     #   deep_copy: data are cloned fist
     #
     def default_parallelize_strategy
-      "inplace"
+      ENV["SPARK_RUBY_PARALLELIZE_STRATEGY"] || "inplace"
     end
 
 
