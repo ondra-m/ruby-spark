@@ -38,8 +38,8 @@ module Spark
 
     def get_serializer(serializer, batch_size=nil)
       serializer   = Spark::Serializer.get(serializer)
-      serializer ||= Spark::Serializer.get(config("ruby.serializer.default"))
-      serializer.new(batch_size || config("ruby.serializer.batch_size"))
+      serializer ||= Spark::Serializer.get(config("spark.ruby.serializer"))
+      serializer.new(batch_size || config("spark.ruby.batch_size"))
     end
 
     # Set a local property that affects jobs submitted from this thread, such as the
@@ -103,7 +103,7 @@ module Spark
       use = jruby? ? (options[:use] || :direct) : :file
       serializer = get_serializer(options[:serializer], options[:batch_size])
 
-      if data.is_a?(Array) && config("ruby.parallelize.strategy") == "deep_copy"
+      if data.is_a?(Array) && config("spark.ruby.parallelize_strategy") == "deep_copy"
         data = data.deep_copy
       else
         # For enumerator or range

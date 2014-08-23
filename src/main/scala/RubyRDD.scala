@@ -30,7 +30,7 @@ class RubyRDD[T: ClassTag](
   extends RDD[Array[Byte]](parent){
 
     val bufferSize = conf.getInt("spark.buffer.size", 65536)
-    val workerType = conf.get("ruby.worker.type")
+    val workerType = conf.get("spark.ruby.worker_type")
 
     val asJavaRDD: JavaRDD[Array[Byte]] = JavaRDD.fromRDD(this)
 

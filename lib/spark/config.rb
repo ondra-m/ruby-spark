@@ -41,7 +41,7 @@ module Spark
         raise Spark::ConfigurationError, "A master URL must be set in your configuration"
       end
 
-      if Spark::Serializer.get(@spark_conf.get("ruby.serializer.default")).nil?
+      if Spark::Serializer.get(@spark_conf.get("spark.ruby.serializer")).nil?
         raise Spark::ConfigurationError, "Default serializer must be set in your configuration"
       end
     end
@@ -68,10 +68,10 @@ module Spark
     def set_default
       set_app_name(default_app_name)
       set_master(default_master)
-      set("ruby.worker.type", default_worker_type)
-      set("ruby.parallelize.strategy", default_parallelize_strategy)
-      set("ruby.serializer.default", default_serializer)
-      set("ruby.serializer.batch_size", default_batch_size)
+      set("spark.ruby.worker_type", default_worker_type)
+      set("spark.ruby.parallelize_strategy", default_parallelize_strategy)
+      set("spark.ruby.serializer", default_serializer)
+      set("spark.ruby.batch_size", default_batch_size)
     end
 
     def default_app_name
