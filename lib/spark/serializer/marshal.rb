@@ -4,11 +4,11 @@ module Spark
   module Serializer
     class Marshal < Base
 
-      def self.serialize(data)
+      def serialize(data)
         ::Marshal::dump(data)
       end
 
-      def self.deserialize(data)
+      def deserialize(data)
         ::Marshal::load(data)
       end
 

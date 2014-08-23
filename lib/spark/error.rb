@@ -8,6 +8,7 @@ module Spark
   end
 
   # Serializer method
+  # Non-existing serializer
   class NotImplemented < StandardError
   end
 

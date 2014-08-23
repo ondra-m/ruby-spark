@@ -32,16 +32,22 @@ module Spark
 
       set_call_site("Ruby") # description of stage
 
-      @default_serializer = Spark::Serializer::Marshal
+      default_serializer("marshal")
+      default_batch_size(Spark::Serializer::DEFAULT_BATCH_SIZE)
     end
 
     # Default level of parallelism to use when not given by user (e.g. parallelize and makeRDD)
+    #
     def default_parallelism
       @jcontext.sc.defaultParallelism
     end
 
-    # Default level of worker type
-    # Fork doesn't work on jruby and windows
+    # Default level of worker type. Fork doesn't work on jruby and windows.
+    #
+    #   Thread: all workers are created via thread
+    #   Process: workers are created by fork
+    #   Simple: workers are created by Spark as single process
+    #
     def default_worker_type
       if jruby? || windows?
         "thread"
@@ -50,18 +56,35 @@ module Spark
       end
     end
 
-    # inplace
-    # deep_copy
+    # How to handle with data in method parallelize.
+    #
+    #   inplace: data are changed directly to save memory
+    #   deep_copy: data are cloned fist
+    #
     def default_parallelize_strategy
       "inplace"
     end
 
-    def default_serializer(klass=nil)
-      if klass.nil?
+    def default_serializer(suggestion=nil)
+      if suggestion.nil?
         return @default_serializer
       end
 
-      @default_serializer = klass
+      @default_serializer = Spark::Serializer.get!(suggestion)
+    end
+
+    def default_batch_size(size=-1)
+      if size == -1
+        return @default_batch_size
+      end
+
+      @default_batch_size = size
+    end
+
+    def get_serializer(serializer, batch_size=nil)
+      serializer   = Spark::Serializer.get(serializer)
+      serializer ||= default_serializer
+      serializer.new(batch_size || default_batch_size)
     end
 
     # Set a local property that affects jobs submitted from this thread, such as the
@@ -95,18 +118,14 @@ module Spark
       end
     end
 
-    def get_serializer(suggestion)
-      Spark::Serializer.get(suggestion) || default_serializer
-    end
-
     # Read a text file from HDFS, a local file system (available on all nodes), or any
     # Hadoop-supported file system URI, and return it as an RDD of Strings.
     #
     def text_file(path, min_partitions=nil, options={})
       min_partitions ||= default_parallelism
-      serializer = get_serializer(options[:serializer])
+      serializer = get_serializer(options[:serializer], options[:batch_size])
 
-      Spark::RDD.new(@jcontext.textFile(path, min_partitions), self, serializer, Spark::Serializer::UTF8)
+      Spark::RDD.new(@jcontext.textFile(path, min_partitions), self, serializer, get_serializer("UTF8"))
     end
 
     # Distribute a local Ruby collection to form an RDD
@@ -121,7 +140,7 @@ module Spark
       num_slices ||= default_parallelism
 
       use = jruby? ? (options[:use] || :direct) : :file
-      serializer = get_serializer(options[:serializer])
+      serializer = get_serializer(options[:serializer], options[:batch_size])
 
       if data.is_a?(Array) && config("ruby.parallelize.strategy") == "deep_copy"
         data = data.deep_copy

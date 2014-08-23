@@ -151,7 +151,7 @@ module Worker
       # Threads changing for reading is very slow
       # Faster way is do it one by one
       def load_iterator
-        # Prevent deadlock
+        # Wait for incoming connection for preventing deadlock
         if jruby?
           client_socket.io_wait
         else

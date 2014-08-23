@@ -9,11 +9,9 @@ module Spark
       attr_reader :template, :attached
 
       def initialize(serializer, deserializer=nil)
-        deserializer ||= serializer
-
         @template = Spark::Command::Template.new
         @template.serializer   = serializer
-        @template.deserializer = deserializer || serializer
+        @template.deserializer = deserializer || serializer.dup
 
         @attached = []
       end

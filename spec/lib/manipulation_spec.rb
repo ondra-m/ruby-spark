@@ -8,7 +8,7 @@ RSpec::describe "Spark::RDD" do
     rdd = $sc.parallelize(numbers, 1).glom
     expect(rdd.collect).to eql([numbers.to_a])
 
-    rdd = $sc.parallelize(numbers, 5).glom
+    rdd = $sc.parallelize(numbers, 5, batch_size: 1).glom
     expect(rdd.collect).to eql(numbers.each_slice(20).to_a)
   end
 
@@ -38,6 +38,20 @@ RSpec::describe "Spark::RDD" do
     rdd = rdd.union(rdd).collect
 
     expect(rdd.collect.sort).to eql((numbers.to_a+numbers.to_a).sort)
+  end
+
+  it ".compact" do
+    data = [nil, nil , 0, 0, 1, 2, nil, 6]
+    result = data.compact
+
+    rdd = $sc.parallelize(data, 1).compact
+    expect(rdd.collect).to eql(result)
+
+    rdd = $sc.parallelize(data, 5, batch_size: 1).compact
+    expect(rdd.collect).to eql(result)
+
+    rdd = $sc.parallelize(data, 1, batch_size: 1).compact
+    expect(rdd.collect).to eql(result)
   end
 
 end

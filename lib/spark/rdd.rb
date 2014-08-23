@@ -28,7 +28,7 @@ module Spark
 
 
     # =============================================================================
-    # Commad
+    # Commad and serializer
 
     # Attach method as Symbol or Proc
     def attach(*args)
@@ -55,6 +55,13 @@ module Spark
       command
     end
 
+    def serializer
+      @command.serializer
+    end
+
+    def deserializer
+      @command.deserializer
+    end
 
     # =============================================================================
     # Variables and non-computing functions
@@ -106,6 +113,7 @@ module Spark
     def collect
       # @command.serializer.load(jrdd.collect.toArray.to_a)
       @command.serializer.load(jrdd.collect)
+      # jrdd.collect
     end
 
     # Convert an Array to Hash
@@ -309,6 +317,19 @@ module Spark
       PipelinedRDD.new(self, comm)
     end
 
+    # Return a new RDD containing non-nil elements.
+    #
+    # rdd = $sc.parallelize([1, nil, 2, nil, 3])
+    # rdd.compact.collect
+    # => [1, 2, 3]
+    #
+    def compact
+      main = "Proc.new {|iterator| iterator.compact!; iterator }"
+      comm = add_command(main)
+
+      PipelinedRDD.new(self, comm)
+    end
+
     # Return an RDD created by coalescing all elements within each partition into an array.
     #
     # rdd = $sc.parallelize(0..10, 3)
@@ -372,16 +393,18 @@ module Spark
       num_partitions ||= default_reduce_partitions
       partition_func ||= "lambda{|x| x.hash}"
 
-      _key_function_ = <<-KEY_FUNCTION
+      key_function = <<-KEY_FUNCTION
         Proc.new{|iterator|
           iterator.map! {|key, value|
             [pack_long(@__partition_func__.call(key)), [key, value]]
-          }.flatten(1)
+          }.flatten!(1);
+          iterator
         }
       KEY_FUNCTION
 
       # RDD is transform from [key, value] to [hash, [key, value]]
-      keyed = map_partitions(_key_function_).attach(partition_func: partition_func)
+      keyed = map_partitions(key_function).attach(partition_func: partition_func)
+      keyed.serializer.unbatch!
 
       # PairwiseRDD and PythonPartitioner are borrowed from Python
       # but works great on ruby too
@@ -390,7 +413,7 @@ module Spark
       new_jrdd = pairwise_rdd.partitionBy(partitioner).values
 
       # Reset deserializer
-      RDD.new(new_jrdd, context, @command.serializer)
+      RDD.new(new_jrdd, context, @command.serializer, keyed.serializer)
     end
 
 
@@ -437,7 +460,7 @@ module Spark
 
       # Not use combiners[key] ||= ..
       # it tests nil and not has_key?
-      _combine_ = <<-COMBINE
+      combine = <<-COMBINE
         Proc.new{|iterator|
           combiners = {}
           iterator.each do |key, value|
@@ -451,7 +474,7 @@ module Spark
         }
       COMBINE
 
-      _merge_ = <<-MERGE
+      merge = <<-MERGE
         Proc.new{|iterator|
           combiners = {}
           iterator.each do |key, value|
@@ -465,9 +488,9 @@ module Spark
         }
       MERGE
 
-      combined = map_partitions(_combine_).attach(merge_value: merge_value, create_combiner: create_combiner)
+      combined = map_partitions(combine).attach(merge_value: merge_value, create_combiner: create_combiner)
       shuffled = combined.partition_by(num_partitions)
-      shuffled.map_partitions(_merge_).attach(merge_combiners: merge_combiners)
+      shuffled.map_partitions(merge).attach(merge_combiners: merge_combiners)
     end
 
     # Return an RDD with the first element of PairRDD
@@ -520,7 +543,7 @@ module Spark
         end
 
         # Send all results to one worker and combine results
-        rdd = rdd.coalesce(1)
+        rdd = rdd.coalesce(1).compact
 
         # Add the same function to new RDD
         comm = rdd.add_command(main, comb_op, options)
@@ -543,7 +566,7 @@ module Spark
   #
   class PipelinedRDD < RDD
 
-    attr_reader :prev_jrdd, :serializer, :command
+    attr_reader :prev_jrdd, :command
 
     def initialize(prev, command)
 

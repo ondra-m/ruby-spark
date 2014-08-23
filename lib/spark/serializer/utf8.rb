@@ -8,22 +8,23 @@ module Spark
   module Serializer
     class UTF8 < Base
 
-      # load => Base
-      # dump => Base
+      UTF8_BATCH_SIZE = 1
 
-      private
+      def initialize(_)
+        super(UTF8_BATCH_SIZE)
+      end
 
-        def self.load_from_io(io)
-          result = []
-          while true
-            begin
-              result << io.read(unpack_int(io.read(4)))
-            rescue
-              break
-            end
+      def load_from_io(io)
+        result = []
+        while true
+          begin
+            result << io.read(unpack_int(io.read(4)))
+          rescue
+            break
           end
-          result
         end
+        result
+      end
 
     end
   end

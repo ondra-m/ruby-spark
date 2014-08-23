@@ -4,11 +4,11 @@ module Spark
   module Serializer
     class Oj < Marshal
 
-      def self.serialize(data)
+      def serialize(data)
         ::Oj::dump(data)
       end
 
-      def self.deserialize(data)
+      def deserialize(data)
         ::Oj::load(data)
       end
 

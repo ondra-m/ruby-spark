@@ -44,7 +44,8 @@ RSpec::shared_examples "a map partitions" do |workers|
       end
 
       # Multiply by 0
-      expect(result[0].values[0]).to eql(0)
+      # Some values are 0 because of batched serialization
+      expect(result.map(&:values).flatten.compact.uniq.first).to eql(0)
     end
   end
 end

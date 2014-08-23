@@ -2,24 +2,59 @@ module Spark
   module Serializer
     class Base
 
-      extend Spark::Serializer::Helper
+      include Spark::Serializer::Helper
+
+      attr_writer :batch_size
+
+      def initialize(batch_size=nil)
+        self.batch_size = batch_size.to_i
+      end
+
+      def batch_size(size=-1)
+        if size == -1
+          return @batch_size
+        end
+
+        _new = self.dup
+        _new.batch_size = size
+        _new
+      end
+
+      def unbatch!
+        @batch_size = 1
+      end
+
+      # nil, 0, 1 are considered as non-batched
+      def batched?
+        batch_size > 1
+      end
 
       # ===========================================================================
       # Load
 
-      # mri: respond_to?(:iterator) => false
+      # Load and deserialize an Array from IO, Array of Java iterator
+      #
+      # mri:   respond_to?(:iterator) => false
       # jruby: respond_to?(:iterator) => true
-      def self.load(source)
+      #
+      def load(source)
         if source.is_a?(IO)
           load_from_io(source)
-        elsif source.is_a?(Array)
-          load_from_array(source)
+        # elsif source.is_a?(Array)
+        #   load_from_array(source)
         elsif try(source, :iterator)
           load_from_iterator(source.iterator)
         end
       end
 
-      def self.load_from_io(io)
+      # Load data from IO. Data must have a format:
+      #  
+      # +------------+--------+
+      # | signed int |  data  |
+      # |     4B     |        |
+      # +------------+--------+
+      #
+      def load_from_io(io)
         result = []
         while true
           begin
@@ -28,22 +63,25 @@ module Spark
             break
           end
         end
+
+        result.flatten!(1) if batched?
         result
       end
 
-      def self.load_from_array(array)
-        array.map! do |item|
-          if item.is_a?(String)
-            # do nothing
-          else
-            item = pack_unsigned_chars(item)
-          end
-          deserialize(item)
-        end
-      end
+      # def load_from_array(array)
+      #   array.map! do |item|
+      #     if item.is_a?(String)
+      #       # do nothing
+      #     else
+      #       item = pack_unsigned_chars(item)
+      #     end
+      #     deserialize(item)
+      #   end
+      # end
 
-      # Java iterator
-      def self.load_from_iterator(iterator)
+      # Load from Java iterator by calling hasNext and next
+      #
+      def load_from_iterator(iterator)
         result = []
         while iterator.hasNext
           item = iterator.next
@@ -54,25 +92,26 @@ module Spark
           end
           result << deserialize(item)
         end
+
+        result.flatten!(1) if batched?
         result
       end
 
       # ===========================================================================
       # Dump
 
-      def self.dump(data, io)
+      # Serialize and send data into IO. Check 'load_from_io' for data format.
+      #
+      def dump(data, io)
         data = [data] unless data.is_a?(Array)
-
-        data.map! do |item|
+        data = data.each_slice(batch_size) if batched?
+        data.each do |item| 
           serialized = serialize(item)
-
-          pack_int(serialized.size) + serialized
+          io.write(pack_int(serialized.size) + serialized)
         end
-
-        io.write(data.join)
       end
 
-      def self.dump_to_java(data)
+      def dump_to_java(data)
         data.map! do |item|
           serialize(item).to_java_bytes
         end
@@ -80,10 +119,10 @@ module Spark
 
       # Rescue cannot be defined
       #
-      # mri => RuntimeError
+      # mri   => RuntimeError
       # jruby => NoMethodError
       #
-      def self.try(object, method)
+      def try(object, method)
         begin
           object.send(method)
           return true
