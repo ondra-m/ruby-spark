@@ -1,9 +1,14 @@
+# TODO: kill worker without controll socket to master
+#       e.g. controll thread for every worker
+
 require "spark/ext/array"
+require "spark/ext/hash"
 require "spark/version"
 require "spark/error"
 
 module Spark
   autoload :Context,    "spark/context"
+  autoload :Config,     "spark/config"
   autoload :RDD,        "spark/rdd"
   autoload :CLI,        "spark/cli"
   autoload :Build,      "spark/build"
@@ -106,7 +111,7 @@ module Spark
 
     get_jars(spark_home).each {|jar| require jar}
 
-    java_objects_as_hash.each do |key, value|
+    java_objects.each do |key, value|
       Object.const_set(key, eval(value))
     end
   end
@@ -121,7 +126,7 @@ module Spark
     Rjb::load(jars)
     Rjb::primitive_conversion = true
 
-    java_objects_as_hash.each do |key, value|
+    java_objects.each do |key, value|
       Object.const_set(key, Rjb::import(value))
     end
   end
@@ -137,7 +142,7 @@ module Spark
     jars.flatten
   end
 
-  def self.java_objects_as_hash
+  def self.java_objects
     hash = {}
     JAVA_OBJECTS.each do |object|
       if object.is_a?(Hash)
