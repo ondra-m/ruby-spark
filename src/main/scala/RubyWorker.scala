@@ -32,16 +32,16 @@ object RubyWorker extends Logging {
   private var commandSocket: Socket = null
   private var commandStream: DataOutputStream = null
 
-  def create(workerDir: String, workerType: String): Socket = {
+  def create(workerDir: String, workerType: String, workerArguments: String): Socket = {
     synchronized {
       if(workerType == "simple"){
         // not yet
         new Socket
       }
       else{
-        createThroughMaster(workerDir, workerType)
+        createThroughMaster(workerDir, workerType, workerArguments)
       }
-      
+
     } // end synchronized
   } // end create
 
@@ -72,10 +72,10 @@ object RubyWorker extends Logging {
    * Connect to master a get socket to new worker which will listen on port
    */
 
-  def createThroughMaster(workerDir: String, workerType: String): Socket = {
+  def createThroughMaster(workerDir: String, workerType: String, workerArguments: String): Socket = {
     synchronized {
       // Start the master if it hasn't been started
-      startMaster(workerDir, workerType)
+      startMaster(workerDir, workerType, workerArguments)
 
       // Attempt to connect, restart and retry once if it fails
       try {
@@ -93,7 +93,7 @@ object RubyWorker extends Logging {
 
   /* -------------------------------------------------------------------------------------------- */
 
-  private def startMaster(workerDir: String, workerType: String){
+  private def startMaster(workerDir: String, workerType: String, workerArguments: String){
     synchronized {
       // Already running?
       if(master != null) {
@@ -103,7 +103,9 @@ object RubyWorker extends Logging {
       try {
         // Create and start the master
         // -C: change worker dir before execution
-        val pb = new ProcessBuilder(List("ruby", "-C", workerDir, "master.rb"))
+        val exec = List("ruby", "-C", workerDir, workerArguments, "master.rb").filter(_ != "")
+
+        val pb = new ProcessBuilder(exec)
         pb.environment().put("WORKER_TYPE", workerType)
         master = pb.start()
 

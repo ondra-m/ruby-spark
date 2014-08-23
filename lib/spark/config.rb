@@ -68,6 +68,7 @@ module Spark
       set_app_name(default_app_name)
       set_master(default_master)
       set("spark.ruby.worker_type", default_worker_type)
+      set("spark.ruby.worker_arguments", default_worker_arguments)
       set("spark.ruby.parallelize_strategy", default_parallelize_strategy)
       set("spark.ruby.serializer", default_serializer)
       set("spark.ruby.batch_size", default_batch_size)
@@ -96,13 +97,23 @@ module Spark
     #   Simple: workers are created by Spark as single process
     #
     def default_worker_type
-      ENV["SPARK_RUBY_WORKER_TYPE"] || begin
-        if jruby? || windows?
-          "thread"
-        else
-          "process"
-        end
+      ENV["SPARK_RUBY_WORKER_TYPE"] || _default_worker_type
+    end
+
+    def _default_worker_type
+      if jruby? || windows?
+        "thread"
+      else
+        "process"
       end
+    end
+
+    def default_worker_arguments
+      ENV["SPARK_RUBY_WORKER_ARGUMENTS"] || _default_worker_arguments
+    end
+
+    def _default_worker_arguments
+      ""
     end
 
     # How to handle with data in method parallelize.

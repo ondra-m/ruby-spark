@@ -18,6 +18,8 @@ require_relative "pool_master"
 require_relative "worker"
 
 def log(klass, message=nil)
+  return if !$DEBUG
+
   $stdout.write %{==> #{Time.now.strftime("%H:%M:%S")} [#{klass.id}] #{klass.name} #{message}\n}
   $stdout.flush
 end

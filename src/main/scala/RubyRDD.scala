@@ -31,6 +31,7 @@ class RubyRDD[T: ClassTag](
 
     val bufferSize = conf.getInt("spark.buffer.size", 65536)
     val workerType = conf.get("spark.ruby.worker_type")
+    val workerArguments = conf.get("spark.ruby.worker_arguments")
 
     val asJavaRDD: JavaRDD[Array[Byte]] = JavaRDD.fromRDD(this)
 
@@ -42,9 +43,8 @@ class RubyRDD[T: ClassTag](
 
     override def compute(split: Partition, context: TaskContext): Iterator[Array[Byte]] = {
 
-      val startTime = System.currentTimeMillis
       val env = SparkEnv.get
-      val worker: Socket = RubyWorker.create(workerDir, workerType)
+      val worker: Socket = RubyWorker.create(workerDir, workerType, workerArguments)
 
       // Start a thread to feed the process input from our parent's iterator
       val writerThread = new WriterThread(env, worker, split, context)
