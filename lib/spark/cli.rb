@@ -34,6 +34,7 @@ module Spark
     def build_ext
       Spark::Build.ext(options[:"spark-home"])
     end
+    map :rebuild => :build_ext
 
     desc "irb", "start ruby shell for spark"
     option :spark
