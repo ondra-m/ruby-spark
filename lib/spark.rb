@@ -7,14 +7,15 @@ require "spark/version"
 require "spark/error"
 
 module Spark
-  autoload :Context,    "spark/context"
-  autoload :Config,     "spark/config"
-  autoload :RDD,        "spark/rdd"
-  autoload :CLI,        "spark/cli"
-  autoload :Build,      "spark/build"
-  autoload :Serializer, "spark/serializer"
-  autoload :Command,    "spark/command"
-  autoload :Helper,     "spark/helper"
+  autoload :Context,      "spark/context"
+  autoload :Config,       "spark/config"
+  autoload :RDD,          "spark/rdd"
+  autoload :CLI,          "spark/cli"
+  autoload :Build,        "spark/build"
+  autoload :Serializer,   "spark/serializer"
+  autoload :Command,      "spark/command"
+  autoload :Helper,       "spark/helper"
+  autoload :StorageLevel, "spark/storage_level"
 
   extend Helper::Platform
 
@@ -87,7 +88,8 @@ module Spark
     "org.apache.spark.api.ruby.PairwiseRDD",
     "org.apache.spark.api.python.PythonPartitioner",
     :JLogger => "org.apache.log4j.Logger",
-    :JLevel  => "org.apache.log4j.Level"
+    :JLevel  => "org.apache.log4j.Level",
+    :JStorageLevel => "org.apache.spark.storage.StorageLevel"
   ]
 
   # Load dependent libraries, can be use once

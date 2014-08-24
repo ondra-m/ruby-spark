@@ -77,7 +77,34 @@ module Spark
 
     # A unique ID for this RDD (within its SparkContext).
     def id
-      @jrdd.id
+      jrdd.id
+    end
+
+    # Persist this RDD with the default storage level MEMORY_ONLY_SER because of serialization.
+    def cache
+      persist("memory_only_ser")
+    end
+
+    # Set this RDD's storage level to persist its values across operations after the first time
+    # it is computed. This can only be used to assign a new storage level if the RDD does not
+    # have a storage level set yet.
+    #
+    # See StorageLevel for type of new_level
+    #
+    def persist(new_level)
+      @cached = true
+      jrdd.persist(Spark::StorageLevel.java_get(new_level))
+      self
+    end
+
+    # Mark the RDD as non-persistent, and remove all blocks for it from memory and disk.
+    #
+    #   blocking: whether to block until all blocks are deleted.
+    #
+    def unpersist(blocking=true)
+      @cached = false
+      jrdd.unpersist(blocking)
+      self
     end
 
     def cached?
@@ -591,14 +618,14 @@ module Spark
 
     # Serialization necessary things and sent it to RubyRDD (scala extension)
     def jrdd
-      return @jrdd_values if @jrdd_values
+      return @jrdd if @jrdd
 
       command = @command.build
       class_tag = @prev_jrdd.classTag
 
       ruby_rdd = RubyRDD.new(@prev_jrdd.rdd, command, Spark.worker_dir, class_tag)
-      @jrdd_values = ruby_rdd.asJavaRDD
-      @jrdd_values
+      @jrdd = ruby_rdd.asJavaRDD
+      @jrdd
     end
 
   end
