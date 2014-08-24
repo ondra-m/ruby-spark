@@ -54,6 +54,10 @@ module Spark
     @ruby_spark_jar ||= File.join(target_dir, 'ruby-spark.jar')
   end
 
+  def self.ivy_xml
+    @ivy_xml ||= File.join(root, 'ivy', 'ivy.xml')
+  end
+
   # ===============================================================================
   # Global Spark actions
 

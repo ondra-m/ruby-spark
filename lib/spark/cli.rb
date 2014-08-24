@@ -7,17 +7,32 @@ module Spark
     IRB_HISTORY_SIZE = 100
 
     desc "install", "build spark and gem extensions"
-    option :spark
-    option :target
+    option :"ivy-version", default: Spark::Build::DEFAULT_IVY_VERSION, 
+                           banner: "ivy version",
+                           desc: "Version of ivy which will build the SPARK"
+    option :"hadoop-version", default: Spark::Build::DEFAULT_HADOOP_VERSION, 
+                              banner: "hadoop version",
+                              desc: "Version of hadoop which will stored with the SPARK"
+    option :"spark-home", default: Spark.target_dir,
+                          banner: "directory",
+                          desc: "Directory where SPARK will be stored"
+    option :"spark-core", default: Spark::Build::DEFAULT_CORE_VERSION,
+                          banner: "version",
+                          desc: "Version of SPARK core"
+    option :"spark-version", default: Spark::Build::DEFAULT_SPARK_VERSION,
+                             banner: "version",
+                             desc: "Version of SPARK"
     def install
-      Spark::Build.spark(options[:target]) unless options[:spak]
-      Spark::Build.ext(options[:spark])
+      Spark::Build.spark(options)
+      Spark::Build.ext(options[:"spark-home"])
     end
 
-    desc "rebuild", "rebuild only ruby extensions"
-    option :spark
-    def rebuild
-      Spark::Build.ext(options[:spark])
+    desc "build_ext", "build only ruby extensions"
+    option :"spark-home", default: Spark.target_dir,
+                          banner: "directory of file",
+                          desc: "Directory  of single jar file where SPARK is located"
+    def build_ext
+      Spark::Build.ext(options[:"spark-home"])
     end
 
     desc "irb", "start ruby shell for spark"
