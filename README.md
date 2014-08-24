@@ -107,7 +107,9 @@ config.set("spark.ruby.serializer", "oj")
 
 sc = Spark::Context.new(config)
 ```
-
+```ruby
+$sc
+```
 
 ### During data uploading
 
@@ -116,21 +118,26 @@ $sc.parallelize(1..10, 3, serializer: "oj")
 ```
 check next section for more informations
 
-
-
 ## Uploading a data
 
+```
+$sc
+```
+
 Single file
+
 ```ruby
 $sc.text_file("spec/inputs/numbers_1_100.txt", workers_num, custom_options)
 ```
 
 All files on directory
+
 ```ruby
 $sc.whole_text_files("spec/inputs", workers_num, custom_options)
 ```
 
 Direct
+
 ```ruby
 $sc.parallelize([1,2,3,4,5], workers_num, custom_options)
 $sc.parallelize(1..5, workers_num, custom_options)
@@ -161,12 +168,14 @@ $sc.parallelize(1..5, workers_num, custom_options)
 ## Examples
 
 Sum of numbers
+
 ```ruby
 $sc.parallelize(0..10).sum
 # => 55
 ```
 
 Words count using methods
+
 ```ruby
 def split_line(line)
   line.split
@@ -190,6 +199,7 @@ rdd.collect_as_hash
 ```
 
 Estimating pi with a custom serializer
+
 ```ruby
 slices = 2
 n = 100000 * slices
