@@ -107,9 +107,6 @@ config.set("spark.ruby.serializer", "oj")
 
 sc = Spark::Context.new(config)
 ```
-```ruby
-$sc
-```
 
 ### During data uploading
 
@@ -120,9 +117,6 @@ check next section for more informations
 
 ## Uploading a data
 
-```
-$sc
-```
 
 Single file
 
