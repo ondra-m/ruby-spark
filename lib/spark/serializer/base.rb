@@ -1,3 +1,5 @@
+require_relative "helper.rb"
+
 module Spark
   module Serializer
     class Base
@@ -6,8 +8,15 @@ module Spark
 
       attr_writer :batch_size
 
+      # Set default values
       def initialize(batch_size=nil)
-        self.batch_size = batch_size.to_i
+        self.batch_size = batch_size
+      end
+
+      # Set values given by user
+      def set(batch_size)
+        self.batch_size = batch_size unless batch_size.nil?
+        self
       end
 
       def batch_size(size=-1)
@@ -20,8 +29,12 @@ module Spark
         _new
       end
 
+      def batch_size=(size)
+        @batch_size = size.to_i
+      end
+
       def unbatch!
-        @batch_size = 1
+        self.batch_size = 1
       end
 
       # nil, 0, 1 are considered as non-batched
@@ -58,7 +71,7 @@ module Spark
         result = []
         while true
           begin
-            result << deserialize(io.read(unpack_int(io.read(4))))
+            result << load_one_from_io(io)
           rescue
             break
           end
@@ -66,6 +79,10 @@ module Spark
 
         result.flatten!(1) if batched?
         result
+      end
+
+      def load_one_from_io(io)
+        deserialize(io.read(unpack_int(io.read(4))))
       end
 
       # def load_from_array(array)

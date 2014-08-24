@@ -36,10 +36,10 @@ module Spark
       @jcontext.sc.defaultParallelism
     end
 
-    def get_serializer(serializer, batch_size=nil)
+    def get_serializer(serializer, *args)
       serializer   = Spark::Serializer.get(serializer)
       serializer ||= Spark::Serializer.get(config("spark.ruby.serializer"))
-      serializer.new(batch_size || config("spark.ruby.batch_size"))
+      serializer.new(config("spark.ruby.batch_size")).set(*args)
     end
 
     # Set a local property that affects jobs submitted from this thread, such as the
@@ -79,23 +79,17 @@ module Spark
       end
     end
 
-    # Read a text file from HDFS, a local file system (available on all nodes), or any
-    # Hadoop-supported file system URI, and return it as an RDD of Strings.
-    #
-    def text_file(path, min_partitions=nil, options={})
-      min_partitions ||= default_parallelism
-      serializer = get_serializer(options[:serializer], options[:batch_size])
-
-      Spark::RDD.new(@jcontext.textFile(path, min_partitions), self, serializer, get_serializer("UTF8"))
-    end
-
     # Distribute a local Ruby collection to form an RDD
     # Direct method can be slow so be careful, this method update data inplace
     #
     #   data: Range or Array
     #   num_slices: number of slice
-    #   user: direct => direct serialization
-    #         file => through file
+    #   options: use
+    #            serializer
+    #            batch_size
+    #
+    # $sc.parallelize(["1", "2", "3"]).map(lambda{|x| x.to_i}).collect
+    # => [1, 2, 3]
     #
     def parallelize(data, num_slices=nil, options={})
       num_slices ||= default_parallelism
@@ -125,9 +119,51 @@ module Spark
       Spark::RDD.new(jrdd, self, serializer)
     end
 
+    # Read a text file from HDFS, a local file system (available on all nodes), or any
+    # Hadoop-supported file system URI, and return it as an RDD of Strings.
+    #
+    # f = Tempfile.new("test")
+    # f.puts("1")
+    # f.puts("2")
+    # f.close
+    #
+    # $sc.text_file(f.path).map(lambda{|x| x.to_i}).collect
+    # => [1, 2]
+    #
+    def text_file(path, min_partitions=nil, options={})
+      min_partitions ||= default_parallelism
+      serializer = get_serializer(options[:serializer], options[:batch_size])
+
+      Spark::RDD.new(@jcontext.textFile(path, min_partitions), self, serializer, get_serializer("UTF8"))
+    end
+
+    # Read a directory of text files from HDFS, a local file system (available on all nodes), or any
+    # Hadoop-supported file system URI. Each file is read as a single record and returned in a
+    # key-value pair, where the key is the path of each file, the value is the content of each file.
+    #
+    # dir = Dir.mktmpdir
+    # f1 = Tempfile.new("test1", dir)
+    # f2 = Tempfile.new("test2", dir)
+    # f1.puts("1"); f1.puts("2");
+    # f2.puts("3"); f2.puts("4");
+    # f1.close
+    # f2.close
+    #
+    # $sc.whole_text_files(dir).flat_map(lambda{|key, value| value.split}).collect
+    # => ["1", "2", "3", "4"]
+    #
+    def whole_text_files(path, min_partitions=nil, options={})
+      min_partitions ||= default_parallelism
+      serializer = get_serializer(options[:serializer], options[:batch_size])
+      deserializer = get_serializer("Pair", get_serializer("UTF8"), get_serializer("UTF8"))
+
+      Spark::RDD.new(@jcontext.wholeTextFiles(path, min_partitions), self, serializer, deserializer)
+    end
+
 
     # Aliases
     alias_method :textFile, :text_file
+    alias_method :wholeTextFiles, :whole_text_files
     alias_method :defaultParallelism, :default_parallelism
     alias_method :setLocalProperty, :set_local_property
     alias_method :getLocalProperty, :get_local_property

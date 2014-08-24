@@ -8,22 +8,17 @@ module Spark
   module Serializer
     class UTF8 < Base
 
-      UTF8_BATCH_SIZE = 1
-
-      def initialize(_)
-        super(UTF8_BATCH_SIZE)
+      def set(*)
+        unbatch!
+        self
       end
 
-      def load_from_io(io)
-        result = []
-        while true
-          begin
-            result << io.read(unpack_int(io.read(4)))
-          rescue
-            break
-          end
-        end
-        result
+      def batched?
+        false
+      end
+
+      def load_one_from_io(io)
+        io.read(unpack_int(io.read(4))).force_encoding(Encoding::UTF_8)
       end
 
     end
