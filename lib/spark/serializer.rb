@@ -6,6 +6,7 @@ module Spark
     autoload :Marshal,     "spark/serializer/marshal"
     autoload :MessagePack, "spark/serializer/message_pack"
     autoload :Oj,          "spark/serializer/oj"
+    autoload :Pair,         "spark/serializer/pair"
 
     DEFAULT_BATCH_SIZE = 1024
     DEFAULT_SERIALIZER_NAME = "marshal"
