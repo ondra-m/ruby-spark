@@ -100,12 +100,11 @@ SPARK_RUBY_SERIALIZER="oj" bin/ruby-spark pry
 ### By configuration
 
 ```ruby
-config = Spark::Config.new
-config.set_app_name("RubySpark")
-config.set_master("local[*]")
-config.set("spark.ruby.serializer", "oj")
-
-sc = Spark::Context.new(config)
+Spark.config do
+  set_app_name "RubySpark"
+  set_master "local[*]"
+  set "spark.ruby.serializer", "oj"
+end
 ```
 
 ### During data uploading
@@ -114,6 +113,31 @@ sc = Spark::Context.new(config)
 $sc.parallelize(1..10, 3, serializer: "oj")
 ```
 check next section for more informations
+
+
+## Starting/stopping the context
+
+RubySpark allows only one instance of SparkContext.
+
+```ruby
+# Create a context. This method have to called before using Spark's functionality
+Spark.start
+
+# Stop context, clear config and kill all workers
+Spark.stop
+```
+
+Access to the context.
+
+```ruby
+# Running context
+Spark.context
+
+# You can set global variable for quicker use.
+$sc = Spark.context
+```
+
+
 
 ## Uploading a data
 
