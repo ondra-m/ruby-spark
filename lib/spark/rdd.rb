@@ -618,15 +618,18 @@ module Spark
 
     # Serialization necessary things and sent it to RubyRDD (scala extension)
     def jrdd
-      return @jrdd if @jrdd
-
-      command = @command.build
-      class_tag = @prev_jrdd.classTag
-
-      ruby_rdd = RubyRDD.new(@prev_jrdd.rdd, command, Spark.worker_dir, class_tag)
-      @jrdd = ruby_rdd.asJavaRDD
-      @jrdd
+      @jrdd ||= _jrdd
     end
+
+    private
+
+      def _jrdd
+        command = @command.build
+        class_tag = @prev_jrdd.classTag
+
+        ruby_rdd = RubyRDD.new(@prev_jrdd.rdd, command, Spark.worker_dir, class_tag)
+        ruby_rdd.asJavaRDD
+      end
 
   end
 end

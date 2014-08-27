@@ -13,21 +13,19 @@ module Spark
 
     attr_reader :jcontext
 
-    # Constructor fo Ruby context
-    # Required parameters: app_name and master
+    # Constructor for Ruby context. Configuration is automatically is taken
+    # from Spark. Config will be automatically set to default if user start
+    # context first.
     #
-    def initialize(arg=nil)
-      if arg.is_a?(Spark::Config)
-        config = arg
-      else
-        config = Spark::Config.new
-        config.parse(arg)
-      end
-      config.valid!
-
-      @jcontext = JavaSparkContext.new(config.spark_conf)
+    def initialize
+      Spark.config.valid!
+      @jcontext = JavaSparkContext.new(Spark.config.spark_conf)
 
       set_call_site("Ruby") # description of stage
+    end
+
+    def stop
+      @jcontext.stop
     end
 
     # Default level of parallelism to use when not given by user (e.g. parallelize and makeRDD)
@@ -73,9 +71,9 @@ module Spark
     #
     def config(key=nil)
       if key
-        config[key]
+        Spark.config[key]
       else
-        @config ||= Spark::Config.show(jcontext.conf)
+        Spark.config.get_all
       end
     end
 

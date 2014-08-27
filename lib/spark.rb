@@ -34,6 +34,69 @@ module Spark
     STRING
   end
 
+  # Returns current configuration. Configurations can be changed until
+  # context is initialized. In this case config is locked only for reading.
+  #
+  # Configuration can be changed:
+  #
+  #   Spark.config.set('spark.app.name', 'RubySpark')
+  #
+  #   Spark.config['spark.app.name'] = 'RubySpark'
+  #
+  #   Spark.config do
+  #     set 'spark.app.name', 'RubySpark'
+  #   end
+  #
+  def self.config(&block)
+    @config ||= Spark::Config.new
+
+    if block_given?
+      @config.instance_eval(&block)
+    else
+      @config
+    end
+  end
+
+  # Destroy current configuration. This can be useful for restarting config
+  # to set new. It has no effect if context is already started.
+  def self.clear_config
+    @config = nil
+  end
+
+  # Return a current active context or nil.
+  #
+  # TODO: Run `start` if context is nil?
+  #
+  def self.context
+    @context
+  end
+
+  # Initialize spark context if not already. Config will be automatically 
+  # loaded on constructor. From that point `config` will use configuration
+  # from running Spark and will be locked only for reading.
+  def self.start
+    if started?
+      # Already started
+    else
+      @context ||= Spark::Context.new
+    end
+  end
+
+  def self.stop
+    @context.stop
+    destroy_workers
+  rescue
+    nil
+  ensure
+    @context = nil
+    clear_config
+  end
+
+  def self.started?
+    # !!(@config && @context)
+    !!@context
+  end
+
   # Root of the gem
   def self.root
     @root ||= File.expand_path("..", File.dirname(__FILE__))
@@ -133,7 +196,8 @@ module Spark
     Rjb::primitive_conversion = true
 
     java_objects.each do |key, value|
-      Object.const_set(key, Rjb::import(value))
+      # Avoid 'already initialized constant'
+      Object.const_set(key, silence_warnings { Rjb::import(value) })
     end
   end
 
@@ -161,11 +225,22 @@ module Spark
     hash
   end
 
+
+  # ===============================================================================
+  # Others
+
+  def self.silence_warnings
+    old_verbose, $VERBOSE = $VERBOSE, nil
+    yield
+  ensure
+    $VERBOSE = old_verbose
+  end
+
 end
 
 Kernel::at_exit do
   begin
-    Spark.destroy_workers
+    Spark.stop
   rescue
   end
 end

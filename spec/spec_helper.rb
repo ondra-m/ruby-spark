@@ -1,10 +1,16 @@
-require 'simplecov'
-SimpleCov.start
+# require 'simplecov'
+# SimpleCov.start
 
 $:.unshift File.dirname(__FILE__) + '/../lib'
 require "ruby-spark"
 require "generator"
 
+def spark_start
+  Spark.disable_log
+  Spark.config["spark.ruby.parallelize_strategy"] = "deep_copy"
+  Spark.start
+  $sc = Spark.context
+end
 
 RSpec.configure do |config|
   config.default_formatter = "doc"
@@ -12,10 +18,9 @@ RSpec.configure do |config|
   config.tty   = true
 
   config.before(:suite) do
-    Spark.disable_log
-    $sc = Spark::Context.new("spark.ruby.parallelize_strategy" => "deep_copy")
+    spark_start
   end
   config.after(:suite) do
-    Spark.destroy_workers
+    Spark.stop
   end
 end

@@ -73,7 +73,13 @@ module Spark
     def pry
       # Load Java and Spark
       Spark.load_lib(options[:spark])
-      $sc = Spark::Context.new
+
+      Spark.config do
+        set_app_name "Pry RubySpark"
+      end
+      Spark.start
+      $sc = Spark.context
+
       Spark.print_logo("Spark context is loaded as $sc")
 
       # Load IRB
