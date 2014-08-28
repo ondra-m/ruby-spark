@@ -4,6 +4,10 @@ module Spark
   module Serializer
     class MessagePack < Marshal
 
+      def name
+        "message_pack"
+      end
+
       def self.serialize(data)
         ::MessagePack::dump(data)
       end

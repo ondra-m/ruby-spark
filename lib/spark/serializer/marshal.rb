@@ -4,6 +4,10 @@ module Spark
   module Serializer
     class Marshal < Base
 
+      def name
+        "marshal"
+      end
+
       def serialize(data)
         ::Marshal::dump(data)
       end

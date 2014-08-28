@@ -13,6 +13,10 @@ module Spark
         self.batch_size = batch_size
       end
 
+      def ==(other)
+        self.class == other.class && self.batch_size == other.batch_size
+      end
+
       # Set values given by user
       def set(batch_size)
         self.batch_size = batch_size unless batch_size.nil?
