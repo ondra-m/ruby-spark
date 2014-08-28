@@ -59,6 +59,10 @@ module Spark
       @command.serializer
     end
 
+    # def serializer=(new_serializer)
+    #   @command.serializer = new_serializer
+    # end
+
     def deserializer
       @command.deserializer
     end
@@ -402,12 +406,34 @@ module Spark
     # => [1, 2, 3, 1, 2, 3]
     #
     def union(other)
-      if command.deserializer == other.command.deserializer
-        new_jrdd = jrdd.union(other.jrdd)
-        RDD.new(new_jrdd, context, @command.serializer, @command.deserializer)
-      else
-        # not yet
+      if self.serializer != other.serializer
+        other = other.reserialize(serializer.name, serializer.batch_size)
       end
+
+      new_jrdd = jrdd.union(other.jrdd)
+      RDD.new(new_jrdd, context, serializer, deserializer)
+    end
+
+    # Return a new RDD with different serializer. This method is useful during union
+    # and join operations.
+    #
+    # rdd = $sc.parallelize([1, 2, 3], nil, serializer: "marshal")
+    # rdd = rdd.map(lambda{|x| x.to_s})
+    # rdd.reserialize("oj").collect
+    # => ["1", "2", "3"]
+    #
+    def reserialize(new_serializer, new_batch_size=nil)
+      new_batch_size ||= deserializer.batch_size
+      new_serializer = Spark::Serializer.get!(new_serializer).new(new_batch_size)
+
+      if serializer == new_serializer
+        return self
+      end
+
+      new_command = @command.deep_copy
+      new_command.serializer = new_serializer
+
+      PipelinedRDD.new(self, new_command)
     end
 
     # Return a copy of the RDD partitioned using the specified partitioner.
@@ -520,6 +546,38 @@ module Spark
       shuffled.map_partitions(merge).attach(merge_combiners: merge_combiners)
     end
 
+    # Group the values for each key in the RDD into a single sequence. Allows controlling the
+    # partitioning of the resulting key-value pair RDD by passing a Partitioner.
+    #
+    # Note: If you are grouping in order to perform an aggregation (such as a sum or average) 
+    # over each key, using reduce_by_key or combine_by_key will provide much better performance.
+    #
+    # rdd = $sc.parallelize([["a", 1], ["a", 2], ["b", 3]])
+    # rdd.group_by_key.collect
+    # => [["a", [1, 2]], ["b", [3]]]
+    #
+    def group_by_key(num_partitions=nil)
+      create_combiner = "Proc.new {|item| [item]}"
+      merge_value     = "Proc.new {|combiner, item| combiner << item; combiner}"
+      merge_combiners = "Proc.new {|combiner_1, combiner_2| combiner_1 += combiner_2; combiner_1}"
+
+      combine_by_key(create_combiner, merge_value, merge_combiners, num_partitions)
+    end
+
+    # Pass each value in the key-value pair RDD through a map function without changing
+    # the keys. This also retains the original RDD's partitioning.
+    #
+    # rdd = $sc.parallelize(["ruby", "scala", "java"])
+    # rdd = rdd.map(lambda{|x| [x, x]})
+    # rdd = rdd.map_values(lambda{|x| x.upcase})
+    # rdd.collect
+    # => [["ruby", "RUBY"], ["scala", "SCALA"], ["java", "JAVA"]]
+    #
+    def map_values(f)
+      func = "Proc.new {|key, value| [key, @__mapping__.call(value)]}"
+      map(func).attach(mapping: f)
+    end
+
     # Return an RDD with the first element of PairRDD
     #
     # rdd = $sc.parallelize([[1,2], [3,4], [5,6]])
@@ -551,9 +609,11 @@ module Spark
     alias_method :mapPartitionsWithIndex, :map_partitions_with_index
     alias_method :reduceByKey, :reduce_by_key
     alias_method :combineByKey, :combine_by_key
+    alias_method :groupByKey, :group_by_key
     alias_method :partitionBy, :partition_by
     alias_method :defaultReducePartitions, :default_reduce_partitions
     alias_method :foreachPartition, :foreach_partition
+    alias_method :mapValues, :map_values
 
     private
 
