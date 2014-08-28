@@ -40,6 +40,13 @@ RSpec::describe "Spark::RDD" do
     expect(rdd.collect.sort).to eql((numbers.to_a+numbers.to_a).sort)
   end
 
+  it ".union with a different serializer" do
+    rdd1 = $sc.parallelize(numbers, 1, serializer: "marshal")
+    rdd2 = $sc.parallelize(numbers, 1, serializer: "oj")
+    
+    expect { rdd1.union(rdd2).collect }.to_not raise_error
+  end
+
   it ".compact" do
     data = [nil, nil , 0, 0, 1, 2, nil, 6]
     result = data.compact

@@ -7,17 +7,25 @@ class Generator
     Array.new(size){ rand(0..1000) }
   end
 
-  def self.words(count=1000)
-    Array.new(10) do
-      Array.new(rand(1..10)){(97+rand(26)).chr}.join
-    end
+  def self.words(size=1000)
+    Array.new(size) { word }
   end
 
-  def self.lines(count=1000, letters=3)
-    Array.new(count) do
+  def self.word(size=10)
+    Array.new(rand(1..size)){(97+rand(26)).chr}.join
+  end
+
+  def self.lines(size=1000, letters=3)
+    Array.new(size) do
       Array.new(rand(50..100)){
         (97+rand(letters)).chr + (" " * (rand(10) == 0 ? 1 : 0))
       }.join
+    end
+  end
+
+  def self.hash(size=1000)
+    Array.new(size) do
+      [word(2), rand(1..10)]
     end
   end
 end
