@@ -18,13 +18,14 @@ module Spark
       dir = Dir.mktmpdir
 
       begin
-        puts "Building ivy"
+        print "Building ivy"
         exec(get_ivy(dir, 'ivy.jar', ivy_version))
-        puts "Building spark"
+        print "Building spark"
         exec(get_spark(dir, 'ivy.jar', spark_core, spark_version, hadoop_version))
-        puts "Moving files"
+        print "Moving files"
         FileUtils.mkdir_p(spark_home)
         FileUtils.mv(Dir.glob(File.join(dir, 'spark', '*')), spark_home)
+        puts " ... OK"
       rescue Exception => e
         raise Spark::BuildError, "Cannot build Spark. #{e}"
       ensure
@@ -36,19 +37,14 @@ module Spark
       spark_home ||= Spark.target_dir
 
       begin
-        puts "Building ruby-spark extension"
-        # exec(compile_ext(spark_home))
-        system(compile_ext(spark_home))
+        print "Building ruby-spark extension"
+        exec(compile_ext(spark_home))
       rescue Exception => e
         raise Spark::BuildError, "Cannot build ruby-spark extension. #{e}", e.backtrace
       end
     end
 
     private
-
-      def self.check_status
-        raise StandardError unless $?.success?
-      end
 
       def self.get_ivy(dir, ivy, version)
         ["curl",
@@ -74,14 +70,15 @@ module Spark
       end
 
       def self.exec(cmd)
-        # Open3.popen3(cmd) do |stdin, stdout, stderr, wait_thr|
-        #   exit_status = wait_thr.value
-        #   unless exit_status.success?
-        #     err = stderr.read
-        #     raise Spark::BuildError, "'#{cmd}' \n failed: #{err}"
-        #   end
-        # end
-        system cmd
+        Open3.popen3(cmd) do |stdin, stdout, stderr, wait_thr|
+          exit_status = wait_thr.value
+          if exit_status.success?
+            puts " ... OK"
+          else
+            err = stderr.read
+            raise Spark::BuildError, "'#{cmd}' \n failed: #{err}"
+          end
+        end
       end
 
   end
