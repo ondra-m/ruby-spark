@@ -1,21 +1,28 @@
 #!/bin/ruby
 
-require 'ruby-spark'
+lib = File.expand_path(File.dirname(__FILE__) + '/../lib')
+$LOAD_PATH.unshift(lib) if File.directory?(lib) && !$LOAD_PATH.include?(lib)
 
-puts Spark.root
-Dir.glob(File.join(File.expand_path  "../target/*", File.dirname(__FILE__))){|file| require file }
-require File.expand_path("../target/ruby-spark.jar", File.dirname(__FILE__))
+require "ruby-spark"
 
-sc = Spark::Context.new(app_name: "RubySpark", master: "local")
+Spark.disable_log
+Spark.start
 
 slices = 3
-
 n = 100000 * slices
 
-f = lambda {
-  x = rand() * 2 - 1
-  y = rand() * 2 - 1
-  x ** 2 + y ** 2 < 1 ? 1 : 0
-}
-count = sc.parallelize((1..n).to_a, slices).map(f).collect.reduce(:+)
-print "Pi is roughly %f" % (4.0 * count / n)
+def map(_)
+  x = rand * 2 - 1
+  y = rand * 2 - 1
+
+  if x**2 + y**2 < 1
+    return 1
+  else
+    return 0
+  end
+end
+
+rdd = Spark.context.parallelize(1..n, slices, serializer: "oj")
+rdd = rdd.map(:map)
+
+puts "Pi is roughly %f" % (4.0 * rdd.sum / n)
