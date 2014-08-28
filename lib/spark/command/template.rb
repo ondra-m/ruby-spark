@@ -20,7 +20,7 @@ class Spark::Command::Stage
 
   def initialize
     @main = nil
-    @before = ""
-    @after  = ""
+    @before = []
+    @after  = []
   end
 end

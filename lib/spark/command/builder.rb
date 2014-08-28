@@ -24,24 +24,45 @@ module Spark
       # Serialize Command template
       # Java use signed number
       def build
-        unpack_chars(Marshal.dump(@template))
+        builder = self.deep_copy
+        builder.prepare_for_build
+
+        unpack_chars(Marshal.dump(builder.template))
+      end
+
+      def prepare_for_build
+        @template.before.flatten!
+        @template.after.flatten!
+        @template.before = @template.before.join(";")
+        @template.after  = @template.after.join(";")
+
+        @template.stages.each do |stage|
+          stage.before.flatten!
+          stage.after.flatten!
+          stage.before = stage.before.join(";")
+          stage.after  = stage.after.join(";")
+        end
       end
 
       def deep_copy
-         Marshal.load(Marshal.dump(self))
+        Marshal.load(Marshal.dump(self))
       end
 
       # Add new stage (stage should be equal with PipelinedRDD)
       def add(main, f=nil, options={})
         stage = Spark::Command::Stage.new
         stage.main = main
-        stage.before = [serialize(:main, f)].flatten.join(";")
+        stage.before = [serialize(:main, f)]
 
         @template.stages << stage
       end
 
       def add_before(*args)
-        @template.before << parse_attach(args).flatten.join(";")
+        @template.stages.last.before << parse_attach(args)
+      end
+
+      def add_global_before(*args)
+        @template.before << parse_attach(args)
       end
 
       def add_library(*args)

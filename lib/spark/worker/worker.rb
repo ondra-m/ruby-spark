@@ -72,7 +72,7 @@ module Worker
       def compute
         begin
           @command.library.each{|lib| require lib}
-          @command.before.each{|x| eval(x)}
+          eval(@command.before)
 
           @command.stages.each do |stage|
             eval(stage.before)
@@ -81,7 +81,7 @@ module Worker
           end
 
           # Can be important for threaded workers
-          @command.after.each{|x| eval(x)}
+          eval(@command.after)
         rescue => e
           write(pack_int(-1))
           write(pack_int(e.message.size))

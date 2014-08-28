@@ -36,6 +36,11 @@ module Spark
       self
     end
 
+    def global_attach(*args)
+      @command.add_global_before(args)
+      self
+    end
+
     # Add library which will be loaded on worker
     def add_library(*args)
       @command.add_library(args)
