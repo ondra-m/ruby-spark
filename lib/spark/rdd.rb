@@ -59,10 +59,6 @@ module Spark
       @command.serializer
     end
 
-    # def serializer=(new_serializer)
-    #   @command.serializer = new_serializer
-    # end
-
     def deserializer
       @command.deserializer
     end
@@ -564,6 +560,36 @@ module Spark
       combine_by_key(create_combiner, merge_value, merge_combiners, num_partitions)
     end
 
+    # The same functionality as cogroup but this can grouped only 2 rdd's and you
+    # can change num_partitions.
+    #
+    # rdd1 = $sc.parallelize([["a", 1], ["a", 2], ["b", 3]])
+    # rdd2 = $sc.parallelize([["a", 4], ["a", 5], ["b", 6]])
+    # rdd1.group_with(rdd2).collect
+    # => [["a", [1, 2, 4, 5]], ["b", [3, 6]]]
+    #
+    def group_with(other, num_partitions=nil)
+      union(other).group_by_key(num_partitions)
+    end
+
+    # For each key k in `this` or `other`, return a resulting RDD that contains a tuple with the
+    # list of values for that key in `this` as well as `other`.
+    #
+    # rdd1 = $sc.parallelize([["a", 1], ["a", 2], ["b", 3]])
+    # rdd2 = $sc.parallelize([["a", 4], ["a", 5], ["b", 6]])
+    # rdd3 = $sc.parallelize([["a", 7], ["a", 8], ["b", 9]])
+    # rdd1.cogroup(rdd2, rdd3).collect
+    # => [["a", [1, 2, 4, 5, 7, 8]], ["b", [3, 6, 9]]]
+    #
+    def cogroup(*others)
+      unioned = self
+      others.each do |other|
+        unioned = unioned.union(other)
+      end
+
+      unioned.group_by_key
+    end
+
     # Pass each value in the key-value pair RDD through a map function without changing
     # the keys. This also retains the original RDD's partitioning.
     #
@@ -610,6 +636,7 @@ module Spark
     alias_method :reduceByKey, :reduce_by_key
     alias_method :combineByKey, :combine_by_key
     alias_method :groupByKey, :group_by_key
+    alias_method :groupWith, :group_with
     alias_method :partitionBy, :partition_by
     alias_method :defaultReducePartitions, :default_reduce_partitions
     alias_method :foreachPartition, :foreach_partition
