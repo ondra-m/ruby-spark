@@ -437,6 +437,24 @@ module Spark
       PipelinedRDD.new(self, new_command)
     end
 
+    # Return the intersection of this RDD and another one. The output will not contain
+    # any duplicate elements, even if the input RDDs did.
+    #
+    # rdd1 = $sc.parallelize([1,2,3,4,5])
+    # rdd2 = $sc.parallelize([1,4,5,6,7])
+    # rdd1.intersection(rdd2).collect
+    # => [1, 4, 5]
+    #
+    def intersection(other)
+      mapping_function = "Proc.new {|item| [item, nil]}"
+      filter_function  = "Proc.new {|key, values| values.size > 1}"
+
+      self.map(mapping_function)
+          .cogroup(other.map(mapping_function))
+          .filter(filter_function)
+          .keys
+    end
+
     # Return a copy of the RDD partitioned using the specified partitioner.
     #
     # rdd = $sc.parallelize(["1","2","3","4","5"]).map(lambda {|x| [x, 1]})
@@ -574,7 +592,7 @@ module Spark
     # => [["a", [1, 2, 4, 5]], ["b", [3, 6]]]
     #
     def group_with(other, num_partitions=nil)
-      union(other).group_by_key(num_partitions)
+      self.union(other).group_by_key(num_partitions)
     end
 
     # For each key k in `this` or `other`, return a resulting RDD that contains a tuple with the
@@ -606,7 +624,7 @@ module Spark
     #
     def map_values(f)
       func = "Proc.new {|key, value| [key, @__mapping__.call(value)]}"
-      map(func).attach(mapping: f)
+      self.map(func).attach(mapping: f)
     end
 
     # Return an RDD with the first element of PairRDD
