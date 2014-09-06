@@ -71,17 +71,7 @@ module Worker
 
       def compute
         begin
-          @command.library.each{|lib| require lib}
-          eval(@command.before)
-
-          @command.stages.each do |stage|
-            eval(stage.before)
-            @iterator = eval(stage.main).call(@iterator, @split_index)
-            eval(stage.after)
-          end
-
-          # Can be important for threaded workers
-          eval(@command.after)
+          @iterator = @command.execute(@iterator, @split_index)
         rescue => e
           write(pack_int(-1))
           write(pack_int(e.message.size))
@@ -94,11 +84,8 @@ module Worker
       end
 
       def finish
-        # 0 = end of stream
         write(pack_int(0))
         flush
-
-        # loop { break if client_socket.recv(4096) == '' }
       end
 
   end

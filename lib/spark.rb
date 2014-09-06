@@ -3,19 +3,21 @@
 
 require "spark/ext/array"
 require "spark/ext/hash"
+require "spark/ext/string"
 require "spark/version"
 require "spark/error"
 
 module Spark
-  autoload :Context,      "spark/context"
-  autoload :Config,       "spark/config"
-  autoload :RDD,          "spark/rdd"
-  autoload :CLI,          "spark/cli"
-  autoload :Build,        "spark/build"
-  autoload :Serializer,   "spark/serializer"
-  autoload :Command,      "spark/command"
-  autoload :Helper,       "spark/helper"
-  autoload :StorageLevel, "spark/storage_level"
+  autoload :Context,        "spark/context"
+  autoload :Config,         "spark/config"
+  autoload :RDD,            "spark/rdd"
+  autoload :CLI,            "spark/cli"
+  autoload :Build,          "spark/build"
+  autoload :Serializer,     "spark/serializer"
+  autoload :Helper,         "spark/helper"
+  autoload :StorageLevel,   "spark/storage_level"
+  autoload :Command,        "spark/worker/command"
+  autoload :CommandBuilder, "spark/command_builder"
 
   extend Helper::Platform
 

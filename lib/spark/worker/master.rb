@@ -11,9 +11,7 @@ require "io/wait"
 dir = File.expand_path(File.join("..", "serializer"), File.dirname(__FILE__))
 Dir.glob(File.join(dir, "*.rb")) { |file| require file  }
 
-# Require template file
-require File.expand_path(File.join("..", "command", "template.rb"), File.dirname(__FILE__))
-
+require_relative "command"
 require_relative "pool_master"
 require_relative "worker"
 
