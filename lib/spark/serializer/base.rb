@@ -126,7 +126,7 @@ module Spark
       def dump(data, io)
         data = [data] unless data.is_a?(Array)
         data = data.each_slice(batch_size) if batched?
-        data.each do |item| 
+        data.each do |item|
           serialized = serialize(item)
           io.write(pack_int(serialized.size) + serialized)
         end
