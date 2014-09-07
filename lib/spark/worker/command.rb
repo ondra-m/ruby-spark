@@ -5,13 +5,13 @@ module Spark
     attr_accessor :libraries
 
     def initialize
-      @commands = []
+      @tasks = []
       @libraries = []
     end
 
-    def add_command(*args)
+    def add_task(*args)
       args.each do |arg|
-        @commands << arg
+        @tasks << arg
       end
     end
 
@@ -20,8 +20,8 @@ module Spark
       libraries.each{|lib| require lib}
 
       # Run all task
-      @commands.each do |command|
-        iterator = command.execute(iterator, split_index)
+      @tasks.each do |task|
+        iterator = task.execute(iterator, split_index)
       end
 
       # Return changed iterator. This is not be necessary for some tasks
@@ -31,7 +31,7 @@ module Spark
     end
 
     def last
-      @commands.last
+      @tasks.last
     end
 
   end

@@ -30,10 +30,10 @@ module Spark
       Marshal.load(Marshal.dump(self))
     end
 
-    def add_command(main)
-      new_command = Spark::Command::Task.new
-      new_command.exec_function = main
-      @command.add_command(new_command)
+    def add_task(main)
+      new_task = Spark::Command::Task.new
+      new_task.exec_function = main
+      @command.add_task(new_task)
       self
     end
 

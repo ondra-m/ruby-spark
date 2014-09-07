@@ -47,9 +47,9 @@ module Spark
     # Method should be private but _reduce need it public to
     # avoid recursion (and Stack level too deep)
     #
-    def add_command(main, func=nil, options={})
+    def add_task(main, func=nil, options={})
       @command.deep_copy
-              .add_command(main)
+              .add_task(main)
               .attach_main_function(func)
     end
 
@@ -251,7 +251,7 @@ module Spark
     #
     def foreach(f, options={})
       main = "Proc.new {|iterator| iterator.each {|_item_| @__main__.call(_item_)}; nil}"
-      comm = add_command(main, f, options)
+      comm = add_task(main, f, options)
 
       PipelinedRDD.new(self, comm).collect
       nil
@@ -265,7 +265,7 @@ module Spark
     #
     def foreach_partition(f, options={})
       main = "Proc.new {|iterator| @__main__.call(iterator); nil }"
-      comm = add_command(main, f, options)
+      comm = add_task(main, f, options)
 
       PipelinedRDD.new(self, comm).collect
       nil
@@ -283,7 +283,7 @@ module Spark
     #
     def map(f, options={})
       main = "Proc.new {|iterator| iterator.map!{|i| @__main__.call(i)} }"
-      comm = add_command(main, f, options)
+      comm = add_task(main, f, options)
 
       PipelinedRDD.new(self, comm)
     end
@@ -297,7 +297,7 @@ module Spark
     #
     def flat_map(f, options={})
       main = "Proc.new {|iterator| iterator.map!{|i| @__main__.call(i)}.flatten }"
-      comm = add_command(main, f, options)
+      comm = add_task(main, f, options)
 
       PipelinedRDD.new(self, comm)
     end
@@ -310,7 +310,7 @@ module Spark
     #
     def map_partitions(f, options={})
       main = "Proc.new {|iterator| @__main__.call(iterator) }"
-      comm = add_command(main, f, options)
+      comm = add_task(main, f, options)
 
       PipelinedRDD.new(self, comm)
     end
@@ -324,7 +324,7 @@ module Spark
     #
     def map_partitions_with_index(f, options={})
       main = "Proc.new {|iterator, index| @__main__.call(iterator, index) }"
-      comm = add_command(main, f, options)
+      comm = add_task(main, f, options)
 
       PipelinedRDD.new(self, comm)
     end
@@ -337,7 +337,7 @@ module Spark
     #
     def filter(f, options={})
       main = "Proc.new {|iterator| iterator.select{|i| @__main__.call(i)} }"
-      comm = add_command(main, f, options)
+      comm = add_task(main, f, options)
 
       PipelinedRDD.new(self, comm)
     end
@@ -350,7 +350,7 @@ module Spark
     #
     def compact
       main = "Proc.new {|iterator| iterator.compact!; iterator }"
-      comm = add_command(main)
+      comm = add_task(main)
 
       PipelinedRDD.new(self, comm)
     end
@@ -363,7 +363,7 @@ module Spark
     #
     def glom
       main = "Proc.new {|iterator| [iterator] }"
-      comm = add_command(main)
+      comm = add_task(main)
 
       PipelinedRDD.new(self, comm)
     end
@@ -668,7 +668,7 @@ module Spark
           # Partitions are already reduced
           rdd = self
         else
-          comm = add_command(main, seq_op, options)
+          comm = add_task(main, seq_op, options)
           rdd = PipelinedRDD.new(self, comm)
         end
 
@@ -676,7 +676,7 @@ module Spark
         rdd = rdd.coalesce(1).compact
 
         # Add the same function to new RDD
-        comm = rdd.add_command(main, comb_op, options)
+        comm = rdd.add_task(main, comb_op, options)
         comm.deserializer = @command.serializer
 
         # Value is returned in array
