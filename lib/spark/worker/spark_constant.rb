@@ -1,4 +1,5 @@
-module SpecialConstant
+module SparkConstant
   WORKER_ERROR = -1
   CREATE_WORKER = 0
+  KILL_WORKER = 1
 end
