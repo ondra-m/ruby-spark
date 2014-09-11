@@ -50,7 +50,7 @@ module Spark
     def add_task(main, func=nil, options={})
       @command.deep_copy
               .add_task(main)
-              .attach_main_function(func)
+              .attach_function!(main: func)
     end
 
     def serializer

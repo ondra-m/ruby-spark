@@ -31,19 +31,21 @@ module Spark
     end
 
     def add_task(main)
-      new_task = Spark::Command::Task.new
-      new_task.exec_function = main
-      @command.add_task(new_task)
-      self
-    end
-
-    def attach_main_function(func)
-      @command.last << serialize(:main, func) if !func.nil?
+      task = Spark::Command::Task.new
+      task.exec_function = main
+      @command.add_task(task)
       self
     end
 
     def attach_function(*args)
-      @command.last << parse(*args)
+      @command.last << parse(true, *args)
+      self
+    end
+
+    # The same as `attach_function` but without validation. 
+    # This should be used only from RDD.
+    def attach_function!(*args)
+      @command.last << parse(false, *args)
       self
     end
 
@@ -72,15 +74,16 @@ module Spark
         #   # => "def test(x)\n  x*x\nend\n@__test__=lambda(&method(:test))\r\n
         #   #    @__test2__=proc { |x| (x * x) }\r\n"
         #
-        def parse(*args)
+        def parse(validate, *args)
           result = ""
           args.each do |arg|
             case arg.class.name.to_sym
             when :Symbol
+              validate_name!(arg) if validate
               result << serialize(arg, arg)
             when :Hash
               arg.each do |name, func|
-                validate_name!(name)
+                validate_name!(name) if validate
                 result << serialize(name, func)
               end
             end
@@ -104,7 +107,7 @@ module Spark
             to_variable(name, serialize_proc(func))
           when :Symbol, :Method
             serialize_method(name, func)
-          end + "\r\n"
+          end.to_s + "\r\n"
         end
 
 
