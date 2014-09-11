@@ -127,22 +127,11 @@ module Worker
   #
   class Thread < Base
 
-    # # Worker is killed from outside
-    # # Spark need get 0 otherwise StreamReader will raise exception
-    # def before_kill
-    #   finish
-    # end
-
     def id
       ::Thread.current.object_id
     end
 
     private
-
-      # # Worker is called before kill
-      # def before_start
-      #   ::Thread.current[:worker] = self
-      # end
 
       # Threads changing for reading is very slow
       # Faster way is do it one by one

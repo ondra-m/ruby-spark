@@ -11,99 +11,131 @@ require_relative "worker"
 # New process group
 Process.setsid
 
-class Master
+# =================================================================================================
+# Master
+#
+module Master
 
-  extend Spark::Serializer::Helper
-  include SparkConstant
-
-  def self.init
-    @worker_type = ENV["WORKER_TYPE"]
-    @worker_arguments = ENV["WORKER_ARGUMENTS"]
-    @port = ENV["SERVER_PORT"]
-
-    @socket = TCPSocket.open("localhost", @port)
-  end
-
-  def self.run
-    init
-
-    selector = NIO::Selector.new
-    monitor = selector.register(@socket, :r)
-    monitor.value = Proc.new { receive_message }
-
-    loop {
-      selector.select {|monitor| monitor.value.call}
-    }
-  end
-
-  def self.receive_message
-    # Read int
-    command = unpack_int(@socket.read(4))
-
-    case command
-    when CREATE_WORKER
-      create_worker
-    when KILL_WORKER
-      kill_worker
-    when KILL_WORKER_AND_WAIT
-      kill_worker_and_wait
+  def self.create
+    case ENV["WORKER_TYPE"]
+    when "process"
+      Master::Process.new
+    when "thread"
+      Master::Thread.new
     end
   end
 
-  def self.create_worker
-    if @worker_type == "process"
-      create_worker_throught_process
-    else
-      create_worker_throught_thread
-    end
-  end
+  class Base
 
-  def self.create_worker_throught_process
-    if fork?
-      pid = Process.fork do
-        Worker::Process.new(@port).run
+    include Spark::Serializer::Helper
+    include SparkConstant
+
+    def initialize
+      @worker_arguments = ENV["WORKER_ARGUMENTS"]
+      @port = ENV["SERVER_PORT"]
+
+      @socket = TCPSocket.open("localhost", @port)
+    end
+
+    def run
+      selector = NIO::Selector.new
+      monitor = selector.register(@socket, :r)
+      monitor.value = Proc.new { receive_message }
+
+      loop {
+        selector.select {|monitor| monitor.value.call}
+      }
+    end
+
+    def receive_message
+      # Read int
+      command = unpack_int(@socket.read(4))
+
+      case command
+      when CREATE_WORKER
+        create_worker
+      when KILL_WORKER
+        kill_worker
+      when KILL_WORKER_AND_WAIT
+        kill_worker_and_wait
       end
-    else
-      pid = Process.spawn("ruby #{@worker_arguments} worker.rb #{@port}")
     end
 
-    # Detach child from master to avoid zombie process
-    Process.detach(pid)
   end
 
-  def self.create_worker_throught_thread
-    Thread.new do
-      Worker::Thread.new(@port).run
+  # ===============================================================================================
+  # Worker::Process
+  #
+  class Process < Base
+
+    def create_worker
+      if fork?
+        pid = ::Process.fork do
+          Worker::Process.new(@port).run
+        end
+      else
+        pid = ::Process.spawn("ruby #{@worker_arguments} worker.rb #{@port}")
+      end
+
+      # Detach child from master to avoid zombie process
+      ::Process.detach(pid)
     end
+
+    def kill_worker
+      worker_id = unpack_long(@socket.read(8))
+      ::Process.kill("TERM", worker_id)
+    rescue
+      nil
+    end
+
+    def kill_worker_and_wait
+      kill_worker
+      @socket.write(pack_int(0))
+    end
+
+    def fork?
+      @can_fork ||= _fork?
+    end
+
+    def _fork?
+      return false if !::Process.respond_to?(:fork)
+
+      pid = ::Process.fork
+      exit unless pid # exit the child immediately
+      true
+    rescue NotImplementedError
+      false
+    end
+
   end
 
-  def self.kill_worker
-    worker_id = unpack_long(@socket.read(8))
-    Process.kill("TERM", worker_id)
-  rescue
-    # Avoid Errno::ESRCH: No such process
-    nil
+  # ===============================================================================================
+  # Worker::Thread
+  #
+  class Thread < Base
+
+    def create_worker
+      Thread.new do
+        Worker::Thread.new(@port).run
+      end
+    end
+
+    def kill_worker
+      worker_id = unpack_long(@socket.read(8))
+
+      thread = ObjectSpace._id2ref(worker_id)
+      thread.kill
+    rescue
+      nil
+    end
+
+    def kill_worker_and_wait
+      kill_worker
+      @socket.write(pack_int(0))
+    end
+
   end
-
-  def self.kill_worker_and_wait
-    kill_worker
-    @socket.write(pack_int(0))
-  end
-
-  def self.fork?
-    @can_fork ||= _fork?
-  end
-
-  def self._fork?
-    return false if !Process.respond_to?(:fork)
-
-    pid = Process.fork
-    exit unless pid # exit the child immediately
-    true
-  rescue NotImplementedError
-    false
-  end
-
 end
 
-Master.run
+# Create proper master by worker_type
+Master.create.run
