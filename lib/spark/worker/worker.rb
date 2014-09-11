@@ -1,21 +1,33 @@
 #!/usr/bin/env ruby
 
+require "socket"
+require "io/wait"
+
+# Require all serializers
+require File.expand_path(File.join("..", "serializer", "all"), File.dirname(__FILE__))
+
+require_relative "command"
+require_relative "special_constant"
+
+def jruby?
+  RbConfig::CONFIG['ruby_install_name'] == 'jruby'
+end
+
 # =================================================================================================
 # Worker
 #
 module Worker
   class Base
+    
     include Spark::Serializer::Helper
+    include SpecialConstant
 
     attr_accessor :client_socket
 
     def initialize(client_socket)
       self.client_socket = client_socket
+      # Send back worker ID
       write(pack_long(id))
-    end
-
-    def name
-      "Worker"
     end
 
     def run
@@ -36,9 +48,11 @@ module Worker
     private
 
       def before_start
+        # Should be implemented in sub-classes
       end
 
       def before_end
+        # Should be implemented in sub-classes
       end
 
       def read(size)
@@ -73,7 +87,7 @@ module Worker
         begin
           @iterator = @command.execute(@iterator, @split_index)
         rescue => e
-          write(pack_int(-1))
+          write(pack_int(WORKER_ERROR))
           write(pack_int(e.message.size))
           write(e.message)
         end
@@ -88,6 +102,13 @@ module Worker
         flush
       end
 
+      def log(message=nil)
+        return if !$DEBUG
+
+        $stdout.puts %{==> #{Time.now.strftime("%H:%M:%S")} [#{id}] #{message}}
+        $stdout.flush
+      end
+
   end
 
   # ===============================================================================================
@@ -99,18 +120,6 @@ module Worker
       ::Process.pid
     end
 
-    private
-
-      def before_start
-        $PROGRAM_NAME = "RubySpark#{name}"
-
-        trap(:HUP){
-          write(pack_int(0))
-          client_socket.close
-          exit
-        }
-      end
-
   end
 
   # ===============================================================================================
@@ -118,11 +127,11 @@ module Worker
   #
   class Thread < Base
 
-    # Worker is killed from outside
-    # Spark need get 0 otherwise StreamReader will raise exception
-    def before_kill
-      finish
-    end
+    # # Worker is killed from outside
+    # # Spark need get 0 otherwise StreamReader will raise exception
+    # def before_kill
+    #   finish
+    # end
 
     def id
       ::Thread.current.object_id
@@ -130,10 +139,10 @@ module Worker
 
     private
 
-      # Worker is called before kill
-      def before_start
-        ::Thread.current[:worker] = self
-      end
+      # # Worker is called before kill
+      # def before_start
+      #   ::Thread.current[:worker] = self
+      # end
 
       # Threads changing for reading is very slow
       # Faster way is do it one by one
@@ -149,5 +158,15 @@ module Worker
       end
 
   end
+end
 
+# Worker is loaded as standalone
+if $PROGRAM_NAME == __FILE__
+  $PROGRAM_NAME = "RubySparkWorker"
+
+  port = ARGV[0]
+  socket = TCPSocket.open("localhost", port)
+
+  worker = Worker::Process.new(socket)
+  worker.run
 end

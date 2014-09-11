@@ -44,7 +44,9 @@ class RubyRDD[T: ClassTag](
     override def compute(split: Partition, context: TaskContext): Iterator[Array[Byte]] = {
 
       val env = SparkEnv.get
-      val worker: Socket = RubyWorker.create(workerDir, workerType, workerArguments)
+
+      // Get worker and id
+      val (worker, workerId) = RubyWorker.create(workerDir, workerType, workerArguments)
 
       // Start a thread to feed the process input from our parent's iterator
       val writerThread = new WriterThread(env, worker, split, context)
@@ -61,9 +63,6 @@ class RubyRDD[T: ClassTag](
       }
 
       val stream = new DataInputStream(new BufferedInputStream(worker.getInputStream, bufferSize))
-
-      // Get worker ID
-      val workerId = stream.readLong()
 
       // Send data
       writerThread.start()
@@ -175,7 +174,7 @@ class RubyRDD[T: ClassTag](
               stream.readFully(obj)
               obj
             case 0 => null
-            case -1 =>
+            case SpecialConstant.WORKER_ERROR =>
               // Exception from worker
               val length = stream.readInt()
               val obj = new Array[Byte](length)
@@ -212,7 +211,7 @@ class RubyRDD[T: ClassTag](
         if (!context.completed) {
           try {
             logWarning("Incomplete task interrupted: Attempting to kill Worker "+workerId.toString())
-            RubyWorker.destroy(workerId)
+            // RubyWorker.destroy(workerId)
           } catch {
             case e: Exception =>
               logError("Exception when trying to kill worker", e)

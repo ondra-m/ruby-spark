@@ -1,5 +1,9 @@
-# TODO: kill worker without controll socket to master
+# TODO: - kill worker without controll socket to master
 #       e.g. controll thread for every worker
+#       - přidat operaci undo pro Command, přepínač kde jze zvolit
+#       že nebude inplace edit - když bude chyba tak se vrátí
+#       poslední správný výsledek
+#       - do spaen dávat rlimits
 
 require "spark/ext/array"
 require "spark/ext/hash"
