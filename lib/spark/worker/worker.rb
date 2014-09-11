@@ -24,8 +24,8 @@ module Worker
 
     attr_accessor :client_socket
 
-    def initialize(client_socket)
-      self.client_socket = client_socket
+    def initialize(port)
+      self.client_socket = TCPSocket.open("localhost", port)
       # Send back worker ID
       write(pack_long(id))
     end
@@ -165,8 +165,7 @@ if $PROGRAM_NAME == __FILE__
   $PROGRAM_NAME = "RubySparkWorker"
 
   port = ARGV[0]
-  socket = TCPSocket.open("localhost", port)
 
-  worker = Worker::Process.new(socket)
+  worker = Worker::Process.new(port)
   worker.run
 end

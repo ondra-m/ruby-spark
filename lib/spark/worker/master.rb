@@ -9,6 +9,9 @@ require "nio"
 require_relative "special_constant"
 require_relative "worker"
 
+# New process group
+Process.setsid
+
 class Master
 
   include SpecialConstant
@@ -44,11 +47,46 @@ class Master
   end
 
   def self.create_worker
-    pid = Process.spawn("ruby #{@worker_arguments} worker.rb #{@port}")
+    if @worker_type == "process"
+      create_worker_throught_process
+    else
+      create_worker_throught_thread
+    end
+  end
 
-    # Detach child from master to avoid kill zombie process
+  def self.create_worker_throught_process
+    if fork?
+      pid = Process.fork do
+        Worker::Process.new(@port).run
+      end
+    else
+      pid = Process.spawn("ruby #{@worker_arguments} worker.rb #{@port}")
+    end
+
+    # Detach child from master to avoid zombie process
     Process.detach(pid)
   end
+
+  def self.create_worker_throught_thread
+    Thread.new do
+      Worker::Thread.new(@port).run
+    end
+  end
+
+  def self.fork?
+    @can_fork ||= _fork?
+  end
+
+  def self._fork?
+    return false if !Process.respond_to?(:fork)
+
+    pid = Process.fork
+    exit unless pid # exit the child immediately
+    true
+  rescue NotImplementedError
+    false
+  end
+
 end
 
 Master.run
