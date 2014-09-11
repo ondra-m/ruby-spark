@@ -114,8 +114,17 @@ module Master
   #
   class Thread < Base
 
+    def initialize
+      ::Thread.abort_on_exception = true
+
+      # For synchronous access to socket IO
+      $mutex = Mutex.new
+
+      super
+    end
+
     def create_worker
-      Thread.new do
+      ::Thread.new do
         Worker::Thread.new(@port).run
       end
     end

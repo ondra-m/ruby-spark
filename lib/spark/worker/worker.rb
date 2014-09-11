@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 
 require "socket"
-require "io/wait"
 
 # Require all serializers
 require File.expand_path(File.join("..", "serializer", "all"), File.dirname(__FILE__))
