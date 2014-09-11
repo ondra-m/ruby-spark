@@ -45,6 +45,8 @@ class Master
       create_worker
     when KILL_WORKER
       kill_worker
+    when KILL_WORKER_AND_WAIT
+      kill_worker_and_wait
     end
   end
 
@@ -81,6 +83,11 @@ class Master
   rescue
     # Avoid Errno::ESRCH: No such process
     nil
+  end
+
+  def self.kill_worker_and_wait
+    kill_worker
+    @socket.write(pack_int(0))
   end
 
   def self.fork?

@@ -90,7 +90,7 @@ module Spark
 
   def self.stop
     @context.stop
-    destroy_workers
+    RubyWorker.stopServer
   rescue
     nil
   ensure
@@ -137,13 +137,6 @@ module Spark
     JLogger.getLogger("org").setLevel(JLevel.toLevel("OFF"))
     JLogger.getLogger("akka").setLevel(JLevel.toLevel("OFF"))
     JLogger.getRootLogger().setLevel(JLevel.toLevel("OFF"))
-  end
-
-  # Term all masters, pool masters and workers
-  def self.destroy_workers
-    load_lib
-    RubyWorker.destroyAll
-    Process.wait rescue nil
   end
 
   # ===============================================================================

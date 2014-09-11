@@ -2,4 +2,5 @@ module SparkConstant
   WORKER_ERROR = -1
   CREATE_WORKER = 0
   KILL_WORKER = 1
+  KILL_WORKER_AND_WAIT = 2
 end
