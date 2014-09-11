@@ -131,6 +131,7 @@ module Spark
     # Actions which return value
 
     # Return an array that contains all of the elements in this RDD.
+    # RJB raise an error if stage is killed.
     #
     # toArray: mri => Array
     #          jruby => ArrayList
@@ -138,7 +139,8 @@ module Spark
     def collect
       # @command.serializer.load(jrdd.collect.toArray.to_a)
       @command.serializer.load(jrdd.collect)
-      # jrdd.collect
+    rescue
+      nil
     end
 
     # Convert an Array to Hash

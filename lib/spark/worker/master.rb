@@ -77,8 +77,10 @@ class Master
 
   def self.kill_worker
     worker_id = unpack_long(@socket.read(8))
-
     Process.kill("TERM", worker_id)
+  rescue
+    # Avoid Errno::ESRCH: No such process
+    nil
   end
 
   def self.fork?
