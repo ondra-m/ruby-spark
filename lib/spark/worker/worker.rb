@@ -6,7 +6,7 @@ require "io/wait"
 # Require all serializers
 require File.expand_path(File.join("..", "serializer", "all"), File.dirname(__FILE__))
 
-require_relative "special_constant"
+require_relative "spark_constant"
 require_relative "command"
 
 def jruby?

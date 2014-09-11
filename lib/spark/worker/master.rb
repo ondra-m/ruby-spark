@@ -13,7 +13,7 @@ Process.setsid
 
 class Master
 
-  include Spark::Serializer::Helper
+  extend Spark::Serializer::Helper
   include SparkConstant
 
   def self.init
@@ -78,7 +78,7 @@ class Master
   def self.kill_worker
     worker_id = unpack_long(@socket.read(8))
 
-    Process.kill(worker_id)
+    Process.kill("TERM", worker_id)
   end
 
   def self.fork?

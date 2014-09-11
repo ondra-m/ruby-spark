@@ -118,11 +118,11 @@ object RubyWorker extends Logging {
   }
 
   /* -------------------------------------------------------------------------------------------- */
- 
-  private def kill(workerId: Long){
+
+  def kill(workerId: Long){
     masterStream.writeInt(RubyConstant.KILL_WORKER)
     masterStream.writeLong(workerId)
-  } 
+  }
 
   /* -------------------------------------------------------------------------------------------- */
 

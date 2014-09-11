@@ -71,7 +71,7 @@ class RubyRDD[T: ClassTag](
       new MonitorThread(workerId, worker, context).start()
 
       // Return an iterator that read lines from the process's stdout
-      val stdoutIterator = new StreamReader(stream, writerThread)
+      val stdoutIterator = new StreamReader(stream, writerThread, context)
 
       // An iterator that wraps around an existing iterator to provide task killing functionality.
       new InterruptibleIterator(context, stdoutIterator)
@@ -146,7 +146,7 @@ class RubyRDD[T: ClassTag](
 
     /* ------------------------------------------------------------------------------------------ */
 
-    class StreamReader(stream: DataInputStream, writerThread: WriterThread) extends Iterator[Array[Byte]] {
+    class StreamReader(stream: DataInputStream, writerThread: WriterThread, context: TaskContext) extends Iterator[Array[Byte]] {
 
       def hasNext = _nextObj != null
       var _nextObj = read()
@@ -183,13 +183,19 @@ class RubyRDD[T: ClassTag](
           }
         } catch {
 
-          case eof: EOFException => {
+          case e: Exception if context.interrupted =>
+            logDebug("Exception thrown after task interruption", e)
+            throw new TaskKilledException
+
+          case e: Exception if writerThread.exception.isDefined =>
+            logError("Python worker exited unexpectedly (crashed)", e)
+            logError("This may have been caused by a prior exception:", writerThread.exception.get)
+            throw writerThread.exception.get
+
+          case eof: EOFException =>
             throw new SparkException("Worker exited unexpectedly (crashed)", eof)
-          }
-        
         }
       }
-
     } // end StreamReader
 
     /* ---------------------------------------------------------------------------------------------
