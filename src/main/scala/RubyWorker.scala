@@ -11,8 +11,6 @@ import org.apache.spark.util.Utils
 import org.apache.spark.api.python.RedirectThread
 import org.apache.spark.Logging
 
-// import org.apache.spark.api.ruby.SpecialConstant
-
 
 /* =================================================================================================
  * Object RubyWorker
@@ -25,8 +23,6 @@ object RubyWorker extends Logging {
 
   val PROCESS_WAIT_TIMEOUT = 10000
 
-  val bufferSize = 65536
-  
   private var serverSocket: ServerSocket = null
   private val serverHost = InetAddress.getByAddress(Array(127, 0, 0, 1))
   private var serverPort: Int = 0
@@ -59,7 +55,7 @@ object RubyWorker extends Logging {
 
   def createWorker: (Socket, Long) = {
     synchronized {
-      masterStream.writeInt(SpecialConstant.CREATE_WORKER)
+      masterStream.writeInt(RubyConstant.CREATE_WORKER)
       var socket = serverSocket.accept()
 
       var id = new DataInputStream(socket.getInputStream).readLong()
@@ -120,6 +116,13 @@ object RubyWorker extends Logging {
       }
     }
   }
+
+  /* -------------------------------------------------------------------------------------------- */
+ 
+  private def kill(workerId: Long){
+    masterStream.writeInt(RubyConstant.KILL_WORKER)
+    masterStream.writeLong(workerId)
+  } 
 
   /* -------------------------------------------------------------------------------------------- */
 

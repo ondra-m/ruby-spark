@@ -6,8 +6,8 @@ require "io/wait"
 # Require all serializers
 require File.expand_path(File.join("..", "serializer", "all"), File.dirname(__FILE__))
 
-require_relative "command"
 require_relative "special_constant"
+require_relative "command"
 
 def jruby?
   RbConfig::CONFIG['ruby_install_name'] == 'jruby'
@@ -20,7 +20,7 @@ module Worker
   class Base
     
     include Spark::Serializer::Helper
-    include SpecialConstant
+    include SparkConstant
 
     attr_accessor :client_socket
 

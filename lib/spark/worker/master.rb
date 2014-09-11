@@ -6,7 +6,6 @@ require "socket"
 require "io/wait"
 require "nio"
 
-require_relative "special_constant"
 require_relative "worker"
 
 # New process group
@@ -14,7 +13,8 @@ Process.setsid
 
 class Master
 
-  include SpecialConstant
+  include Spark::Serializer::Helper
+  include SparkConstant
 
   def self.init
     @worker_type = ENV["WORKER_TYPE"]
@@ -38,11 +38,13 @@ class Master
 
   def self.receive_message
     # Read int
-    command = @socket.read(4).unpack("l>")[0]
+    command = unpack_int(@socket.read(4))
 
     case command
     when CREATE_WORKER
       create_worker
+    when KILL_WORKER
+      kill_worker
     end
   end
 
@@ -71,6 +73,12 @@ class Master
     Thread.new do
       Worker::Thread.new(@port).run
     end
+  end
+
+  def self.kill_worker
+    worker_id = unpack_long(@socket.read(8))
+
+    Process.kill(worker_id)
   end
 
   def self.fork?

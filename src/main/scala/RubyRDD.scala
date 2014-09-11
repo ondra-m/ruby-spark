@@ -174,7 +174,7 @@ class RubyRDD[T: ClassTag](
               stream.readFully(obj)
               obj
             case 0 => null
-            case SpecialConstant.WORKER_ERROR =>
+            case RubyConstant.WORKER_ERROR =>
               // Exception from worker
               val length = stream.readInt()
               val obj = new Array[Byte](length)
@@ -193,9 +193,7 @@ class RubyRDD[T: ClassTag](
     } // end StreamReader
 
     /* ---------------------------------------------------------------------------------------------
-     * It is necessary to have a monitor thread for python workers if the user cancels with
-     * interrupts disabled. In that case we will need to explicitly kill the worker, otherwise 
-     * the threads can block indefinitely.
+     * Monitor thread for controll worker. Kill worker if task is interrupted.
      */
 
     class MonitorThread(workerId: Long, worker: Socket, context: TaskContext)
@@ -211,15 +209,14 @@ class RubyRDD[T: ClassTag](
         if (!context.completed) {
           try {
             logWarning("Incomplete task interrupted: Attempting to kill Worker "+workerId.toString())
-            // RubyWorker.destroy(workerId)
+            RubyWorker.kill(workerId)
           } catch {
             case e: Exception =>
-              logError("Exception when trying to kill worker", e)
+              logError("Exception when trying to kill worker "+workerId.toString(), e)
           }
         }
       }
     } // end MonitorThread
-
   } // end RubyRDD
 
 
