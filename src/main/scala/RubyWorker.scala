@@ -34,7 +34,7 @@ object RubyWorker extends Logging {
 
   private var workers = new mutable.WeakHashMap[Socket, Int]()
 
-  /* -------------------------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------------------------- */
 
   def create(workerDir: String, workerType: String, workerArguments: String): (Socket, Long) = {
     synchronized {
@@ -52,7 +52,7 @@ object RubyWorker extends Logging {
     }
   }
 
-  /* -------------------------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------------------------- */
 
   def createWorker: (Socket, Long) = {
     synchronized {
@@ -66,7 +66,8 @@ object RubyWorker extends Logging {
     }
   }
 
-  /* -------------------------------------------------------------------------------------------- */
+  /* ---------------------------------------------------------------------------------------------- 
+   */
 
   private def createServer(workerDir: String, workerType: String, workerArguments: String){
     synchronized {
@@ -89,7 +90,7 @@ object RubyWorker extends Logging {
     }
   }
 
-  /* -------------------------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------------------------- */
 
   private def createMaster(workerDir: String, workerType: String, workerArguments: String){
     synchronized {
@@ -109,6 +110,7 @@ object RubyWorker extends Logging {
       // Wait for it to connect to our socket
       serverSocket.setSoTimeout(PROCESS_WAIT_TIMEOUT)
       try {
+        // Use socket for comunication. Keep stdout and stdin for log
         masterSocket = serverSocket.accept()
         masterOutputStream = new DataOutputStream(masterSocket.getOutputStream)
         masterInputStream  = new DataInputStream(masterSocket.getInputStream)
@@ -119,24 +121,27 @@ object RubyWorker extends Logging {
     }
   }
 
-  /* -------------------------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------------------------- */
 
   def kill(workerId: Long){
     masterOutputStream.writeInt(RubyConstant.KILL_WORKER)
     masterOutputStream.writeLong(workerId)
   }
 
-  /* -------------------------------------------------------------------------------------------- */
-  
+  /* ------------------------------------------------------------------------------------------- */
+
   def killAndWait(workerId: Long){
     masterOutputStream.writeInt(RubyConstant.KILL_WORKER_AND_WAIT)
     masterOutputStream.writeLong(workerId)
 
     // Wait for answer
-    masterInputStream.readInt()
+    masterInputStream.readInt() match {
+      case RubyConstant.SUCCESSFULLY_KILLED  => logInfo(s"Worker $workerId was successfully killed")
+      case RubyConstant.UNSUCCESSFUL_KILLING => logInfo(s"Worker $workerId cannot be killed")
+    }
   }
 
-  /* -------------------------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------------------------- */
 
   def stopServer{
     synchronized {
@@ -159,18 +164,19 @@ object RubyWorker extends Logging {
     }
   }
 
-  /* -------------------------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------------------------- */
 
-  private def redirectStreamsToStderr(stdout: InputStream, stderr: InputStream) {
+  private def redirectStreamsToStderr(streams: InputStream*) {
     try {
-      new RedirectThread(stdout, System.err, "stdout reader").start()
-      new RedirectThread(stderr, System.err, "stderr reader").start()
+      for(stream <- streams) {
+        new RedirectThread(stream, System.err, "stream reader").start()
+      }
     } catch {
       case e: Exception =>
         logError("Exception in redirecting streams", e)
     }
   }
 
-  /* -------------------------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------------------------- */
 
 }

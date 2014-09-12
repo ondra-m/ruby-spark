@@ -9,7 +9,7 @@ require "nio"
 require_relative "worker"
 
 # New process group
-Process.setsid
+# Process.setsid
 
 # =================================================================================================
 # Master
@@ -49,7 +49,7 @@ module Master
 
     def receive_message
       # Read int
-      command = unpack_int(@socket.read(4))
+      command = unpack_int(read(4))
 
       case command
       when CREATE_WORKER
@@ -59,6 +59,22 @@ module Master
       when KILL_WORKER_AND_WAIT
         kill_worker_and_wait
       end
+    end
+
+    def kill_worker_and_wait
+      if kill_worker
+        write(pack_int(SUCCESSFULLY_KILLED))
+      else
+        write(pack_int(UNSUCCESSFUL_KILLING))
+      end
+    end
+
+    def read(count)
+      @socket.read(count)
+    end
+
+    def write(data)
+      @socket.write(data)
     end
 
   end
@@ -82,15 +98,10 @@ module Master
     end
 
     def kill_worker
-      worker_id = unpack_long(@socket.read(8))
+      worker_id = unpack_long(read(8))
       ::Process.kill("TERM", worker_id)
     rescue
       nil
-    end
-
-    def kill_worker_and_wait
-      kill_worker
-      @socket.write(pack_int(0))
     end
 
     def fork?
@@ -130,17 +141,12 @@ module Master
     end
 
     def kill_worker
-      worker_id = unpack_long(@socket.read(8))
+      worker_id = unpack_long(read(8))
 
       thread = ObjectSpace._id2ref(worker_id)
       thread.kill
     rescue
       nil
-    end
-
-    def kill_worker_and_wait
-      kill_worker
-      @socket.write(pack_int(0))
     end
 
   end
