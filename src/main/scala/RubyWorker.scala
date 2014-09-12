@@ -1,7 +1,7 @@
 package org.apache.spark.api.ruby
 
 import java.io.{DataInputStream, InputStream, DataOutputStream, BufferedOutputStream}
-import java.net.{InetAddress, Socket, SocketException}
+import java.net.{InetAddress, ServerSocket, Socket, SocketException}
 
 import scala.collection.mutable
 import scala.collection.JavaConversions._
@@ -16,166 +16,167 @@ import org.apache.spark.Logging
  * Object RubyWorker
  * =================================================================================================
  *
- * Store all workers
+ * Create and store server for creating workers.
  */
 
 object RubyWorker extends Logging {
 
-  val PROCESS_WAIT_TIMEOUT_MS = 10000
+  val PROCESS_WAIT_TIMEOUT = 10000
 
-  val COMMAND_KILL_WORKER = 0
+  private var serverSocket: ServerSocket = null
+  private val serverHost = InetAddress.getByAddress(Array(127, 0, 0, 1))
+  private var serverPort: Int = 0
 
   private var master: Process = null
-  private val masterHost = InetAddress.getByAddress(Array(127, 0, 0, 1))
-  private var masterPort: Int = 0
+  private var masterSocket: Socket = null
+  private var masterOutputStream: DataOutputStream = null
+  private var masterInputStream:  DataInputStream = null
 
-  private var commandSocket: Socket = null
-  private var commandStream: DataOutputStream = null
+  private var workers = new mutable.WeakHashMap[Socket, Int]()
 
-  def create(workerDir: String, workerType: String, workerArguments: String): Socket = {
+  /* ------------------------------------------------------------------------------------------- */
+
+  def create(workerDir: String, workerType: String, workerArguments: String): (Socket, Long) = {
     synchronized {
-      if(workerType == "simple"){
-        // not yet
-        new Socket
-      }
-      else{
-        createThroughMaster(workerDir, workerType, workerArguments)
-      }
-
-    } // end synchronized
-  } // end create
-
-  /* -------------------------------------------------------------------------------------------- */
-
-  def destroy(workerId: Long) {
-    synchronized {
-      // Send master id of worker to kill
-      commandStream.writeInt(COMMAND_KILL_WORKER)
-      commandStream.writeLong(workerId)
-      commandStream.flush()
-    }
-  }
-
-  /* -----------------------------------------------------------------------------------------------
-   * Destroy all process, threads and simple workers
-   * Method is user when program is ready to close
-   */
-
-  def destroyAll() {
-    synchronized {
-      // Simple worker cannot be stopped
-      stopMaster()
-    }
-  }
-
-  /* -----------------------------------------------------------------------------------------------
-   * Connect to master a get socket to new worker which will listen on port
-   */
-
-  def createThroughMaster(workerDir: String, workerType: String, workerArguments: String): Socket = {
-    synchronized {
-      // Start the master if it hasn't been started
-      startMaster(workerDir, workerType, workerArguments)
+      // Create the server if it hasn't been started
+      createServer(workerDir, workerType, workerArguments)
 
       // Attempt to connect, restart and retry once if it fails
       try {
-        new Socket(masterHost, masterPort)
+        createWorker
       } catch {
         case exc: SocketException =>
           logWarning("Worker unexpectedly quit, attempting to restart")
-          // If one connection fail -> destroy master and all workers?
-          // stopMaster()
-          // startMaster()
-          new Socket(masterHost, masterPort)
+          createWorker
       }
-    } // end synchronized
-  } // end createThroughMaster
+    }
+  }
 
-  /* -------------------------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------------------------- */
 
-  private def startMaster(workerDir: String, workerType: String, workerArguments: String){
+  def createWorker: (Socket, Long) = {
+    synchronized {
+      masterOutputStream.writeInt(RubyConstant.CREATE_WORKER)
+      var socket = serverSocket.accept()
+
+      var id = new DataInputStream(socket.getInputStream).readLong()
+      workers.put(socket, id)
+
+      (socket, id)
+    }
+  }
+
+  /* ---------------------------------------------------------------------------------------------- 
+   */
+
+  private def createServer(workerDir: String, workerType: String, workerArguments: String){
     synchronized {
       // Already running?
-      if(master != null) {
+      if(serverSocket != null && masterSocket != null) {
         return
       }
 
       try {
-        // Create and start the master
-        // -C: change worker dir before execution
-        val exec = List("ruby", "-C", workerDir, workerArguments, "master.rb").filter(_ != "")
+        // Start Socket Server for comunication
+        serverSocket = new ServerSocket(0, 0, serverHost)
+        serverPort = serverSocket.getLocalPort
 
-        val pb = new ProcessBuilder(exec)
-        pb.environment().put("WORKER_TYPE", workerType)
-        master = pb.start()
+        // Create a master for worker creations
+        createMaster(workerDir, workerType, workerArguments)
+      } catch {
+        case e: Exception => 
+          throw new SparkException("There was a problem with creating a server", e)
+      }
+    }
+  }
 
-        // Master create TCPServer and send back port
-        val in = new DataInputStream(master.getInputStream)
-        masterPort = in.readInt()
+  /* ------------------------------------------------------------------------------------------- */
 
-        // Redirect master stdout and stderr
-        redirectStreamsToStderr(in, master.getErrorStream)
+  private def createMaster(workerDir: String, workerType: String, workerArguments: String){
+    synchronized {
+      // Create and start the master
+      // -C: change worker dir before execution
+      val exec = List("ruby", "-C", workerDir, workerArguments, "master.rb").filter(_ != "")
 
-        commandSocket = new Socket(masterHost, masterPort)
-        commandStream = new DataOutputStream(new BufferedOutputStream(commandSocket.getOutputStream))
-    
+      val pb = new ProcessBuilder(exec)
+      pb.environment().put("WORKER_TYPE", workerType)
+      pb.environment().put("WORKER_ARGUMENTS", workerArguments)
+      pb.environment().put("SERVER_PORT", serverPort.toString())
+      master = pb.start()
+
+      // Redirect master stdout and stderr
+      redirectStreamsToStderr(master.getInputStream, master.getErrorStream)
+
+      // Wait for it to connect to our socket
+      serverSocket.setSoTimeout(PROCESS_WAIT_TIMEOUT)
+      try {
+        // Use socket for comunication. Keep stdout and stdin for log
+        masterSocket = serverSocket.accept()
+        masterOutputStream = new DataOutputStream(masterSocket.getOutputStream)
+        masterInputStream  = new DataInputStream(masterSocket.getInputStream)
       } catch {
         case e: Exception =>
-
-          // If the master exists, wait for it to finish and get its stderr
-          val stderr = Option(master).flatMap { d => Utils.getStderr(d, PROCESS_WAIT_TIMEOUT_MS) }
-                                     .getOrElse("")
-
-          stopMaster()
-
-          if (stderr != "") {
-            val formattedStderr = stderr.replace("\n", "\n  ")
-            val errorMessage = s"""
-              |Error from master:
-              |  $formattedStderr
-              |$e"""
-
-            // Append error message from python master, but keep original stack trace
-            val wrappedException = new SparkException(errorMessage.stripMargin)
-            wrappedException.setStackTrace(e.getStackTrace)
-            throw wrappedException
-          } else {
-            throw e
-          }
+          throw new SparkException("Ruby master did not connect back in time", e)
       }
-
-      // Important: don't close master's stdin (master.getOutputStream) so it can correctly
-      // detect our disappearance.
     }
   }
 
-  /* -------------------------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------------------------- */
 
-  private def stopMaster() {
+  def kill(workerId: Long){
+    masterOutputStream.writeInt(RubyConstant.KILL_WORKER)
+    masterOutputStream.writeLong(workerId)
+  }
+
+  /* ------------------------------------------------------------------------------------------- */
+
+  def killAndWait(workerId: Long){
+    masterOutputStream.writeInt(RubyConstant.KILL_WORKER_AND_WAIT)
+    masterOutputStream.writeLong(workerId)
+
+    // Wait for answer
+    masterInputStream.readInt() match {
+      case RubyConstant.SUCCESSFULLY_KILLED  => logInfo(s"Worker $workerId was successfully killed")
+      case RubyConstant.UNSUCCESSFUL_KILLING => logInfo(s"Worker $workerId cannot be killed")
+    }
+  }
+
+  /* ------------------------------------------------------------------------------------------- */
+
+  def stopServer{
     synchronized {
-      // Request shutdown of existing master by sending SIGTERM
-      if (master != null) {
-        master.destroy()
-      }
+      // Kill workers
+      workers.foreach { case (socket, id) => killAndWait(id) }
 
-      // Clear previous signs of master
+      // Kill master
+      master.destroy()
+
+      // Stop SocketServer
+      serverSocket.close()
+
+      // Clean variables
+      serverSocket = null
+      serverPort = 0
       master = null
-      masterPort = 0
+      masterSocket = null
+      masterOutputStream = null
+      masterInputStream = null
     }
   }
 
-  /* -------------------------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------------------------- */
 
-  private def redirectStreamsToStderr(stdout: InputStream, stderr: InputStream) {
+  private def redirectStreamsToStderr(streams: InputStream*) {
     try {
-      new RedirectThread(stdout, System.err, "stdout reader").start()
-      new RedirectThread(stderr, System.err, "stderr reader").start()
+      for(stream <- streams) {
+        new RedirectThread(stream, System.err, "stream reader").start()
+      }
     } catch {
       case e: Exception =>
         logError("Exception in redirecting streams", e)
     }
   }
 
-  /* -------------------------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------------------------- */
 
 }

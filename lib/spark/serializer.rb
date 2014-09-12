@@ -11,18 +11,14 @@ module Spark
     DEFAULT_BATCH_SIZE = 1024
     DEFAULT_SERIALIZER_NAME = "marshal"
 
-    def self.camelize(text)
-      text.to_s.gsub(/\/(.?)/) { "::#{$1.upcase}" }.gsub(/(?:^|_)(.)/) { $1.upcase }
-    end
-
     def self.get(suggestion)
-      const_get(camelize(suggestion)) rescue nil
+      const_get(suggestion.to_s.camelize) rescue nil
     end
 
     def self.get!(suggestion)
-      const_get(camelize(suggestion))
+      const_get(suggestion.to_s.camelize)
     rescue
-      raise Spark::NotImplemented, "Serializer #{camelize(suggestion)} not exist."
+      raise Spark::NotImplemented, "Serializer #{suggestion.to_s.camelize} not exist."
     end
   end
 end

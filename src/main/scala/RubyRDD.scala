@@ -44,7 +44,9 @@ class RubyRDD[T: ClassTag](
     override def compute(split: Partition, context: TaskContext): Iterator[Array[Byte]] = {
 
       val env = SparkEnv.get
-      val worker: Socket = RubyWorker.create(workerDir, workerType, workerArguments)
+
+      // Get worker and id
+      val (worker, workerId) = RubyWorker.create(workerDir, workerType, workerArguments)
 
       // Start a thread to feed the process input from our parent's iterator
       val writerThread = new WriterThread(env, worker, split, context)
@@ -62,9 +64,6 @@ class RubyRDD[T: ClassTag](
 
       val stream = new DataInputStream(new BufferedInputStream(worker.getInputStream, bufferSize))
 
-      // Get worker ID
-      val workerId = stream.readLong()
-
       // Send data
       writerThread.start()
 
@@ -72,7 +71,7 @@ class RubyRDD[T: ClassTag](
       new MonitorThread(workerId, worker, context).start()
 
       // Return an iterator that read lines from the process's stdout
-      val stdoutIterator = new StreamReader(stream, writerThread)
+      val stdoutIterator = new StreamReader(stream, writerThread, context)
 
       // An iterator that wraps around an existing iterator to provide task killing functionality.
       new InterruptibleIterator(context, stdoutIterator)
@@ -147,7 +146,7 @@ class RubyRDD[T: ClassTag](
 
     /* ------------------------------------------------------------------------------------------ */
 
-    class StreamReader(stream: DataInputStream, writerThread: WriterThread) extends Iterator[Array[Byte]] {
+    class StreamReader(stream: DataInputStream, writerThread: WriterThread, context: TaskContext) extends Iterator[Array[Byte]] {
 
       def hasNext = _nextObj != null
       var _nextObj = read()
@@ -175,7 +174,7 @@ class RubyRDD[T: ClassTag](
               stream.readFully(obj)
               obj
             case 0 => null
-            case -1 =>
+            case RubyConstant.WORKER_ERROR =>
               // Exception from worker
               val length = stream.readInt()
               val obj = new Array[Byte](length)
@@ -184,19 +183,23 @@ class RubyRDD[T: ClassTag](
           }
         } catch {
 
-          case eof: EOFException => {
+          case e: Exception if context.interrupted =>
+            logDebug("Exception thrown after task interruption", e)
+            throw new TaskKilledException
+
+          case e: Exception if writerThread.exception.isDefined =>
+            logError("Python worker exited unexpectedly (crashed)", e)
+            logError("This may have been caused by a prior exception:", writerThread.exception.get)
+            throw writerThread.exception.get
+
+          case eof: EOFException =>
             throw new SparkException("Worker exited unexpectedly (crashed)", eof)
-          }
-        
         }
       }
-
     } // end StreamReader
 
     /* ---------------------------------------------------------------------------------------------
-     * It is necessary to have a monitor thread for python workers if the user cancels with
-     * interrupts disabled. In that case we will need to explicitly kill the worker, otherwise 
-     * the threads can block indefinitely.
+     * Monitor thread for controll worker. Kill worker if task is interrupted.
      */
 
     class MonitorThread(workerId: Long, worker: Socket, context: TaskContext)
@@ -212,15 +215,14 @@ class RubyRDD[T: ClassTag](
         if (!context.completed) {
           try {
             logWarning("Incomplete task interrupted: Attempting to kill Worker "+workerId.toString())
-            RubyWorker.destroy(workerId)
+            RubyWorker.kill(workerId)
           } catch {
             case e: Exception =>
-              logError("Exception when trying to kill worker", e)
+              logError("Exception when trying to kill worker "+workerId.toString(), e)
           }
         }
       }
     } // end MonitorThread
-
   } // end RubyRDD
 
 

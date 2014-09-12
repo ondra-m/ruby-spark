@@ -3,8 +3,10 @@ source 'https://rubygems.org'
 gemspec
 
 gem 'sourcify', '0.6.0.rc4'
+gem 'method_source'
 gem 'thor'
 gem 'pry'
+gem 'nio4r'
 # gem 'yaml'
 # gem 'childprocess'
 

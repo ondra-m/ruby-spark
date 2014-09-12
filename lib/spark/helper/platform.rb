@@ -14,6 +14,10 @@ module Spark
         RbConfig::CONFIG['ruby_install_name'] == 'jruby'
       end
 
+      def pry?
+        !!Thread.current[:__pry__]
+      end
+
     end
   end
 end

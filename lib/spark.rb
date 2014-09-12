@@ -1,21 +1,27 @@
-# TODO: kill worker without controll socket to master
+# TODO: - kill worker without controll socket to master
 #       e.g. controll thread for every worker
+#       - přidat operaci undo pro Command, přepínač kde jze zvolit
+#       že nebude inplace edit - když bude chyba tak se vrátí
+#       poslední správný výsledek
+#       - do spaen dávat rlimits
 
 require "spark/ext/array"
 require "spark/ext/hash"
+require "spark/ext/string"
 require "spark/version"
 require "spark/error"
 
 module Spark
-  autoload :Context,      "spark/context"
-  autoload :Config,       "spark/config"
-  autoload :RDD,          "spark/rdd"
-  autoload :CLI,          "spark/cli"
-  autoload :Build,        "spark/build"
-  autoload :Serializer,   "spark/serializer"
-  autoload :Command,      "spark/command"
-  autoload :Helper,       "spark/helper"
-  autoload :StorageLevel, "spark/storage_level"
+  autoload :Context,        "spark/context"
+  autoload :Config,         "spark/config"
+  autoload :RDD,            "spark/rdd"
+  autoload :CLI,            "spark/cli"
+  autoload :Build,          "spark/build"
+  autoload :Serializer,     "spark/serializer"
+  autoload :Helper,         "spark/helper"
+  autoload :StorageLevel,   "spark/storage_level"
+  autoload :Command,        "spark/worker/command"
+  autoload :CommandBuilder, "spark/command_builder"
 
   extend Helper::Platform
 
@@ -84,7 +90,7 @@ module Spark
 
   def self.stop
     @context.stop
-    destroy_workers
+    RubyWorker.stopServer
   rescue
     nil
   ensure
@@ -131,13 +137,6 @@ module Spark
     JLogger.getLogger("org").setLevel(JLevel.toLevel("OFF"))
     JLogger.getLogger("akka").setLevel(JLevel.toLevel("OFF"))
     JLogger.getRootLogger().setLevel(JLevel.toLevel("OFF"))
-  end
-
-  # Term all masters, pool masters and workers
-  def self.destroy_workers
-    load_lib
-    RubyWorker.destroyAll
-    Process.wait rescue nil
   end
 
   # ===============================================================================

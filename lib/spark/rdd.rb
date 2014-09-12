@@ -1,5 +1,4 @@
-require "sourcify"
-
+##
 # A Resilient Distributed Dataset (RDD), the basic abstraction in Spark. Represents an immutable,
 # partitioned collection of elements that can be operated on in parallel. This class contains the
 # basic operations available on all RDDs, such as `map`, `filter`, and `persist`.
@@ -23,7 +22,7 @@ module Spark
       @cached = false
       @checkpointed = false
 
-      @command = Spark::Command::Builder.new(serializer, deserializer)
+      @command = Spark::CommandBuilder.new(serializer, deserializer)
     end
 
 
@@ -31,33 +30,27 @@ module Spark
     # Commad and serializer
 
     # Attach method as Symbol or Proc
-    def attach(*args)
-      @command.add_before(args)
-      self
-    end
-
-    def global_attach(*args)
-      @command.add_global_before(args)
+    def attach_function(*args)
+      @command.attach_function(*args)
       self
     end
 
     # Add library which will be loaded on worker
-    def add_library(*args)
-      @command.add_library(args)
+    def attach_library(*args)
+      @command.attach_library(*args)
       self
-    end
-
-    # Show attached methods, procs and libraries
-    def attached
-      @command.attached
     end
 
     # Make a copy of command for new PipelinedRDD
     # .dup and .clone does not do deep copy of @command.template
-    def add_command(main, f=nil, options={})
-      command = @command.deep_copy
-      command.add(main, f, options)
-      command
+    #
+    # Method should be private but _reduce need it public to
+    # avoid recursion (and Stack level too deep)
+    #
+    def add_task(main, func=nil, options={})
+      @command.deep_copy
+              .add_task(main)
+              .attach_function!(main: func)
     end
 
     def serializer
@@ -138,6 +131,7 @@ module Spark
     # Actions which return value
 
     # Return an array that contains all of the elements in this RDD.
+    # RJB raise an error if stage is killed.
     #
     # toArray: mri => Array
     #          jruby => ArrayList
@@ -145,7 +139,8 @@ module Spark
     def collect
       # @command.serializer.load(jrdd.collect.toArray.to_a)
       @command.serializer.load(jrdd.collect)
-      # jrdd.collect
+    rescue
+      nil
     end
 
     # Convert an Array to Hash
@@ -258,7 +253,7 @@ module Spark
     #
     def foreach(f, options={})
       main = "Proc.new {|iterator| iterator.each {|_item_| @__main__.call(_item_)}; nil}"
-      comm = add_command(main, f, options)
+      comm = add_task(main, f, options)
 
       PipelinedRDD.new(self, comm).collect
       nil
@@ -272,7 +267,7 @@ module Spark
     #
     def foreach_partition(f, options={})
       main = "Proc.new {|iterator| @__main__.call(iterator); nil }"
-      comm = add_command(main, f, options)
+      comm = add_task(main, f, options)
 
       PipelinedRDD.new(self, comm).collect
       nil
@@ -290,7 +285,7 @@ module Spark
     #
     def map(f, options={})
       main = "Proc.new {|iterator| iterator.map!{|i| @__main__.call(i)} }"
-      comm = add_command(main, f, options)
+      comm = add_task(main, f, options)
 
       PipelinedRDD.new(self, comm)
     end
@@ -304,7 +299,7 @@ module Spark
     #
     def flat_map(f, options={})
       main = "Proc.new {|iterator| iterator.map!{|i| @__main__.call(i)}.flatten }"
-      comm = add_command(main, f, options)
+      comm = add_task(main, f, options)
 
       PipelinedRDD.new(self, comm)
     end
@@ -317,7 +312,7 @@ module Spark
     #
     def map_partitions(f, options={})
       main = "Proc.new {|iterator| @__main__.call(iterator) }"
-      comm = add_command(main, f, options)
+      comm = add_task(main, f, options)
 
       PipelinedRDD.new(self, comm)
     end
@@ -331,7 +326,7 @@ module Spark
     #
     def map_partitions_with_index(f, options={})
       main = "Proc.new {|iterator, index| @__main__.call(iterator, index) }"
-      comm = add_command(main, f, options)
+      comm = add_task(main, f, options)
 
       PipelinedRDD.new(self, comm)
     end
@@ -344,7 +339,7 @@ module Spark
     #
     def filter(f, options={})
       main = "Proc.new {|iterator| iterator.select{|i| @__main__.call(i)} }"
-      comm = add_command(main, f, options)
+      comm = add_task(main, f, options)
 
       PipelinedRDD.new(self, comm)
     end
@@ -357,7 +352,7 @@ module Spark
     #
     def compact
       main = "Proc.new {|iterator| iterator.compact!; iterator }"
-      comm = add_command(main)
+      comm = add_task(main)
 
       PipelinedRDD.new(self, comm)
     end
@@ -370,7 +365,7 @@ module Spark
     #
     def glom
       main = "Proc.new {|iterator| [iterator] }"
-      comm = add_command(main)
+      comm = add_task(main)
 
       PipelinedRDD.new(self, comm)
     end
@@ -475,7 +470,7 @@ module Spark
       KEY_FUNCTION
 
       # RDD is transform from [key, value] to [hash, [key, value]]
-      keyed = map_partitions(key_function).attach(partition_func: partition_func)
+      keyed = map_partitions(key_function).attach_function(partition_func: partition_func)
       keyed.serializer.unbatch!
 
       # PairwiseRDD and PythonPartitioner are borrowed from Python
@@ -560,9 +555,9 @@ module Spark
         }
       MERGE
 
-      combined = map_partitions(combine).attach(merge_value: merge_value, create_combiner: create_combiner)
+      combined = map_partitions(combine).attach_function(merge_value: merge_value, create_combiner: create_combiner)
       shuffled = combined.partition_by(num_partitions)
-      shuffled.map_partitions(merge).attach(merge_combiners: merge_combiners)
+      shuffled.map_partitions(merge).attach_function(merge_combiners: merge_combiners)
     end
 
     # Group the values for each key in the RDD into a single sequence. Allows controlling the
@@ -624,7 +619,7 @@ module Spark
     #
     def map_values(f)
       func = "Proc.new {|key, value| [key, @__mapping__.call(value)]}"
-      self.map(func).attach(mapping: f)
+      self.map(func).attach_function(mapping: f)
     end
 
     # Return an RDD with the first element of PairRDD
@@ -675,7 +670,7 @@ module Spark
           # Partitions are already reduced
           rdd = self
         else
-          comm = add_command(main, seq_op, options)
+          comm = add_task(main, seq_op, options)
           rdd = PipelinedRDD.new(self, comm)
         end
 
@@ -683,7 +678,7 @@ module Spark
         rdd = rdd.coalesce(1).compact
 
         # Add the same function to new RDD
-        comm = rdd.add_command(main, comb_op, options)
+        comm = rdd.add_task(main, comb_op, options)
         comm.deserializer = @command.serializer
 
         # Value is returned in array

@@ -1,219 +1,156 @@
 #!/usr/bin/env ruby
 
-# TODO: restart poolmaster if crash
-
-$PROGRAM_NAME = "RubySparkWorker"
+$PROGRAM_NAME = "RubySparkMaster"
 
 require "socket"
 require "io/wait"
+require "nio"
 
-# Require all serializers
-dir = File.expand_path(File.join("..", "serializer"), File.dirname(__FILE__))
-Dir.glob(File.join(dir, "*.rb")) { |file| require file  }
-
-# Require template file
-require File.expand_path(File.join("..", "command", "template.rb"), File.dirname(__FILE__))
-
-require_relative "pool_master"
 require_relative "worker"
 
-def log(klass, message=nil)
-  return if !$DEBUG
-
-  $stdout.write %{==> #{Time.now.strftime("%H:%M:%S")} [#{klass.id}] #{klass.name} #{message}\n}
-  $stdout.flush
-end
-
-def jruby?
-  RbConfig::CONFIG['ruby_install_name'] == 'jruby'
-end
-
 # New process group
-Process.setsid
-
+# Process.setsid
 
 # =================================================================================================
-# Master of all workers
-# Create and controll process/threads
-# Trap signal
+# Master
 #
 module Master
 
-  # Create a master class by type
-  def self.create(address='127.0.0.1', port=0)
-    case ENV['WORKER_TYPE'].downcase
-    when 'process'
-      Master::Process.new(address, port)
-    when 'thread'
-      Master::Thread.new(address, port)
-    when 'simple'
-      # not yet
+  def self.create
+    case ENV["WORKER_TYPE"]
+    when "process"
+      Master::Process.new
+    when "thread"
+      Master::Thread.new
     end
   end
 
-  # ===============================================================================================
-  # Base class
-  # Used just as parent
-  #
   class Base
+
     include Spark::Serializer::Helper
+    include SparkConstant
 
-    POOL_SIZE = 2
+    def initialize
+      @worker_arguments = ENV["WORKER_ARGUMENTS"]
+      @port = ENV["SERVER_PORT"]
 
-    COMMAND_KILL_WORKER = 0
-
-    attr_accessor :port, :server_socket, :controll_socket
-
-    # Create new Socket server
-    def initialize(address, port)
-      self.server_socket = TCPServer.new(address, port)
-      self.port = server_socket.addr[1]
-
-      # Send to Spark port of Socket server
-      $stdout.write(pack_int(self.port))
-      $stdout.flush
-
-      # This is controll socket
-      self.controll_socket = server_socket.accept
-
-      # Master received SIGTERM
-      # all workers must be closed
-      trap(:TERM) { @shutdown = true }
+      @socket = TCPSocket.open("localhost", @port)
     end
 
-    def name
-      "Master"
-    end
-
-    # Create PollMasters
     def run
-      before_start
-      log self, "INIT"
-
-      POOL_SIZE.times do
-        create_pool_master
-      end
+      selector = NIO::Selector.new
+      monitor = selector.register(@socket, :r)
+      monitor.value = Proc.new { receive_message }
 
       loop {
-        sleep(2)
-        if $stdin.closed? || shutdown?
-          break;
-        end
-
-        begin
-          type = unpack_int(controll_socket.read_nonblock(4))
-          handle_signal(type)
-        rescue IO::WaitReadable
-          # IO.select([controll_socket])
-        end
+        selector.select {|monitor| monitor.value.call}
       }
-
-      log self, "SHUTDOWN"
-      before_end
     end
 
-    private
-      
-      def before_start
-      end
+    def receive_message
+      # Read int
+      command = unpack_int(read(4))
 
-      def before_end
+      case command
+      when CREATE_WORKER
+        create_worker
+      when KILL_WORKER
+        kill_worker
+      when KILL_WORKER_AND_WAIT
+        kill_worker_and_wait
       end
+    end
 
-      def shutdown?
-        @shutdown
+    def kill_worker_and_wait
+      if kill_worker
+        write(pack_int(SUCCESSFULLY_KILLED))
+      else
+        write(pack_int(UNSUCCESSFUL_KILLING))
       end
+    end
 
-      def handle_signal(type)
-        case type
-        when COMMAND_KILL_WORKER
-          id = unpack_long(controll_socket.read(8))
-          kill_worker(id)
-        end
-      end
+    def read(count)
+      @socket.read(count)
+    end
+
+    def write(data)
+      @socket.write(data)
+    end
 
   end
 
   # ===============================================================================================
-  # Master::Process
-  #
-  # New workers are created via process
-  # Available only on UNIX on non-java ruby
+  # Worker::Process
   #
   class Process < Base
 
-    def id
-      ::Process.pid
+    def create_worker
+      if fork?
+        pid = ::Process.fork do
+          Worker::Process.new(@port).run
+        end
+      else
+        pid = ::Process.spawn("ruby #{@worker_arguments} worker.rb #{@port}")
+      end
+
+      # Detach child from master to avoid zombie process
+      ::Process.detach(pid)
     end
 
-    private
+    def kill_worker
+      worker_id = unpack_long(read(8))
+      ::Process.kill("TERM", worker_id)
+    rescue
+      nil
+    end
 
-      def before_start
-        $PROGRAM_NAME = "RubySpark#{name}"
-      end
+    def fork?
+      @can_fork ||= _fork?
+    end
 
-      def before_end
-        ::Process.kill("HUP", 0)
-        ::Process.wait
-      end
+    def _fork?
+      return false if !::Process.respond_to?(:fork)
 
-      def create_pool_master
-        fork do
-          PoolMaster::Process.new(server_socket).run
-        end
-      end
-
-      def kill_worker(id)
-        ::Process.kill("HUP", id)
-        ::Process.wait
-      end
+      pid = ::Process.fork
+      exit unless pid # exit the child immediately
+      true
+    rescue NotImplementedError
+      false
+    end
 
   end
 
   # ===============================================================================================
-  # Master::Thread
-  #
-  # New workers are created via threads
-  # Somethings are faster but it can be danger
+  # Worker::Thread
   #
   class Thread < Base
-    attr_accessor :pool_threads
 
-    def id
-      ::Thread.current.object_id
+    def initialize
+      ::Thread.abort_on_exception = true
+
+      # For synchronous access to socket IO
+      $mutex = Mutex.new
+
+      super
     end
 
-    private
-
-      def before_start
-        ::Thread.abort_on_exception = true
-
-        self.pool_threads = []
-
-        # For synchronous access to socket IO
-        $mutex = Mutex.new
+    def create_worker
+      ::Thread.new do
+        Worker::Thread.new(@port).run
       end
+    end
 
-      def before_end
-        pool_threads.each {|t| t.kill}
-      end
+    def kill_worker
+      worker_id = unpack_long(read(8))
 
-      def create_pool_master
-        pool_threads << ::Thread.new {
-                          PoolMaster::Thread.new(server_socket).run
-                        }
-      end
-
-      def kill_worker(id)
-        thread = ObjectSpace._id2ref(id)
-        thread[:worker].before_kill
-        thread.kill
-      end
+      thread = ObjectSpace._id2ref(worker_id)
+      thread.kill
+    rescue
+      nil
+    end
 
   end
-
 end
 
-
-# Create master by ENV['WORKER_TYPE']
+# Create proper master by worker_type
 Master.create.run
