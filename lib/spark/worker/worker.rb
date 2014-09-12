@@ -119,6 +119,12 @@ module Worker
       ::Process.pid
     end
 
+    private
+
+      def before_start
+        $PROGRAM_NAME = "RubySparkWorker"
+      end
+
   end
 
   # ===============================================================================================
@@ -150,10 +156,6 @@ end
 
 # Worker is loaded as standalone
 if $PROGRAM_NAME == __FILE__
-  $PROGRAM_NAME = "RubySparkWorker"
-
-  port = ARGV[0]
-
-  worker = Worker::Process.new(port)
+  worker = Worker::Process.new(ARGV[0])
   worker.run
 end
