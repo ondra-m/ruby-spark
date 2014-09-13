@@ -1,5 +1,6 @@
 require "distribution"
 
+# Random Generators
 module Spark
   module RandomGenerator
     class Poisson
@@ -26,6 +27,7 @@ module Spark
   end
 end
 
+# Samplers
 module Spark
   module Sampler
 
@@ -34,12 +36,11 @@ module Spark
 
       def initialize(fraction, seed=nil)
         @fraction = fraction
-        @seed = seed || Random.new_seed 
+        @seed = seed || Random.new_seed
       end
     end
-    
-    # =============================================================================================
-    # Poisson
+
+    # Poisson Sampler
     #
     class Poisson < Base
 
@@ -59,16 +60,14 @@ module Spark
 
     end
 
-    # =============================================================================================
-    # Uniform
+    # Uniform Sampler
     #
     class Uniform < Base
-      
+
       def sample(iterator)
         rng = Random.new(seed)
 
         iterator.select!{|item| rng.rand <= fraction}
-
         iterator
       end
 

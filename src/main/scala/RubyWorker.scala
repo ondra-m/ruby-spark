@@ -1,6 +1,6 @@
 package org.apache.spark.api.ruby
 
-import java.io.{DataInputStream, InputStream, DataOutputStream, BufferedOutputStream}
+import java.io.{DataInputStream, InputStream, DataOutputStream}
 import java.net.{InetAddress, ServerSocket, Socket, SocketException}
 
 import scala.collection.mutable
@@ -34,7 +34,10 @@ object RubyWorker extends Logging {
 
   private var workers = new mutable.WeakHashMap[Socket, Int]()
 
-  /* ------------------------------------------------------------------------------------------- */
+  /* ----------------------------------------------------------------------------------------------
+   * Create new worker but first check if exist SocketServer and master process.
+   * If not it will create them. Worker have 2 chance to create.
+   */
 
   def create(workerDir: String, workerType: String, workerArguments: String): (Socket, Long) = {
     synchronized {
@@ -52,7 +55,12 @@ object RubyWorker extends Logging {
     }
   }
 
-  /* ------------------------------------------------------------------------------------------- */
+  /* ----------------------------------------------------------------------------------------------
+   * Create a worker throught master process. Return new socket and id.
+   * According spark.ruby.worker_type id will be:
+   *   process: PID
+   *   thread: thread object id
+   */
 
   def createWorker: (Socket, Long) = {
     synchronized {
@@ -66,7 +74,9 @@ object RubyWorker extends Logging {
     }
   }
 
-  /* ---------------------------------------------------------------------------------------------- 
+  /* ----------------------------------------------------------------------------------------------
+   * Create SocketServer and bind it to the localhost. Max numbers of connection on queue
+   * is set to default. If server is created withou exception -> create master.
    */
 
   private def createServer(workerDir: String, workerType: String, workerArguments: String){
@@ -90,7 +100,11 @@ object RubyWorker extends Logging {
     }
   }
 
-  /* ------------------------------------------------------------------------------------------- */
+  /* ----------------------------------------------------------------------------------------------
+   * In this point SocketServer must be created. Master process create and kill workers.
+   * Creating workers from Java can be an expensive operation because new process can
+   * get copy of address space.
+   */
 
   private def createMaster(workerDir: String, workerType: String, workerArguments: String){
     synchronized {

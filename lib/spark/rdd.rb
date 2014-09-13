@@ -486,6 +486,18 @@ module Spark
       RDD.new(new_jrdd, context, @command.serializer, keyed.serializer)
     end
 
+    # Return a sampled subset of this RDD. Operations are base on Poisson and Uniform
+    # distributions.
+    # TODO: Replace Unfirom for Bernoulli
+    #
+    # rdd = $sc.parallelize(0..100)
+    #
+    # rdd.sample(true, 10).collect
+    # => [17, 17, 22, 23, 51, 52, 62, 64, 69, 70, 96]
+    #
+    # rdd.sample(false, 0.1).collect
+    # => [3, 5, 9, 32, 44, 55, 66, 68, 75, 80, 86, 91, 98]
+    #
     def sample(with_replacement, fraction, seed=nil)
       if with_replacement
         sampler = Spark::Sampler::Poisson
