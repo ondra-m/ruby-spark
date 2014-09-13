@@ -32,7 +32,7 @@ object RubyWorker extends Logging {
   private var masterOutputStream: DataOutputStream = null
   private var masterInputStream:  DataInputStream = null
 
-  private var workers = new mutable.WeakHashMap[Socket, Int]()
+  private var workers = new mutable.WeakHashMap[Socket, Long]()
 
   /* ----------------------------------------------------------------------------------------------
    * Create new worker but first check if exist SocketServer and master process.
@@ -150,8 +150,10 @@ object RubyWorker extends Logging {
 
     // Wait for answer
     masterInputStream.readInt() match {
-      case RubyConstant.SUCCESSFULLY_KILLED  => logInfo(s"Worker $workerId was successfully killed")
-      case RubyConstant.UNSUCCESSFUL_KILLING => logInfo(s"Worker $workerId cannot be killed")
+      case RubyConstant.SUCCESSFULLY_KILLED =>
+        logInfo(s"Worker $workerId was successfully killed")
+      case RubyConstant.UNSUCCESSFUL_KILLING =>
+        logInfo(s"Worker $workerId cannot be killed (maybe is already killed)")
     }
   }
 

@@ -87,6 +87,7 @@ module Spark
   def self.stop
     @context.stop
     RubyWorker.stopServer
+    log_info("Workers were stopped")
   rescue
     nil
   ensure
@@ -271,6 +272,7 @@ module Spark
 
   # Aliases
   class << self
+    alias_method :sc, :context
     alias_method :logInfo, :log_info
     alias_method :logDebug, :log_debug
     alias_method :logTrace, :log_trace
