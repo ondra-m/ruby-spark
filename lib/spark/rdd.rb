@@ -488,12 +488,11 @@ module Spark
 
     def sample(with_replacement, fraction, seed=nil)
       if with_replacement
-        sampler = Spark::Sampler::Poisson.new(fraction, seed)
+        sampler = Spark::Sampler::Poisson
       else
-        # sampler = Spark::Sampler::BernoulliSampler
-        # sampler = Spark::Sampler::UniformaSampler
+        sampler = Spark::Sampler::Uniform
       end
-      comm = add_task_by_type(:sample, sampler)
+      comm = add_task_by_type(:sample, sampler.new(fraction, seed))
 
       PipelinedRDD.new(self, comm)
     end

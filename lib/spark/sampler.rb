@@ -59,5 +59,20 @@ module Spark
 
     end
 
+    # =============================================================================================
+    # Uniform
+    #
+    class Uniform < Base
+      
+      def sample(iterator)
+        rng = Random.new(seed)
+
+        iterator.select!{|item| rng.rand <= fraction}
+
+        iterator
+      end
+
+    end
+
   end
 end
