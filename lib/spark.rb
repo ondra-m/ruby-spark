@@ -1,9 +1,4 @@
-# TODO: - kill worker without controll socket to master
-#       e.g. controll thread for every worker
-#       - přidat operaci undo pro Command, přepínač kde jze zvolit
-#       že nebude inplace edit - když bude chyba tak se vrátí
-#       poslední správný výsledek
-#       - do spaen dávat rlimits
+# přidat preeserve partitions
 
 require "spark/ext/array"
 require "spark/ext/hash"
@@ -129,6 +124,7 @@ module Spark
     @ivy_xml ||= File.join(root, 'ivy', 'ivy.xml')
   end
 
+
   # ===============================================================================
   # Global Spark actions
 
@@ -137,8 +133,43 @@ module Spark
     load_lib
     JLogger.getLogger("org").setLevel(JLevel.toLevel("OFF"))
     JLogger.getLogger("akka").setLevel(JLevel.toLevel("OFF"))
+    JLogger.getLogger("ruby").setLevel(JLevel.toLevel("OFF"))
     JLogger.getRootLogger().setLevel(JLevel.toLevel("OFF"))
   end
+
+
+  # ===============================================================================
+  # Logging
+
+  def self.log
+    load_lib
+    JLogger.getLogger("Ruby")
+  end
+
+  def self.log_enabled?(type)
+    log.isEnabledFor(JPriority.toPriority(type.upcase))
+  end
+
+  def self.log_info(message)
+    log.info(message) if log_enabled?("info")
+  end
+
+  def self.log_debug(message)
+    log.debug(message) if log_enabled?("debug")
+  end
+
+  def self.log_trace(message)
+    log.trace(message) if log_enabled?("trace")
+  end
+
+  def self.log_warning(message)
+    log.warn(message) if log_enabled?("warn")
+  end
+
+  def self.log_error(message)
+    log.error(message) if log_enabled?("error")
+  end
+
 
   # ===============================================================================
   # Load JVM and jars
@@ -150,8 +181,9 @@ module Spark
     "org.apache.spark.api.ruby.RubyWorker",
     "org.apache.spark.api.ruby.PairwiseRDD",
     "org.apache.spark.api.python.PythonPartitioner",
-    :JLogger => "org.apache.log4j.Logger",
-    :JLevel  => "org.apache.log4j.Level",
+    :JLogger   => "org.apache.log4j.Logger",
+    :JLevel    => "org.apache.log4j.Level",
+    :JPriority => "org.apache.log4j.Priority",
     :JStorageLevel => "org.apache.spark.storage.StorageLevel"
   ]
 
@@ -234,6 +266,16 @@ module Spark
     yield
   ensure
     $VERBOSE = old_verbose
+  end
+
+
+  # Aliases
+  class << self
+    alias_method :logInfo, :log_info
+    alias_method :logDebug, :log_debug
+    alias_method :logTrace, :log_trace
+    alias_method :logWarning, :log_warning
+    alias_method :logError, :log_error
   end
 
 end
