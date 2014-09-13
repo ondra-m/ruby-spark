@@ -22,6 +22,7 @@ module Spark
   autoload :StorageLevel,   "spark/storage_level"
   autoload :Command,        "spark/worker/command"
   autoload :CommandBuilder, "spark/command_builder"
+  autoload :Sampler,        "spark/sampler"
 
   extend Helper::Platform
 

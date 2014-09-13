@@ -23,7 +23,9 @@ module Spark
     # Serialize Command class for worker
     # Java use signed number
     def build
-      unpack_chars(Marshal.dump(@command))
+      built_command = @command.deep_copy
+      built_command.build
+      unpack_chars(Marshal.dump(built_command))
     end
 
     def deep_copy

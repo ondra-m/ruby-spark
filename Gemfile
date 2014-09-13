@@ -7,6 +7,8 @@ gem 'method_source'
 gem 'thor'
 gem 'pry'
 gem 'nio4r'
+gem 'distribution'
+# gem 'croupier', '>= 2.0.0.beta'
 # gem 'yaml'
 # gem 'childprocess'
 
