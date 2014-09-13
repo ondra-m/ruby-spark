@@ -61,4 +61,14 @@ RSpec::describe "Spark::RDD" do
     expect(rdd.collect).to eql(result)
   end
 
+  it ".intersection" do
+    data1 = [0,1,2,3,4,5,6,7,8,9,10]
+    data2 = [5,6,7,8,9,10,11,12,13,14,15]
+
+    rdd1 = $sc.parallelize(data1)
+    rdd2 = $sc.parallelize(data2)
+
+    expect(rdd1.intersection(rdd2).collect.sort).to eql(data1 & data2)
+  end
+
 end
