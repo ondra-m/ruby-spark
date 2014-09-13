@@ -38,15 +38,15 @@ module Spark
 end
 
 class Spark::Command
-  class Task
+  class SimpleTask
     include Spark::Serializer::Helper
 
     attr_accessor :before
     attr_accessor :exec_function
 
-    def initialize
+    def initialize(args)
       @before = ""
-      @exec_function = ""
+      @exec_function = args.is_a?(Array) ? args.first : args
     end
 
     def <<(data)

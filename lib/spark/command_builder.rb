@@ -30,9 +30,8 @@ module Spark
       Marshal.load(Marshal.dump(self))
     end
 
-    def add_task(main)
-      task = Spark::Command::Task.new
-      task.exec_function = main
+    def add_task(type, args)
+      task = Spark::Command.const_get("#{type.to_s.camelize}Task").new(args)
       @command.add_task(task)
       self
     end

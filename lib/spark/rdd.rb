@@ -47,10 +47,13 @@ module Spark
     # Method should be private but _reduce need it public to
     # avoid recursion (and Stack level too deep)
     #
-    def add_task(main, func=nil, options={})
+    def add_task(args, main_func=nil, options={})
+      add_task_by_type(:simple, args).attach_function!(main: main_func)
+    end
+
+    def add_task_by_type(type, args, options={})
       @command.deep_copy
-              .add_task(main)
-              .attach_function!(main: func)
+              .add_task(type, args)
     end
 
     def serializer
@@ -481,6 +484,12 @@ module Spark
 
       # Reset deserializer
       RDD.new(new_jrdd, context, @command.serializer, keyed.serializer)
+    end
+
+    def sample(with_replacement, fraction, seed=nil)
+      comm = add_task_by_type(:sample, [with_replacement, fraction, seed])
+
+      PipelinedRDD.new(self, comm)
     end
 
 
