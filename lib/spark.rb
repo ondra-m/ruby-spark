@@ -3,6 +3,7 @@
 require "spark/ext/array"
 require "spark/ext/hash"
 require "spark/ext/string"
+require "spark/ext/integer"
 require "spark/version"
 require "spark/error"
 

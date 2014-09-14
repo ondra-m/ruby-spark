@@ -15,4 +15,8 @@ module Spark
   # Missison app_name or master
   class ConfigurationError < StandardError
   end
+
+  # Wrong parameters
+  class RDDError < StandardError
+  end
 end

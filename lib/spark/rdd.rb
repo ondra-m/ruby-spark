@@ -8,6 +8,9 @@ module Spark
 
     attr_reader :jrdd, :context, :command
 
+    include Spark::Helper::Logger
+    include Spark::Helper::Statistic
+
     # Initializing RDD, this method is root of all Pipelined RDD - its unique
     # If you call some operations on this class it will be computed in Java
     #
@@ -397,6 +400,12 @@ module Spark
           .map("lambda{|x| x[0]}")
     end
 
+    # Return a shuffled RDD.
+    #
+    def shuffle(seed=Random.new_seed)
+      self.map_partitions("lambda{|part| part.shuffle!(random: Random.new(#{seed.to_i})); part}")
+    end
+
     # Return the union of this RDD and another one. Any identical elements will appear multiple
     # times (use .distinct to eliminate them).
     #
@@ -507,6 +516,57 @@ module Spark
       comm = add_task_by_type(:sample, sampler.new(fraction, seed))
 
       PipelinedRDD.new(self, comm)
+    end
+
+    # Return a fixed-size sampled subset of this RDD in an array
+    #
+    def take_sample(with_replacement, num, seed=nil)
+      
+      if num < 0
+        raise Spark::RDDError, "Size have to be greater than 0"
+      elsif num == 0
+        return []
+      end
+
+      # Taken from scala
+      num_st_dev = 10.0
+
+      # Number of items
+      initial_count = self.count
+      return [] if initial_count == 0
+
+      # Create new generator
+      seed ||= Random.new_seed
+      rng = Random.new(seed)
+
+      # Shuffle elements if requested num if greater than array size
+      if !with_replacement && num >= initial_count
+        return self.shuffle(seed)
+      end
+
+      # Max num
+      max_sample_size = Integer::MAX - (num_st_dev * Math.sqrt(Integer::MAX)).to_i
+      if num > max_sample_size
+        raise Spark::RDDError, "Size can not be greate than #{max_sample_size}"
+      end
+
+      # Approximate fraction with tolerance
+      fraction = compute_fraction(num, initial_count, with_replacement)
+
+      # Compute first samled subset
+      samples = self.sample(with_replacement, fraction, seed).collect
+
+      # If the first sample didn't turn out large enough, keep trying to take samples;
+      # this shouldn't happen often because we use a big multiplier for their initial size.
+      index = 0
+      while samples.size < num
+        log_warning("Needed to re-sample due to insufficient sample size. Repeat #{index}")
+        samples = self.sample(with_replacement, fraction, rng.rand(0..Integer::MAX))
+        index += 1
+      end
+
+      samples.shuffle!(random: rng)
+      samples[0, num]
     end
 
 
@@ -685,6 +745,7 @@ module Spark
     alias_method :defaultReducePartitions, :default_reduce_partitions
     alias_method :foreachPartition, :foreach_partition
     alias_method :mapValues, :map_values
+    alias_method :takeSample, :take_sample
 
     private
 
