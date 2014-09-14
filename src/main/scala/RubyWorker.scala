@@ -157,6 +157,18 @@ object RubyWorker extends Logging {
     }
   }
 
+  /* ----------------------------------------------------------------------------------------------
+   * workers HashMap is week but it avoid long list of workers which cannot be killed (killAndWait)
+   */
+
+  def remove(worker: Socket, workerId: Long){
+    try { 
+      workers.remove(worker)
+    } catch {
+      case e: Exception => logWarning(s"Worker $workerId does not exist (maybe is already removed)")
+    }
+  }
+
   /* ------------------------------------------------------------------------------------------- */
 
   def stopServer{

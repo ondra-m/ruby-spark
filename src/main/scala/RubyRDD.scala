@@ -56,6 +56,7 @@ class RubyRDD[T: ClassTag](
 
         // Cleanup the worker socket. This will also cause the worker to exit.
         try {
+          RubyWorker.remove(worker, workerId)
           worker.close()
         } catch {
           case e: Exception => logWarning("Failed to close worker socket", e)
@@ -173,7 +174,7 @@ class RubyRDD[T: ClassTag](
               val obj = new Array[Byte](length)
               stream.readFully(obj)
               obj
-            case 0 => null
+            case RubyConstant.WORKER_DONE => null
             case RubyConstant.WORKER_ERROR =>
               // Exception from worker
               val length = stream.readInt()

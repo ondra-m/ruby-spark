@@ -97,7 +97,7 @@ module Worker
       end
 
       def finish
-        write(pack_int(0))
+        write(pack_int(WORKER_DONE))
         flush
       end
 
