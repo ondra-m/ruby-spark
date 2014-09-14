@@ -18,11 +18,11 @@ module Spark
 
     # Disable all Spark log
     def self.disable
+      if enabled?
       # JLogger.getLogger("org").setLevel(JLevel.toLevel("OFF"))
       # JLogger.getLogger("akka").setLevel(JLevel.toLevel("OFF"))
       # JLogger.getLogger("ruby").setLevel(JLevel.toLevel("OFF"))
 
-      if enabled?
         @root_prev_level = root.getLevel
         root.setLevel(level_off)
       end

@@ -20,7 +20,8 @@ module Spark
   autoload :Sampler,        "spark/sampler"
   autoload :Logger,         "spark/logger"
 
-  extend Helper::Platform
+  include Helper::Platform
+  include Helper::Logger
 
   def self.print_logo(message=nil)
     puts <<-STRING
@@ -128,30 +129,6 @@ module Spark
 
 
   # ===============================================================================
-  # Logging
-
-  def self.log_info(message)
-    Logger.info(message)
-  end
-
-  def self.log_debug(message)
-    Logger.debug(message)
-  end
-
-  def self.log_trace(message)
-    Logger.trace(message)
-  end
-
-  def self.log_warning(message)
-    Logger.warn(message)
-  end
-
-  def self.log_error(message)
-    Logger.error(message)
-  end
-
-
-  # ===============================================================================
   # Load JVM and jars
 
   JAVA_OBJECTS = [
@@ -252,11 +229,6 @@ module Spark
   # Aliases
   class << self
     alias_method :sc, :context
-    alias_method :logInfo, :log_info
-    alias_method :logDebug, :log_debug
-    alias_method :logTrace, :log_trace
-    alias_method :logWarning, :log_warning
-    alias_method :logError, :log_error
   end
 
 end
