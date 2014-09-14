@@ -1,0 +1,35 @@
+if !ENV.has_key?("JAVA_HOME")
+  raise Spark::ConfigurationError, "Environment variable JAVA_HOME is not set" 
+end
+
+require "rjb"
+
+module Spark
+  module JavaBridge
+    class RJB < Base
+
+      def self.jars
+        separator = windows? ? ';' : ':'
+        super.join(separator)
+      end
+      
+      def self.import
+        Rjb::load(jars)
+        Rjb::primitive_conversion = true
+
+        java_objects.each do |key, value|
+          # Avoid 'already initialized constant'
+          Object.const_set(key, silence_warnings { Rjb::import(value) })
+        end
+      end
+
+      def self.silence_warnings
+        old_verbose, $VERBOSE = $VERBOSE, nil
+        yield
+      ensure
+        $VERBOSE = old_verbose
+      end
+
+    end
+  end
+end

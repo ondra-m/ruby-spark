@@ -1,5 +1,3 @@
-# přidat preeserve partitions
-
 require "spark/ext/array"
 require "spark/ext/hash"
 require "spark/ext/string"
@@ -20,6 +18,7 @@ module Spark
   autoload :CommandBuilder, "spark/command_builder"
   autoload :Sampler,        "spark/sampler"
   autoload :Logger,         "spark/logger"
+  autoload :JavaBridge,     "spark/java_bridge"
 
   include Helper::Platform
   include Helper::Logger
@@ -132,19 +131,6 @@ module Spark
   # ===============================================================================
   # Load JVM and jars
 
-  JAVA_OBJECTS = [
-    "org.apache.spark.SparkConf",
-    "org.apache.spark.api.java.JavaSparkContext",
-    "org.apache.spark.api.ruby.RubyRDD",
-    "org.apache.spark.api.ruby.RubyWorker",
-    "org.apache.spark.api.ruby.PairwiseRDD",
-    "org.apache.spark.api.python.PythonPartitioner",
-    :JLogger   => "org.apache.log4j.Logger",
-    :JLevel    => "org.apache.log4j.Level",
-    :JPriority => "org.apache.log4j.Priority",
-    :JStorageLevel => "org.apache.spark.storage.StorageLevel"
-  ]
-
   # Load dependent libraries, can be use once
   # Cannot load before CLI::install
   #
@@ -156,74 +142,11 @@ module Spark
 
     spark_home ||= Spark.target_dir
 
-    if jruby?
-      jruby_load_lib(spark_home)
-    else
-      rjb_load_lib(spark_home)
-    end
+    bridge = JavaBridge.get
+    bridge.init(spark_home)
+    bridge.import
 
     @loaded_lib = true
-  end
-
-  def self.jruby_load_lib(spark_home)
-    require "java"
-
-    get_jars(spark_home).each {|jar| require jar}
-
-    java_objects.each do |key, value|
-      Object.const_set(key, eval(value))
-    end
-  end
-
-  def self.rjb_load_lib(spark_home)
-    raise Spark::ConfigurationError, "Environment variable JAVA_HOME is not set" unless ENV.has_key?("JAVA_HOME")
-    require "rjb"
-
-    separator = windows? ? ';' : ':'
-
-    jars = get_jars(spark_home).join(separator)
-    Rjb::load(jars)
-    Rjb::primitive_conversion = true
-
-    java_objects.each do |key, value|
-      # Avoid 'already initialized constant'
-      Object.const_set(key, silence_warnings { Rjb::import(value) })
-    end
-  end
-
-  def self.get_jars(spark_home)
-    jars = []
-    if File.file?(spark_home)
-      jars << spark_home
-    else
-      jars << Dir.glob(File.join(spark_home, "*.jar"))
-    end
-    jars << Spark.ruby_spark_jar
-    jars.flatten
-  end
-
-  def self.java_objects
-    hash = {}
-    JAVA_OBJECTS.each do |object|
-      if object.is_a?(Hash)
-        hash.merge!(object)
-      else
-        key = object.split(".").last.to_sym
-        hash[key] = object
-      end
-    end
-    hash
-  end
-
-
-  # ===============================================================================
-  # Others
-
-  def self.silence_warnings
-    old_verbose, $VERBOSE = $VERBOSE, nil
-    yield
-  ensure
-    $VERBOSE = old_verbose
   end
 
 
