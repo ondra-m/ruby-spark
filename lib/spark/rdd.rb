@@ -30,6 +30,14 @@ module Spark
 
 
     # =============================================================================
+    # Operators
+
+    def +(other)
+      self.union(other)
+    end
+
+
+    # =============================================================================
     # Commad and serializer
 
     # Attach method as Symbol or Proc

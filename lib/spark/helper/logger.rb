@@ -21,7 +21,7 @@ module Spark
         end
 
         def log_warning(message)
-          Spark::Logger.warn(message)
+          Spark::Logger.warning(message)
         end
 
         def log_error(message)
