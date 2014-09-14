@@ -18,6 +18,7 @@ module Spark
   autoload :Command,        "spark/worker/command"
   autoload :CommandBuilder, "spark/command_builder"
   autoload :Sampler,        "spark/sampler"
+  autoload :Logger,         "spark/logger"
 
   extend Helper::Platform
 
@@ -127,48 +128,26 @@ module Spark
 
 
   # ===============================================================================
-  # Global Spark actions
-
-  # Disable all Spark log
-  def self.disable_log
-    load_lib
-    JLogger.getLogger("org").setLevel(JLevel.toLevel("OFF"))
-    JLogger.getLogger("akka").setLevel(JLevel.toLevel("OFF"))
-    JLogger.getLogger("ruby").setLevel(JLevel.toLevel("OFF"))
-    JLogger.getRootLogger().setLevel(JLevel.toLevel("OFF"))
-  end
-
-
-  # ===============================================================================
   # Logging
 
-  def self.log
-    load_lib
-    JLogger.getLogger("Ruby")
-  end
-
-  def self.log_enabled?(type)
-    log.isEnabledFor(JPriority.toPriority(type.upcase))
-  end
-
   def self.log_info(message)
-    log.info(message) if log_enabled?("info")
+    Logger.info(message)
   end
 
   def self.log_debug(message)
-    log.debug(message) if log_enabled?("debug")
+    Logger.debug(message)
   end
 
   def self.log_trace(message)
-    log.trace(message) if log_enabled?("trace")
+    Logger.trace(message)
   end
 
   def self.log_warning(message)
-    log.warn(message) if log_enabled?("warn")
+    Logger.warn(message)
   end
 
   def self.log_error(message)
-    log.error(message) if log_enabled?("error")
+    Logger.error(message)
   end
 
 

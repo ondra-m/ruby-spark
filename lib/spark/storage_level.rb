@@ -1,3 +1,6 @@
+# Necessary libraries
+Spark.load_lib
+
 module Spark
   class StorageLevel
 
