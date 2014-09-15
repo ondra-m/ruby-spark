@@ -1,3 +1,6 @@
+# - přidat reserver partitions
+# - každá metoda bude třída (execute, validate - activerecord style, serialize)
+
 require "spark/ext/array"
 require "spark/ext/hash"
 require "spark/ext/string"
@@ -138,15 +141,12 @@ module Spark
   #               or single Spark jar
   #
   def self.load_lib(spark_home=nil)
-    return if @loaded_lib
+    return if @bridge
 
     spark_home ||= Spark.target_dir
 
-    bridge = JavaBridge.get
-    bridge.init(spark_home)
-    bridge.import
-
-    @loaded_lib = true
+    @bridge = JavaBridge.get.new(spark_home)
+    @bridge.import
   end
 
 

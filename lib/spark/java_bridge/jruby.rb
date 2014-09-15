@@ -3,8 +3,8 @@ require "java"
 module Spark
   module JavaBridge
     class JRuby < Base
-      
-      def self.import
+
+      def import
         jars.each {|jar| require jar}
 
         java_objects.each do |key, value|

@@ -8,12 +8,12 @@ module Spark
   module JavaBridge
     class RJB < Base
 
-      def self.jars
+      def jars
         separator = windows? ? ';' : ':'
         super.join(separator)
       end
-      
-      def self.import
+
+      def import
         Rjb::load(jars)
         Rjb::primitive_conversion = true
 
@@ -23,7 +23,7 @@ module Spark
         end
       end
 
-      def self.silence_warnings
+      def silence_warnings
         old_verbose, $VERBOSE = $VERBOSE, nil
         yield
       ensure

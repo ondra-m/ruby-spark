@@ -17,11 +17,11 @@ module Spark
         :JStorageLevel => "org.apache.spark.storage.StorageLevel"
       ]
 
-      def self.init(spark_home)
+      def initialize(spark_home)
         @spark_home = spark_home
       end
 
-      def self.jars
+      def jars
         result = []
         if File.file?(@spark_home)
           result << @spark_home
@@ -32,7 +32,7 @@ module Spark
         result.flatten
       end
 
-      def self.java_objects
+      def java_objects
         hash = {}
         JAVA_OBJECTS.each do |object|
           if object.is_a?(Hash)
