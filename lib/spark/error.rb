@@ -19,4 +19,8 @@ module Spark
   # Wrong parameters
   class RDDError < StandardError
   end
+
+  # Validations
+  class CommandError < StandardError
+  end
 end

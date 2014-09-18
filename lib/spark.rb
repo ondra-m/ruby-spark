@@ -1,7 +1,7 @@
 # - přidat reserver partitions
 # - každá metoda bude třída (execute, validate - activerecord style, serialize)
 
-require "spark/ext/array"
+require "spark/ext/object"
 require "spark/ext/hash"
 require "spark/ext/string"
 require "spark/ext/integer"
@@ -17,7 +17,7 @@ module Spark
   autoload :Serializer,     "spark/serializer"
   autoload :Helper,         "spark/helper"
   autoload :StorageLevel,   "spark/storage_level"
-  autoload :Command,        "spark/worker/command"
+  autoload :Command,        "spark/command"
   autoload :CommandBuilder, "spark/command_builder"
   autoload :Sampler,        "spark/sampler"
   autoload :Logger,         "spark/logger"
@@ -162,4 +162,14 @@ Kernel::at_exit do
     Spark.stop
   rescue
   end
+
+  # Error log
+  # error = $!
+  # if error
+  #   File.open("ruby-spark.log", "a") do |log|
+  #     log.puts %{[#{Time.now}] #{error.message}}
+  #     log.puts error.backtrace
+  #     log.puts "---"
+  #   end
+  # end
 end

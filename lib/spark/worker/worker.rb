@@ -1,24 +1,23 @@
 #!/usr/bin/env ruby
 
+# Load root of the gem
+lib = File.expand_path(File.join("..", ".."), File.dirname(__FILE__))
+$LOAD_PATH.unshift(lib) if File.directory?(lib) && !$LOAD_PATH.include?(lib)
+
+require "ruby-spark.rb"
 require "socket"
 
-# Require all serializers
-require File.expand_path(File.join("..", "serializer", "all"), File.dirname(__FILE__))
-
 require_relative "spark_constant"
-require_relative "command"
 
-def jruby?
-  RbConfig::CONFIG['ruby_install_name'] == 'jruby'
-end
 
 # =================================================================================================
 # Worker
 #
 module Worker
   class Base
-    
+
     include Spark::Serializer::Helper
+    include Spark::Helper::Platform
     include SparkConstant
 
     attr_accessor :client_socket
