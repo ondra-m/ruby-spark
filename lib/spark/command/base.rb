@@ -61,12 +61,18 @@ class Spark::Command::Base
     run(iterator, split_index)
   end
 
+  def initialized?
+    !!@initialized
+  end
+
   # This is called before every executing
   #
   # == What is doing?
   # * evaluting function (now it is just a string)
   #
   def before_run
+    return if initialized?
+
     to_function = settings.variables.select {|_, options| options[:function]}
     to_function.each do |name, options|
       name = "@#{name}"
@@ -84,6 +90,8 @@ class Spark::Command::Base
 
       instance_variable_set(name, result)
     end
+
+    @initialized = true
   end
 
 end

@@ -5,7 +5,9 @@ def func3(x)
 end
 
 def func4_with_index(data, index)
-  {index => data.map(&:to_i).reduce(:*)}
+  {
+    index => data.map{|x| x.to_i}.reduce(:*)
+  }
 end
 
 RSpec::shared_examples "a map partitions" do |workers|

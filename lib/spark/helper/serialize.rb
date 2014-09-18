@@ -1,6 +1,6 @@
 module Spark
-  module Serializer
-    module Helper
+  module Helper
+    module Serialize
 
       # http://www.ruby-doc.org/core-2.1.1/String.html#method-i-unpack
 

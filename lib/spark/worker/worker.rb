@@ -16,7 +16,7 @@ require_relative "spark_constant"
 module Worker
   class Base
 
-    include Spark::Serializer::Helper
+    include Spark::Helper::Serialize
     include Spark::Helper::Platform
     include SparkConstant
 

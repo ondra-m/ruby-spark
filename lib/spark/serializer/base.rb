@@ -1,10 +1,8 @@
-require_relative "helper.rb"
-
 module Spark
   module Serializer
     class Base
 
-      include Spark::Serializer::Helper
+      include Spark::Helper::Serialize
 
       attr_writer :batch_size
 

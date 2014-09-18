@@ -6,9 +6,11 @@ require "spark/command_validator"
 module Spark
   class CommandBuilder
 
-    include Spark::Serializer::Helper
+    include Spark::Helper::Serialize
     include Spark::Helper::Platform
     include Spark::CommandValidator
+
+    attr_reader :command
 
     def initialize(serializer, deserializer=nil)
       @command = Spark::Command.new
@@ -94,7 +96,7 @@ module Spark
         def serialize_function(func)
           case func.class.name.to_sym
           when :String
-            serialize_function_from_string(fun)
+            serialize_function_from_string(func)
           when :Proc
             serialize_function_from_proc(func)
           when :Symbol
@@ -163,8 +165,8 @@ module Spark
         #
         def serialize_function_from_method(func)
           {type: "method", name: func.name, content: func.source}
-        # rescue
-          # raise Spark::SerializeError, "Method can not be serialized. Use full path or Proc."
+        rescue
+          raise Spark::SerializeError, "Method can not be serialized. Use full path or Proc."
         end
 
   end

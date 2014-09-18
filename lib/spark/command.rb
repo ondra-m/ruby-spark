@@ -43,3 +43,5 @@ end
 
 require "spark/command/base"
 require "spark/command/basic"
+require "spark/command/pair"
+require "spark/command/statistic"

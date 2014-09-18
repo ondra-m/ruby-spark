@@ -27,7 +27,7 @@ module Master
 
   class Base
 
-    include Spark::Serializer::Helper
+    include Spark::Helper::Serialize
     include SparkConstant
 
     def initialize

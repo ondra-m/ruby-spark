@@ -14,10 +14,14 @@ module Spark
       end
     end
 
-    def validate_type(value, type)
-      if !value.is_a?(type)
-        error "Value: #{value} should be a #{type} but is #{value.class}."
+    def validate_type(value, types)
+      types = [types] if !types.is_a?(Array)
+
+      types.each do |type|
+        return if value.is_a?(type)
       end
+
+      error "Value: #{value} should be a #{type} but is #{value.class}."
     end
 
     def validate_size(array1, array2)
