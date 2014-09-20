@@ -23,7 +23,14 @@ module Spark
         def pry?
           !!Thread.current[:__pry__]
         end
+
+        def config_for_java
+          hash_map = HashMap.new
+          RbConfig::CONFIG.each_pair {|key, value| hash_map.put(key, value)}
+          hash_map
+        end
       end # Methods
+
     end # Platform
   end # Helper
 end # Spark

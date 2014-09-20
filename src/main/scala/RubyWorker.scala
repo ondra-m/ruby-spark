@@ -8,7 +8,7 @@ import scala.collection.JavaConversions._
 
 import org.apache.spark._
 import org.apache.spark.util.Utils
-import org.apache.spark.api.python.RedirectThread
+import org.apache.spark.util.RedirectThread
 import org.apache.spark.Logging
 
 

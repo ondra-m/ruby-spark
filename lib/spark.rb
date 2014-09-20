@@ -141,12 +141,16 @@ module Spark
   #               or single Spark jar
   #
   def self.load_lib(spark_home=nil)
-    return if @bridge
+    return if @java_bridge
 
     spark_home ||= Spark.target_dir
 
-    @bridge = JavaBridge.get.new(spark_home)
-    @bridge.import
+    @java_bridge = JavaBridge.get.new(spark_home)
+    @java_bridge.import
+  end
+
+  def self.java_bridge
+    @java_bridge
   end
 
 

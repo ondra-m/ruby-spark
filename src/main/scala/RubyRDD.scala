@@ -93,7 +93,7 @@ class RubyRDD[T: ClassTag](
 
       // Terminates the writer thread, ignoring any exceptions that may occur due to cleanup.
       def shutdownOnTaskCompletion() {
-        assert(context.completed)
+        assert(context.isCompleted)
         this.interrupt()
       }
 
@@ -131,7 +131,7 @@ class RubyRDD[T: ClassTag](
           PythonRDD.writeIteratorToStream(parent.iterator(split, context), dataOut)
           dataOut.flush()
         } catch {
-          case e: Exception if context.completed || context.interrupted =>
+          case e: Exception if context.isCompleted || context.isInterrupted =>
             logDebug("Exception thrown after task completion (likely due to cleanup)", e)
 
           case e: Exception =>
@@ -184,13 +184,12 @@ class RubyRDD[T: ClassTag](
           }
         } catch {
 
-          case e: Exception if context.interrupted =>
+          case e: Exception if context.isInterrupted =>
             logDebug("Exception thrown after task interruption", e)
             throw new TaskKilledException
 
           case e: Exception if writerThread.exception.isDefined =>
-            logError("Python worker exited unexpectedly (crashed)", e)
-            logError("This may have been caused by a prior exception:", writerThread.exception.get)
+            logError("Worker exited unexpectedly (crashed)", e)
             throw writerThread.exception.get
 
           case eof: EOFException =>
@@ -210,10 +209,10 @@ class RubyRDD[T: ClassTag](
 
       override def run() {
         // Kill the worker if it is interrupted, checking until task completion.
-        while (!context.interrupted && !context.completed) {
+        while (!context.isInterrupted && !context.isCompleted) {
           Thread.sleep(2000)
         }
-        if (!context.completed) {
+        if (!context.isCompleted) {
           try {
             logWarning("Incomplete task interrupted: Attempting to kill Worker "+workerId.toString())
             RubyWorker.kill(workerId)

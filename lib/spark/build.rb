@@ -5,7 +5,7 @@ module Spark
 
     DEFAULT_IVY_VERSION    = '2.3.0'
     DEFAULT_CORE_VERSION   = '2.10'
-    DEFAULT_SPARK_VERSION  = '1.0.0'
+    DEFAULT_SPARK_VERSION  = '1.1.0'
     DEFAULT_HADOOP_VERSION = '2.4.0'
 
     def self.spark(options={})

@@ -21,11 +21,21 @@ module Spark
       Spark.config.valid!
       @jcontext = JavaSparkContext.new(Spark.config.spark_conf)
 
+      ui.attachTab(RubyTab.new(ui, config_for_java))
+
       set_call_site("Ruby") # description of stage
     end
 
     def stop
       @jcontext.stop
+    end
+
+    def sc
+      @jcontext.sc
+    end
+
+    def ui
+      sc.ui
     end
 
     # Default level of parallelism to use when not given by user (e.g. parallelize and makeRDD)
