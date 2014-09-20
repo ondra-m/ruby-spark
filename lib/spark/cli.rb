@@ -3,6 +3,16 @@ require "thor"
 module Spark
   class CLI < Thor
 
+    # class_option :verbose, :type => :boolean
+    # class_option :silence, :type => :boolean
+    class_option :version, :type => :boolean
+
+    desc "", ""
+    def default
+      print_version if options[:version]
+    end
+    default_task :default
+
     IRB_HISTORY_FILE = File.join(Dir.home, ".irb_spark_history")
     IRB_HISTORY_SIZE = 100
 
@@ -87,6 +97,11 @@ module Spark
       Pry.start
     end
 
+    no_tasks do
+      def print_version
+        puts Spark::VERSION
+      end
+    end
 
   end
 end
