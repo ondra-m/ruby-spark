@@ -523,7 +523,7 @@ module Spark
 
       # Shuffle elements if requested num if greater than array size
       if !with_replacement && num >= initial_count
-        return self.shuffle(seed)
+        return self.shuffle(seed).collect
       end
 
       # Max num
