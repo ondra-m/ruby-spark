@@ -5,8 +5,8 @@ module Spark
     autoload :JRuby, "spark/java_bridge/jruby"
     autoload :RJB,   "spark/java_bridge/rjb"
 
-    include Spark::Helper::Platform
-    
+    include Spark::Helper::System
+
     def self.get
       if jruby?
         JRuby

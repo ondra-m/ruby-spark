@@ -7,7 +7,7 @@ module Spark
   class CommandBuilder
 
     include Spark::Helper::Serialize
-    include Spark::Helper::Platform
+    include Spark::Helper::System
     include Spark::CommandValidator
 
     attr_reader :command

@@ -21,7 +21,7 @@ module Spark
         return if value.is_a?(type)
       end
 
-      error "Value: #{value} should be a #{type} but is #{value.class}."
+      error "Value: #{value} should be a #{types.join(' or ')} but is #{value.class}."
     end
 
     def validate_size(array1, array2)

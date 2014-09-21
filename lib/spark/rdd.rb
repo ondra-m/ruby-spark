@@ -9,7 +9,9 @@ module Spark
     attr_reader :jrdd, :context, :command
 
     include Spark::Helper::Logger
+    include Spark::Helper::Parser
     include Spark::Helper::Statistic
+    include Spark::Helper::Partition
 
     # Initializing RDD, this method is root of all Pipelined RDD - its unique
     # If you call some operations on this class it will be computed in Java
@@ -71,6 +73,11 @@ module Spark
       @command.deep_copy.add_command(klass, *args)
     end
 
+    def new_pipelined_from_command(klass, *args)
+      comm = add_command(klass, *args)
+      PipelinedRDD.new(self, comm)
+    end
+
     def serializer
       @command.serializer
     end
@@ -82,8 +89,12 @@ module Spark
     # =============================================================================
     # Variables and non-computing functions
 
+    def config
+      @context.config
+    end
+
     def default_reduce_partitions
-      @context.config["spark.default.parallelism"] || partitions_size
+      config["spark.default.parallelism"] || partitions_size
     end
 
     # Count of ParallelCollectionPartition
@@ -157,8 +168,8 @@ module Spark
     def collect
       # @command.serializer.load(jrdd.collect.toArray.to_a)
       @command.serializer.load(jrdd.collect)
-    rescue
-      nil
+    # rescue
+    #   nil
     end
 
     # Convert an Array to Hash
@@ -254,8 +265,8 @@ module Spark
     #
     def count
       # nil is for seq_op => it means the all result go directly to one worker for combine
-      self.map_partitions("lambda{|iterator| iterator.size }")
-          .aggregate(0, nil, "lambda{|sum, item| sum + item }")
+      @count ||= self.map_partitions("lambda{|iterator| iterator.size }")
+                     .aggregate(0, nil, "lambda{|sum, item| sum + item }")
     end
 
     # Applies a function f to all elements of this RDD.
@@ -652,6 +663,64 @@ module Spark
       unioned.group_by_key
     end
 
+    def sort_by_key(ascending=true, num_partitions=nil)
+      num_partitions ||= default_reduce_partitions
+      command_klass = Spark::Command::Sort
+
+      # Allow spill data to disk due to memory limit
+      spilling = config["spark.shuffle.spill"] || false
+      memory   = config["spark.ruby.worker.memory"]
+
+      # Set spilling to false if worker has unlimited memory
+      if memory.empty?
+        spilling = false
+        memory   = nil
+      else
+        memory = to_memory_size(memory)
+      end
+
+      # Sorting should do one worker
+      if num_partitions == 1
+        rdd = self
+        rdd = rdd.coalesce(1) if partitions_size > 1
+        return rdd.new_pipelined_from_command(command_klass, ascending, spilling, memory)
+      end
+
+      # Compute boundary of collection
+      # Collection should be evenly distributed
+      # 20.0 is from scala RangePartitioner (for roughly balanced output partitions)
+      count = self.count
+      sample_size = num_partitions * 20.0
+      fraction = [sample_size / [count, 1].max, 1.0].min
+      samples = self.sample(false, fraction, 1).keys.collect
+      samples.sort!
+      # Reverse is much faster than sort_by
+      samples.reverse! if !ascending
+
+      # Determine part bounds
+      bounds = determine_bounds(samples, num_partitions)
+
+      # Index by bisect alghoritm
+      # TODO: move it into class for better serialization of bounds
+      partition_func = %{
+        Proc.new do |key|
+          count = 0
+          #{bounds}.each{|i|
+            break if i >= key
+            count += 1
+          }
+          if #{ascending}
+            count
+          else
+            #{num_partitions} - 1 - count
+          end
+        end
+      }
+
+      shuffled = self.partition_by(num_partitions, partition_func)
+      shuffled.new_pipelined_from_command(command_klass, ascending, spilling, memory)
+    end
+
     # Pass each value in the key-value pair RDD through a map function without changing
     # the keys. This also retains the original RDD's partitioning.
     #
@@ -704,6 +773,7 @@ module Spark
     alias_method :foreachPartition, :foreach_partition
     alias_method :mapValues, :map_values
     alias_method :takeSample, :take_sample
+    alias_method :sortByKey, :sort_by_key
 
     private
 

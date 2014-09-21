@@ -9,7 +9,8 @@ Spark.load_lib
 module Spark
   class Context
 
-    include Spark::Helper::Platform
+    include Spark::Helper::System
+    include Spark::Helper::Parser
 
     attr_reader :jcontext
 
@@ -21,7 +22,7 @@ module Spark
       Spark.config.valid!
       @jcontext = JavaSparkContext.new(Spark.config.spark_conf)
 
-      ui.attachTab(RubyTab.new(ui, config_for_java))
+      ui.attachTab(RubyTab.new(ui, to_java_hash(RbConfig::CONFIG)))
 
       set_call_site("Ruby") # description of stage
     end
@@ -41,7 +42,7 @@ module Spark
     # Default level of parallelism to use when not given by user (e.g. parallelize and makeRDD)
     #
     def default_parallelism
-      @jcontext.sc.defaultParallelism
+      sc.defaultParallelism
     end
 
     def get_serializer(serializer, *args)

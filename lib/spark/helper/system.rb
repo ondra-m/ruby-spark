@@ -1,6 +1,6 @@
 module Spark
   module Helper
-    module Platform
+    module System
 
       def self.included(base)
         base.send :extend,  Methods
@@ -24,13 +24,19 @@ module Spark
           !!Thread.current[:__pry__]
         end
 
-        def config_for_java
-          hash_map = HashMap.new
-          RbConfig::CONFIG.each_pair {|key, value| hash_map.put(key, value)}
-          hash_map
+        # Memory usage in kb
+        def memory_usage
+          if jruby?
+            runtime = java.lang.Runtime.getRuntime
+            (runtime.totalMemory - runtime.freeMemory) >> 10
+          elsif windows?
+            # not yet
+          else
+            `ps -o rss= -p #{Process.pid}`.to_i
+          end
         end
       end # Methods
 
-    end # Platform
+    end # System
   end # Helper
 end # Spark

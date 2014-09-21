@@ -2,8 +2,8 @@ module Spark
   module JavaBridge
     class Base
 
-      include Spark::Helper::Platform
-      
+      include Spark::Helper::System
+
       JAVA_OBJECTS = [
         "org.apache.spark.SparkConf",
         "org.apache.spark.api.java.JavaSparkContext",

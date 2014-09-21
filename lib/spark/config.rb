@@ -6,7 +6,7 @@ Spark.load_lib
 module Spark
   class Config
 
-    include Spark::Helper::Platform
+    include Spark::Helper::System
 
     # Initialize java SparkConf and load default configuration.
     def initialize
@@ -48,8 +48,9 @@ module Spark
       Spark.started?
     end
 
+    # Rescue from NoSuchElementException
     def get(key)
-      spark_conf.get(key.to_s)
+      spark_conf.get(key.to_s) rescue nil
     end
 
     def get_all
@@ -82,8 +83,9 @@ module Spark
     def set_default
       set_app_name(default_app_name)
       set_master(default_master)
-      set("spark.ruby.worker_type", default_worker_type)
-      set("spark.ruby.worker_arguments", default_worker_arguments)
+      set("spark.ruby.worker.type", default_worker_type)
+      set("spark.ruby.worker.arguments", default_worker_arguments)
+      set("spark.ruby.worker.memory", default_worker_memory)
       set("spark.ruby.parallelize_strategy", default_parallelize_strategy)
       set("spark.ruby.serializer", default_serializer)
       set("spark.ruby.batch_size", default_batch_size)
@@ -105,30 +107,16 @@ module Spark
       ENV["SPARK_RUBY_BATCH_SIZE"] || Spark::Serializer::DEFAULT_BATCH_SIZE.to_s
     end
 
-    # Default level of worker type. Fork doesn't work on jruby and windows.
-    #
-    #   Thread: all workers are created via thread
-    #   Process: workers are created by fork
-    #   Simple: workers are created by Spark as single process
-    #
     def default_worker_type
-      ENV["SPARK_RUBY_WORKER_TYPE"] || _default_worker_type
-    end
-
-    def _default_worker_type
-      if jruby? || windows?
-        "thread"
-      else
-        "process"
-      end
+      ENV["SPARK_RUBY_WORKER_TYPE"] || "process"
     end
 
     def default_worker_arguments
-      ENV["SPARK_RUBY_WORKER_ARGUMENTS"] || _default_worker_arguments
+      ENV["SPARK_RUBY_WORKER_ARGUMENTS"] || ""
     end
 
-    def _default_worker_arguments
-      ""
+    def default_worker_memory
+      ENV["SPARK_RUBY_WORKER_MEMORY"] || ""
     end
 
     # How to handle with data in method parallelize.

@@ -17,7 +17,7 @@ module Worker
   class Base
 
     include Spark::Helper::Serialize
-    include Spark::Helper::Platform
+    include Spark::Helper::System
     include SparkConstant
 
     attr_accessor :client_socket

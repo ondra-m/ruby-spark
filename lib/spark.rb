@@ -23,7 +23,7 @@ module Spark
   autoload :Logger,         "spark/logger"
   autoload :JavaBridge,     "spark/java_bridge"
 
-  include Helper::Platform
+  include Helper::System
   include Helper::Logger
 
   def self.print_logo(message=nil)

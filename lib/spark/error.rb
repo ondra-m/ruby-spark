@@ -23,4 +23,8 @@ module Spark
   # Validations
   class CommandError < StandardError
   end
+
+  # Parser helper
+  class ParseError < StandardError
+  end
 end
