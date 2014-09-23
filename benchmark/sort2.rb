@@ -2,7 +2,7 @@ require "benchmark"
 require "algorithms"
 
 NUMBER_OF_SORTING = 10
-NUMBER_OF_ARRAY   = 10
+NUMBER_OF_ARRAY   = 20
 WORDS_IN_ARRAY    = 10000
 MAX_WORD_SIZE     = 10
 
@@ -14,8 +14,8 @@ def word
   Array.new(rand(1..MAX_WORD_SIZE)){(97+rand(26)).chr}.join
 end
 
-@array  = Array.new(NUMBER_OF_ARRAY) { words.sort }
-@result = @array.flatten.sort
+@array = Array.new(NUMBER_OF_ARRAY) { words.sort }
+
 
 # =================================================================================================
 # Sort1
@@ -85,6 +85,12 @@ end
 # Benchmark
 
 Benchmark.bm(10) do |x|
+  x.report("sort") do
+    NUMBER_OF_SORTING.times {
+      @result = @array.flatten.sort
+    }
+  end
+
   x.report("sort 1") do
     NUMBER_OF_SORTING.times { 
       raise "Bad sorting" if @result != sort1(@array.map(&:each)).to_a
