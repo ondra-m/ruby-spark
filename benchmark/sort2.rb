@@ -1,18 +1,24 @@
 require "benchmark"
 require "algorithms"
 
+NUMBER_OF_SORTING = 10
+NUMBER_OF_ARRAY   = 10
+WORDS_IN_ARRAY    = 10000
+MAX_WORD_SIZE     = 10
 
-# Data
-array1 = (['r', 'g', 's', 'd', 'a'] * 1000000).sort;
-array2 = (['v', 's', 'r', 'h', 'j'] * 1000000).sort;
-array3 = (['n', 'r', 'u', 'o', 'w'] * 1000000).sort;
+def words
+  Array.new(WORDS_IN_ARRAY) { word }
+end
 
+def word
+  Array.new(rand(1..MAX_WORD_SIZE)){(97+rand(26)).chr}.join
+end
+
+@array  = Array.new(NUMBER_OF_ARRAY) { words.sort }
+@result = @array.flatten.sort
 
 # =================================================================================================
-# Sort2
-
-# Pole enumeratoru
-array = [array1.each, array2.each, array3.each]
+# Sort1
 
 # Vrátí nový (nevyhodnocený) enumerator
 def sort1(data)
@@ -49,10 +55,6 @@ end
 # =================================================================================================
 # Sort 2
 
-# Pole enumeratoru
-array = [array1.each, array2.each, array3.each]
-
-
 def sort2(data)
   return to_enum(__callee__, data) unless block_given?
 
@@ -82,13 +84,16 @@ end
 # =================================================================================================
 # Benchmark
 
-n = 1000000
 Benchmark.bm(10) do |x|
   x.report("sort 1") do
-    n.times { sort1([array1.each, array2.each, array3.each]) }
+    NUMBER_OF_SORTING.times { 
+      raise "Bad sorting" if @result != sort1(@array.map(&:each)).to_a
+    }
   end
 
   x.report("sort 2") do
-    n.times { sort2([array1.each, array2.each, array3.each]) }
+    NUMBER_OF_SORTING.times {
+      raise "Bad sorting" if @result != sort2(@array.map(&:each)).to_a
+    }
   end
 end
