@@ -87,6 +87,24 @@ module Spark
         deserialize(io.read(unpack_int(io.read(4))))
       end
 
+      def load_as_enum(io)
+        return to_enum(__callee__, io) unless block_given?
+
+        while true
+          begin
+            result = load_one_from_io(io)
+            if batched?
+              result.each {|item| yield item }
+            else
+              yield result
+            end
+          rescue
+            break
+          end # begin
+        end # while
+
+      end # load_as_enum
+
       # def load_from_array(array)
       #   array.map! do |item|
       #     if item.is_a?(String)
@@ -121,20 +139,37 @@ module Spark
 
       # Serialize and send data into IO. Check 'load_from_io' for data format.
       #
-      def dump(data, io)
-        data = [data] unless data.is_a?(Array)
+      def dump(data, io, separator=:size)
+        data = [data] if !data.is_a?(Array) || !data.is_a?(Enumerator)
         data = data.each_slice(batch_size) if batched?
+
+        case separator.to_sym
+        when :size
+          dump_with_size(data, io)
+        when :newline
+          dump_with_newline(data, io)
+        end
+      end
+
+      def dump_with_size(data, io)
         data.each do |item|
           serialized = serialize(item)
           io.write(pack_int(serialized.size) + serialized)
         end
       end
 
-      def dump_to_java(data)
-        data.map! do |item|
-          serialize(item).to_java_bytes
+      def dump_with_newline(data, io)
+        data.each do |item|
+          io.puts(serialize(item))
         end
       end
+
+      # # For direct serialization
+      # def dump_to_java(data)
+      #   data.map! do |item|
+      #     serialize(item).to_java_bytes
+      #   end
+      # end
 
       # Rescue cannot be defined
       #

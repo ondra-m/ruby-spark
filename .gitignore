@@ -1,3 +1,5 @@
+/.gemtags
+/.tags
 /java/spark.jar
 .jbundler
 target/*

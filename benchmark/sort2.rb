@@ -2,13 +2,16 @@ require "benchmark"
 require "algorithms"
 
 NUMBER_OF_SORTING = 1
-NUMBER_OF_ARRAY   = 5
-WORDS_IN_ARRAY    = 500000
+NUMBER_OF_ARRAY   = 10
+WORDS_IN_ARRAY    = 100000
 MAX_WORD_SIZE     = 10
+EVAL_N_VALUES     = 10
 
-# Rozdíl mezi 1 a 10 je 2x
-# ale mezi 10 a 50 žádný
-EVAL_N_VALUES     = 10 # sort1_2
+puts "NUMBER_OF_SORTING: #{NUMBER_OF_SORTING}"
+puts "NUMBER_OF_ARRAY: #{NUMBER_OF_ARRAY}"
+puts "WORDS_IN_ARRAY: #{WORDS_IN_ARRAY}"
+puts "MAX_WORD_SIZE: #{MAX_WORD_SIZE}"
+puts "EVAL_N_VALUES: #{EVAL_N_VALUES}"
 
 def words
   Array.new(WORDS_IN_ARRAY) { word }
@@ -68,7 +71,10 @@ def sort1_2(data)
   # připojím samotné enumeratory pro volání .next
   data.each do |a|
     EVAL_N_VALUES.times {
-      heap << [a.next, a]
+      begin
+        heap << [a.next, a]
+      rescue StopIteration
+      end
     }
   end
 
@@ -78,6 +84,8 @@ def sort1_2(data)
 
       # Minimálně můžu vzít EVAL_N_VALUES
       EVAL_N_VALUES.times {
+        break if heap.empty?
+
         # Uložím si hodnotu a enumerator
         item, enum = heap.shift
         # Hodnota půjde do výsledku
@@ -91,6 +99,7 @@ def sort1_2(data)
         heap << [enum.next, enum]
       rescue StopIteration
         data.delete(enum)
+        enums.delete(enum)
       end
     end
 
@@ -147,9 +156,9 @@ Benchmark.bm(10) do |x|
     }
   end
 
-  x.report("sort 2") do
-    NUMBER_OF_SORTING.times {
-      raise "Bad sorting" if @result != sort2(@array.map(&:each)).to_a
-    }
-  end
+  # x.report("sort 2") do
+  #   NUMBER_OF_SORTING.times {
+  #     raise "Bad sorting" if @result != sort2(@array.map(&:each)).to_a
+  #   }
+  # end
 end

@@ -477,21 +477,7 @@ module Spark
     #
     def partition_by(num_partitions, partition_func=nil)
       num_partitions ||= default_reduce_partitions
-      partition_func ||= "lambda{|x| x.hash}"
-
-      # RDD is transform from [key, value] to [hash, [key, value]]
-      comm = add_command(Spark::Command::PartitionBy, partition_func)
-      keyed = PipelinedRDD.new(self, comm)
-      keyed.serializer.unbatch!
-
-      # PairwiseRDD and PythonPartitioner are borrowed from Python
-      # but works great on ruby too
-      pairwise_rdd = PairwiseRDD.new(keyed.jrdd.rdd).asJavaPairRDD
-      partitioner = PythonPartitioner.new(num_partitions, partition_func.object_id)
-      new_jrdd = pairwise_rdd.partitionBy(partitioner).values
-
-      # Reset deserializer
-      RDD.new(new_jrdd, context, @command.serializer, keyed.serializer)
+      _partition_by(num_partitions, Spark::Command::PartitionBy::Basic, partition_func)
     end
 
     # Return a sampled subset of this RDD. Operations are base on Poisson and Uniform
@@ -665,7 +651,8 @@ module Spark
 
     def sort_by_key(ascending=true, num_partitions=nil)
       num_partitions ||= default_reduce_partitions
-      command_klass = Spark::Command::Sort
+
+      command_klass = Spark::Command::SortByKey
 
       # Allow spill data to disk due to memory limit
       spilling = config["spark.shuffle.spill"] || false
@@ -683,7 +670,7 @@ module Spark
       if num_partitions == 1
         rdd = self
         rdd = rdd.coalesce(1) if partitions_size > 1
-        return rdd.new_pipelined_from_command(command_klass, ascending, spilling, memory)
+        return rdd.new_pipelined_from_command(command_klass, ascending, spilling, memory, serializer)
       end
 
       # Compute boundary of collection
@@ -693,32 +680,15 @@ module Spark
       sample_size = num_partitions * 20.0
       fraction = [sample_size / [count, 1].max, 1.0].min
       samples = self.sample(false, fraction, 1).keys.collect
-      samples.sort!
+      samples.sort_by!
       # Reverse is much faster than sort_by
       samples.reverse! if !ascending
 
       # Determine part bounds
       bounds = determine_bounds(samples, num_partitions)
 
-      # Index by bisect alghoritm
-      # TODO: move it into class for better serialization of bounds
-      partition_func = %{
-        Proc.new do |key|
-          count = 0
-          #{bounds}.each{|i|
-            break if i >= key
-            count += 1
-          }
-          if #{ascending}
-            count
-          else
-            #{num_partitions} - 1 - count
-          end
-        end
-      }
-
-      shuffled = self.partition_by(num_partitions, partition_func)
-      shuffled.new_pipelined_from_command(command_klass, ascending, spilling, memory)
+      shuffled = _partition_by(num_partitions, Spark::Command::PartitionBy::Sorting, bounds, ascending, num_partitions)
+      shuffled.new_pipelined_from_command(command_klass, ascending, spilling, memory, serializer)
     end
 
     # Pass each value in the key-value pair RDD through a map function without changing
@@ -799,6 +769,22 @@ module Spark
         # Value is returned in array
         PipelinedRDD.new(rdd, comm).collect[0]
       end
+
+    def _partition_by(num_partitions, klass, *args)
+      # RDD is transform from [key, value] to [hash, [key, value]]
+      comm = add_command(klass, *args)
+      keyed = PipelinedRDD.new(self, comm)
+      keyed.serializer.unbatch!
+
+      # PairwiseRDD and PythonPartitioner are borrowed from Python
+      # but works great on ruby too
+      pairwise_rdd = PairwiseRDD.new(keyed.jrdd.rdd).asJavaPairRDD
+      partitioner = PythonPartitioner.new(num_partitions, partition_func.object_id)
+      new_jrdd = pairwise_rdd.partitionBy(partitioner).values
+
+      # Reset deserializer
+      RDD.new(new_jrdd, context, @command.serializer, keyed.serializer)
+    end
 
   end
 

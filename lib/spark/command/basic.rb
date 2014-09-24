@@ -93,8 +93,7 @@ end
 # Shuffle
 
 class Spark::Command::Shuffle < _Base
-  variable :seed, function: false,
-                  type: Integer
+  variable :seed, function: false, type: Integer
 
   def run(iterator, _)
     iterator.shuffle!(random: rng)
@@ -109,27 +108,56 @@ end
 # -------------------------------------------------------------------------------------------------
 # PartitionBy
 
-class Spark::Command::PartitionBy < _Base
-  include Spark::Helper::Serialize
+class Spark::Command::PartitionBy
 
-  variable :partition_func
+  class Base < Spark::Command::Base
+    include Spark::Helper::Serialize
 
-  def run(iterator, _)
-    iterator.map! do |key, value|
-      [pack_long(@partition_func.call(key)), [key, value]]
+    def run(iterator, _)
+      iterator.map! do |key, value|
+        [pack_long(@partition_func.call(key)), [key, value]]
+      end
+      iterator.flatten!(1)
+      iterator
     end
-    iterator.flatten!(1)
-    iterator
   end
-end
+
+  class Basic < Base
+    variable :partition_func
+  end
+
+  class Sorting < Base
+    variable :bounds, function: false, type: Array
+    variable :ascending, function: false, type: [TrueClass, FalseClass]
+    variable :num_partitions, function: false, type: Numeric
+
+    def run(iterator, _)
+      # Index by bisect alghoritm
+      @partition_func = Proc.new do |key|
+        count = 0
+        @bounds.each{|i|
+          break if i >= key
+          count += 1
+        }
+        if @ascending
+          count
+        else
+          @num_partitions - 1 - count
+        end
+      end
+
+      super
+    end
+
+  end # Sorting
+end # PartitionBy
 
 # -------------------------------------------------------------------------------------------------
 # Aggregate
 
 class Spark::Command::Aggregate < _Base
   variable :reduce_func
-  variable :zero_value, function: false,
-                        type: Object
+  variable :zero_value, function: false, type: Object
 
   def run(iterator, _)
     [iterator.reduce(@zero_value, &@reduce_func)]
