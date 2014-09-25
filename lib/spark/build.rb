@@ -16,12 +16,13 @@ module Spark
       hadoop_version = options[:"hadoop-version"] || DEFAULT_HADOOP_VERSION
 
       dir = Dir.mktmpdir
+      ivy_jar = File.join(dir, 'ivy.jar')
 
       begin
         print "Building ivy"
-        exec(get_ivy(dir, 'ivy.jar', ivy_version))
+        exec(get_ivy(ivy_jar, ivy_version))
         print "Building spark"
-        exec(get_spark(dir, 'ivy.jar', spark_core, spark_version, hadoop_version))
+        exec(get_spark(dir, ivy_jar, spark_core, spark_version, hadoop_version))
         print "Moving files"
         FileUtils.mkdir_p(spark_home)
         FileUtils.mv(Dir.glob(File.join(dir, 'spark', '*')), spark_home)
@@ -46,18 +47,19 @@ module Spark
 
     private
 
-      def self.get_ivy(dir, ivy, version)
+      def self.get_ivy(ivy_jar, version)
         ["curl",
-         "-o", File.join(dir, ivy),
+         "-L",
+         "-o", ivy_jar,
          "http://search.maven.org/remotecontent\?filepath\=org/apache/ivy/ivy/#{version}/ivy-#{version}.jar"].join(" ")
       end
 
-      def self.get_spark(dir, ivy, core_version, spark_version, hadoop_version)
+      def self.get_spark(dir, ivy_jar, core_version, spark_version, hadoop_version)
         ["java",
          "-Dspark.core.version=#{core_version}",
          "-Dspark.version=#{spark_version}",
          "-Dhadoop.version=#{hadoop_version}",
-         "-jar", File.join(dir, ivy),
+         "-jar", ivy_jar,
          "-ivy", Spark.ivy_xml,
          "-retrieve", "\"#{File.join(dir, "spark", "[artifact]-[revision](-[classifier]).[ext]")}\""].join(" ")
       end
