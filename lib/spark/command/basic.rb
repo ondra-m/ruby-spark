@@ -12,10 +12,10 @@ class Spark::Command::Map < _Base
     end
     iterator
   end
-  
-  def run_as_enum(iterator, *)
-    iterator.each do |item|
-      yield @map_function.call(item)
+
+  def run_with_enum(iterator, *)
+    iterator.defer do |out, inp|
+      out << @map_function.call(inp)
     end
   end
 end
@@ -30,14 +30,14 @@ class Spark::Command::FlatMap < Spark::Command::Map
     iterator
   end
 
-  def run_as_enum(iterator, *)
-    iterator.each do |item|
-      item = @map_function.call(item)
-      if item.is_a?(Array)
-        item.flatten!
-        item.each {|x| yield x}
+  def run_with_enum(iterator, *)
+    iterator.defer do |out, inp|
+      inp = @map_function.call(inp)
+      if inp.is_a?(Array)
+        inp.flatten!
+        inp.each {|x| out << x}
       else
-        yield item
+        out << inp
       end
     end
   end
@@ -79,9 +79,9 @@ class Spark::Command::Filter < _Base
     iterator
   end
 
-  def run_as_enum(iterator, *)
-    iterator.each do |item|
-      yield item if @filter_function.call(item)
+  def run_with_enum(iterator, *)
+    iterator.defer do |out, inp|
+      out << inp if @filter_function.call(inp)
     end
   end
 end
@@ -95,9 +95,9 @@ class Spark::Command::Compact < _Base
     iterator
   end
 
-  def run_as_enum(iterator, *)
-    iterator.each do |item|
-      yield item if !item.nil?
+  def run_with_enum(iterator, *)
+    iterator.defer do |out, inp|
+      out << inp if !inp.nil?
     end
   end
 end
@@ -137,15 +137,17 @@ class Spark::Command::PartitionBy
 
     def run(iterator, *)
       iterator.map! do |key, value|
+        log [key, value].inspect
         [pack_long(@partition_func.call(key)), [key, value]]
       end
       iterator.flatten!(1)
       iterator
     end
-    def run_as_enum(iterator, *)
-      iterator.each do |key, value|
-        yield pack_long(@partition_func.call(key))
-        yield [key, value]
+
+    def run_with_enum(iterator, *)
+      iterator.defer do |out, inp|
+        out << pack_long(@partition_func.call(inp[0]))
+        out << inp
       end
     end
   end
@@ -159,7 +161,7 @@ class Spark::Command::PartitionBy
     variable :ascending, function: false, type: [TrueClass, FalseClass]
     variable :num_partitions, function: false, type: Numeric
 
-    def run(iterator, *)
+    def create_partition_func
       # Index by bisect alghoritm
       @partition_func = Proc.new do |key|
         count = 0
@@ -173,7 +175,15 @@ class Spark::Command::PartitionBy
           @num_partitions - 1 - count
         end
       end
+    end
 
+    def run(iterator, *)
+      create_partition_func
+      super
+    end
+
+    def run_with_enum(iterator, *)
+      create_partition_func
       super
     end
 
@@ -191,8 +201,8 @@ class Spark::Command::Aggregate < _Base
     [iterator.reduce(@zero_value, &@reduce_func)]
   end
 
-  def run_as_enum(iterator, *)
-    yield run(iterator)[0]
+  def run_with_enum(iterator, *)
+    run(iterator)
   end
 end
 

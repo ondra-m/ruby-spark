@@ -13,9 +13,7 @@ class Spark::Command::Sample < _Base
   end
 
   def run_as_enum(iterator, _)
-    sampler.sample_as_enum(iterator) do |item|
-      yield item
-    end
+    sampler.sample_as_enum(iterator)
   end
 
   def sampler

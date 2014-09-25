@@ -80,9 +80,11 @@ module Spark
 
     desc "pry", "start ruby shell for spark"
     option :spark
-    option :start, :default => true
+    option :start,  :default => true
+    option :logger, :default => true
     def pry
       Spark.load_lib(options[:spark])
+      Spark::Logger.disable if !options[:logger]
 
       Spark.config do
         set_app_name "Pry RubySpark"

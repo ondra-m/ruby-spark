@@ -55,9 +55,9 @@ module Spark
       end
 
       def sample_as_enum(iterator)
-        iterator.each do |item|
+        iterator.defer do |out, inp|
           count = rng.rand
-          count.times { yield item }
+          count.times { out << inp }
         end
       end
 
@@ -77,8 +77,8 @@ module Spark
       end
 
       def sample_as_enum(iterator)
-        iterator.each do |item|
-          yield item if rng.rand <= fraction
+        iterator.defer do |out, inp|
+          out << inp if rng.rand <= fraction
         end
       end
 

@@ -651,6 +651,12 @@ module Spark
       unioned.group_by_key
     end
 
+    # Sort the RDD by key
+    #
+    # rdd = $sc.parallelize([["c", 1], ["b", 2], ["a", 3]])
+    # rdd.sort_by_key.collect
+    # => [["a", 3], ["b", 2], ["c", 1]]
+    #
     def sort_by_key(ascending=true, num_partitions=nil)
       num_partitions ||= default_reduce_partitions
 

@@ -59,9 +59,9 @@ class Spark::Command::MapValues < _Base
   end
 
   def run_as_enum(iterator, *)
-    iterator.each do |item|
-      item[1] = @map_function.call(item[1])
-      yield item
+    iterator.defer do |out, inp|
+      item[1] = @map_function.call(inp[1])
+      out << item
     end
   end
 end

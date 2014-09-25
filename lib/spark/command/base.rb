@@ -19,6 +19,11 @@ class Spark::Command::Base
     self.class.error(message)
   end
 
+  def log(message=nil)
+    $stdout.puts %{==> [#{Time.now.strftime("%H:%M")}] [#{self.class.name}] #{message}}
+    $stdout.flush
+  end
+
 
   # ===============================================================================================
   # Methods called after during class loading
@@ -59,14 +64,11 @@ class Spark::Command::Base
     before_run
 
     # Run has to be implemented on child
-    if iterator.is_a?(Enumerator)
-      if respond_to?(:run_as_enum)
-        return enum_for(:run_as_enum, iterator, split_index)
-      else
-        iterator = iterator.to_a
-      end
+    if iterator.is_a?(Enumerator) && respond_to?(:run_with_enum)
+      return run_with_enum(iterator, split_index)
     end
 
+    iterator = iterator.to_a
     run(iterator, split_index)
   end
 
@@ -101,6 +103,10 @@ class Spark::Command::Base
     end
 
     @initialized = true
+  end
+
+  def enum
+    Enumerator.new
   end
 
 end
