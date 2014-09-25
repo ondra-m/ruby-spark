@@ -11,9 +11,9 @@ class Spark::Command::SortByKey < _Base
 
   def run(iterator, _)
     if @spilling
-      run_with_spilling(iterator)
+      iterator = run_with_spilling(iterator)
     else
-      run_without_spilling(iterator)
+      iterator = run_without_spilling(iterator)
     end
 
     # iterator.reverse! if !@ascending
@@ -28,7 +28,7 @@ class Spark::Command::SortByKey < _Base
     end
 
     def run_without_spilling(iterator)
-      iterator.sort_by!{|(key, _)| key}
+      iterator.sort_by{|(key, _)| key}
     end
 
 end

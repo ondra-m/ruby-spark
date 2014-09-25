@@ -21,15 +21,15 @@ module Spark
         self
       end
 
-      def batch_size(size=-1)
-        if size == -1
-          return @batch_size
-        end
+      # def batch_size(size=-1)
+      #   if size == -1
+      #     return @batch_size
+      #   end
 
-        _new = self.dup
-        _new.batch_size = size
-        _new
-      end
+      #   _new = self.dup
+      #   _new.batch_size = size
+      #   _new
+      # end
 
       def batch_size=(size)
         @batch_size = size.to_i
@@ -69,25 +69,21 @@ module Spark
       # |     4B     |        |
       # +------------+--------+
       #
+      # def load_from_io(io)
+      #   result = []
+      #   while true
+      #     begin
+      #       result << load_one_from_io(io)
+      #     rescue
+      #       break
+      #     end
+      #   end
+
+      #   result.flatten!(1) if batched?
+      #   result
+      # end
+
       def load_from_io(io)
-        result = []
-        while true
-          begin
-            result << load_one_from_io(io)
-          rescue
-            break
-          end
-        end
-
-        result.flatten!(1) if batched?
-        result
-      end
-
-      def load_one_from_io(io)
-        deserialize(io.read(unpack_int(io.read(4))))
-      end
-
-      def load_as_enum(io)
         return to_enum(__callee__, io) unless block_given?
 
         while true
@@ -103,7 +99,11 @@ module Spark
           end # begin
         end # while
 
-      end # load_as_enum
+      end # load_from_io
+
+      def load_one_from_io(io)
+        deserialize(io.read(unpack_int(io.read(4))))
+      end
 
       # def load_from_array(array)
       #   array.map! do |item|
@@ -139,29 +139,18 @@ module Spark
 
       # Serialize and send data into IO. Check 'load_from_io' for data format.
       #
-      def dump(data, io, separator=:size)
-        data = [data] if !data.is_a?(Array) || !data.is_a?(Enumerator)
+      def dump(data, io)
+        if !data.is_a?(Array) && !data.is_a?(Enumerator)
+          data = [data]
+        end
         data = data.each_slice(batch_size) if batched?
 
-        case separator.to_sym
-        when :size
-          dump_with_size(data, io)
-        when :newline
-          dump_with_newline(data, io)
-        end
-      end
-
-      def dump_with_size(data, io)
         data.each do |item|
           serialized = serialize(item)
           io.write(pack_int(serialized.size) + serialized)
         end
-      end
 
-      def dump_with_newline(data, io)
-        data.each do |item|
-          io.puts(serialize(item))
-        end
+        io.flush
       end
 
       # # For direct serialization

@@ -22,6 +22,7 @@ module Spark
   autoload :Sampler,        "spark/sampler"
   autoload :Logger,         "spark/logger"
   autoload :JavaBridge,     "spark/java_bridge"
+  autoload :ExternalSorter, "spark/sort"
 
   include Helper::System
   include Helper::Logger

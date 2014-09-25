@@ -80,17 +80,23 @@ module Spark
 
     desc "pry", "start ruby shell for spark"
     option :spark
+    option :start, :default => true
     def pry
-      # Load Java and Spark
       Spark.load_lib(options[:spark])
 
       Spark.config do
         set_app_name "Pry RubySpark"
       end
-      Spark.start
-      $sc = Spark.context
 
-      Spark.print_logo("Spark context is loaded as $sc")
+      if options[:start]
+        # Load Java and Spark
+        Spark.start
+        $sc = Spark.context
+
+        Spark.print_logo("Spark context is loaded as $sc")
+      else
+        Spark.print_logo("You can start Spark with Spark.start")
+      end
 
       # Load IRB
       require "pry"
