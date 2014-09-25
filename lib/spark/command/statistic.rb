@@ -9,6 +9,20 @@ class Spark::Command::Sample < _Base
   variable :seed,             function: false, type: [NilClass, Numeric]
 
   def run(iterator, _)
+    sampler.sample(iterator)
+  end
+
+  def run_as_enum(iterator, _)
+    sampler.sample_as_enum(iterator) do |item|
+      yield item
+    end
+  end
+
+  def sampler
+    @sampler ||= _sampler
+  end
+
+  def _sampler
     if @with_replacement
       sampler = Spark::Sampler::Poisson
     else
@@ -16,6 +30,5 @@ class Spark::Command::Sample < _Base
     end
 
     sampler = sampler.new(@fraction, @seed)
-    sampler.sample(iterator)
   end
 end

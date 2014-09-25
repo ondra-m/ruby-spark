@@ -4,7 +4,7 @@ module Spark
 
       include Spark::Helper::Serialize
 
-      attr_writer :batch_size
+      attr_reader :batch_size
 
       # Set default values
       def initialize(batch_size=nil)

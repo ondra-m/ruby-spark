@@ -11,9 +11,21 @@ class Spark::Command::SortByKey < _Base
 
   def run(iterator, _)
     if @spilling
+      iterator = run_with_spilling(iterator.each)
+    else
+      run_without_spilling(iterator)
+    end
+
+    # iterator.reverse! if !@ascending
+    iterator
+  end
+
+  def run_as_enum(iterator, _)
+    if @spilling
       iterator = run_with_spilling(iterator)
     else
-      iterator = run_without_spilling(iterator)
+      iterator = iterator.to_a
+      run_without_spilling(iterator)
     end
 
     # iterator.reverse! if !@ascending
@@ -28,7 +40,7 @@ class Spark::Command::SortByKey < _Base
     end
 
     def run_without_spilling(iterator)
-      iterator.sort_by{|(key, _)| key}
+      iterator.sort_by!{|(key, _)| key}
     end
 
 end

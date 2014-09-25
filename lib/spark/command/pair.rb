@@ -5,11 +5,14 @@ _Base = Spark::Command::Base
 
 class Spark::Command::CombineByKey
 
-  class Combine < Spark::Command::Base
+  class Base < Spark::Command::Base
+  end
+
+  class Combine < Base
     variable :merge_value
     variable :create_combiner
 
-    def run(iterator, _)
+    def run(iterator, *)
       # Not use combiners[key] ||= ..
       # it tests nil and not has_key?
       combiners = {}
@@ -24,10 +27,10 @@ class Spark::Command::CombineByKey
     end
   end
 
-  class Merge < Spark::Command::Base
+  class Merge < Base
     variable :merge_combiners
 
-    def run(iterator, _)
+    def run(iterator, *)
       combiners = {}
       iterator.each do |key, value|
         if combiners.has_key?(key)
@@ -48,10 +51,17 @@ end
 class Spark::Command::MapValues < _Base
   variable :map_function
 
-  def run(iterator, _)
+  def run(iterator, *)
     iterator.map do |item|
       item[1] = @map_function.call(item[1])
     end
     iterator
+  end
+
+  def run_as_enum(iterator, *)
+    iterator.each do |item|
+      item[1] = @map_function.call(item[1])
+      yield item
+    end
   end
 end

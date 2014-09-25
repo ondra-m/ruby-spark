@@ -54,6 +54,13 @@ module Spark
         iterator
       end
 
+      def sample_as_enum(iterator)
+        iterator.each do |item|
+          count = rng.rand
+          count.times { yield item }
+        end
+      end
+
       def rng
         @rng ||= Spark::RandomGenerator::Poisson.new(fraction, seed)
       end
@@ -65,10 +72,18 @@ module Spark
     class Uniform < Base
 
       def sample(iterator)
-        rng = Random.new(seed)
-
         iterator.select!{|item| rng.rand <= fraction}
         iterator
+      end
+
+      def sample_as_enum(iterator)
+        iterator.each do |item|
+          yield item if rng.rand <= fraction
+        end
+      end
+
+      def rng
+        @rng ||= Random.new(seed)
       end
 
     end

@@ -37,16 +37,6 @@ module Spark
       unpack_chars(Marshal.dump(@command))
     end
 
-    # def deep_copy
-    #   Marshal.load(Marshal.dump(self))
-    # end
-
-    # def add_task(type, args)
-    #   task = Spark::Command.const_get("#{type.to_s.camelize}Task").new(args)
-    #   @command.add_task(task)
-    #   self
-    # end
-
     def add_command(klass, *args)
       variables = klass.settings.variables
       validate_size(variables, args)

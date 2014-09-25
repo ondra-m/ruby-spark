@@ -4,10 +4,6 @@ Spark.load_lib
 module Spark
   class Logger
 
-    def self.root
-      JLogger.getRootLogger
-    end
-    
     def self.logger
       JLogger.getLogger("Ruby")
     end
@@ -18,24 +14,10 @@ module Spark
 
     # Disable all Spark log
     def self.disable
-      if enabled?
-      # JLogger.getLogger("org").setLevel(JLevel.toLevel("OFF"))
-      # JLogger.getLogger("akka").setLevel(JLevel.toLevel("OFF"))
-      # JLogger.getLogger("ruby").setLevel(JLevel.toLevel("OFF"))
-
-        @root_prev_level = root.getLevel
-        root.setLevel(level_off)
-      end
-    end
-
-    def self.enable
-      if disabled? && @root_prev_level
-        root.setLevel(@root_prev_level)
-      end
-    end
-
-    def self.disabled?
-      root.getLevel.equals(level_off)
+      logger.setLevel(level_off)
+      JLogger.getLogger("org").setLevel(level_off)
+      JLogger.getLogger("akka").setLevel(level_off)
+      JLogger.getRootLogger.setLevel(level_off)
     end
 
     def self.enabled?

@@ -57,7 +57,16 @@ class Spark::Command::Base
   def execute(iterator, split_index)
     # Implemented on Base but can be override
     before_run
+
     # Run has to be implemented on child
+    if iterator.is_a?(Enumerator)
+      if respond_to?(:run_as_enum)
+        return enum_for(:run_as_enum, iterator, split_index)
+      else
+        iterator = iterator.to_a
+      end
+    end
+
     run(iterator, split_index)
   end
 

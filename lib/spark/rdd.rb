@@ -477,6 +477,8 @@ module Spark
     #
     def partition_by(num_partitions, partition_func=nil)
       num_partitions ||= default_reduce_partitions
+      partition_func ||= "lambda{|x| x.hash}"
+
       _partition_by(num_partitions, Spark::Command::PartitionBy::Basic, partition_func)
     end
 
@@ -770,21 +772,21 @@ module Spark
         PipelinedRDD.new(rdd, comm).collect[0]
       end
 
-    def _partition_by(num_partitions, klass, *args)
-      # RDD is transform from [key, value] to [hash, [key, value]]
-      comm = add_command(klass, *args)
-      keyed = PipelinedRDD.new(self, comm)
-      keyed.serializer.unbatch!
+      def _partition_by(num_partitions, klass, *args)
+        # RDD is transform from [key, value] to [hash, [key, value]]
+        comm = add_command(klass, *args)
+        keyed = PipelinedRDD.new(self, comm)
+        keyed.serializer.unbatch!
 
-      # PairwiseRDD and PythonPartitioner are borrowed from Python
-      # but works great on ruby too
-      pairwise_rdd = PairwiseRDD.new(keyed.jrdd.rdd).asJavaPairRDD
-      partitioner = PythonPartitioner.new(num_partitions, partition_func.object_id)
-      new_jrdd = pairwise_rdd.partitionBy(partitioner).values
+        # PairwiseRDD and PythonPartitioner are borrowed from Python
+        # but works great on ruby too
+        pairwise_rdd = PairwiseRDD.new(keyed.jrdd.rdd).asJavaPairRDD
+        partitioner = PythonPartitioner.new(num_partitions, args.first.object_id)
+        new_jrdd = pairwise_rdd.partitionBy(partitioner).values
 
-      # Reset deserializer
-      RDD.new(new_jrdd, context, @command.serializer, keyed.serializer)
-    end
+        # Reset deserializer
+        RDD.new(new_jrdd, context, @command.serializer, keyed.serializer)
+      end
 
   end
 
