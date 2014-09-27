@@ -39,13 +39,13 @@ module Spark
       @memory_limit += memory_chunk
     end
 
-    def sort_by(iterator, key_function=KEY_FUNCTION)
+    def sort_by(iterator, ascending=true, key_function=KEY_FUNCTION)
       return to_enum(__callee__, iterator, key_function) unless block_given?
 
       create_temp_folder
 
       # Make N sorted enumerators
-      parts = make_parts(iterator, key_function)
+      parts = make_parts(iterator, ascending, key_function)
 
       return [] if parts.empty?
 
@@ -76,7 +76,7 @@ module Spark
         EVAL_N_VALUES.times {
           break if heap.empty?
 
-          item, enum = heap.shift
+          item, enum = ascending ? heap.shift : heap.pop
           enums << enum
 
           yield item
@@ -109,7 +109,7 @@ module Spark
 
       # New part is created when current part exceeds memory limit (is variable)
       # Every new part have more memory because of ruby GC
-      def make_parts(iterator, key_function)
+      def make_parts(iterator, ascending, key_function)
         slice = START_SLICE_SIZE
 
         parts = []
@@ -127,6 +127,8 @@ module Spark
           if memory_usage > memory_limit
             # Sort current part with origin key_function
             part.sort_by!(&key_function)
+            # Reverse is faster than sort_by
+            part.reverse! unless ascending
             # Tempfile for current part
             # will be destroyed on #destroy_temp_folder
             file = Tempfile.new("part", @dir)
@@ -147,6 +149,7 @@ module Spark
         # Last part which is not in the file
         if part.any?
           part.sort_by!(&key_function)
+          part.reverse! unless ascending
           parts << part.each
         end
 
