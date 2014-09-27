@@ -129,6 +129,7 @@ class RubyRDD[T: ClassTag](
 
           // Data
           PythonRDD.writeIteratorToStream(parent.iterator(split, context), dataOut)
+          dataOut.writeInt(RubyConstant.DATA_EOF)
           dataOut.flush()
         } catch {
           case e: Exception if context.isCompleted || context.isInterrupted =>

@@ -1,6 +1,7 @@
 package org.apache.spark.api.ruby
 
 object RubyConstant {
+  val DATA_EOF = -2
   val WORKER_ERROR = -1
   val WORKER_DONE = 0
   val CREATE_WORKER = 1

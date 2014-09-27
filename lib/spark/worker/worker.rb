@@ -7,9 +7,6 @@ $LOAD_PATH.unshift(lib) if File.directory?(lib) && !$LOAD_PATH.include?(lib)
 require "ruby-spark.rb"
 require "socket"
 
-require_relative "spark_constant"
-
-
 # =================================================================================================
 # Worker
 #
@@ -18,7 +15,7 @@ module Worker
 
     include Spark::Helper::Serialize
     include Spark::Helper::System
-    include SparkConstant
+    include Spark::Constant
 
     attr_accessor :client_socket
 

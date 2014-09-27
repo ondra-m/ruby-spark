@@ -28,7 +28,7 @@ module Master
   class Base
 
     include Spark::Helper::Serialize
-    include SparkConstant
+    include Spark::Constant
 
     def initialize
       @worker_arguments = ENV["WORKER_ARGUMENTS"]

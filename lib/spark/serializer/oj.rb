@@ -1,5 +1,3 @@
-require_relative "marshal.rb"
-
 module Spark
   module Serializer
     class Oj < Marshal

@@ -3,6 +3,7 @@ module Spark
     class Base
 
       include Spark::Helper::Serialize
+      include Spark::Constant
 
       attr_reader :batch_size
 
@@ -86,23 +87,21 @@ module Spark
       def load_from_io(io)
         return to_enum(__callee__, io) unless block_given?
 
-        while true
-          begin
-            result = load_one_from_io(io)
-            if batched?
-              result.each {|item| yield item }
-            else
-              yield result
-            end
-          rescue
-            break
-          end # begin
-        end # while
+        loop do
+          lenght = read_int(io)
+          break if lenght == DATA_EOF
 
+          result = load_next_from_io(io, lenght)
+          if batched?
+            result.each {|item| yield item }
+          else
+            yield result
+          end
+        end # loop
       end # load_from_io
 
-      def load_one_from_io(io)
-        deserialize(io.read(unpack_int(io.read(4))))
+      def load_next_from_io(io, lenght)
+        deserialize(io.read(lenght))
       end
 
       # def load_from_array(array)
@@ -132,6 +131,10 @@ module Spark
 
         result.flatten!(1) if batched?
         result
+      end
+
+      def read_int(io)
+        unpack_int(io.read(4))
       end
 
       # ===========================================================================

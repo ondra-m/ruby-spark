@@ -1,5 +1,3 @@
-require_relative "base.rb"
-
 module Spark
   module Serializer
     class Pair < Base
@@ -17,10 +15,10 @@ module Spark
         false
       end
 
-      def load_one_from_io(io)
+      def load_next_from_io(io, lenght)
         key_value = []
-        key_value << @first.load_one_from_io(io)
-        key_value << @second.load_one_from_io(io)
+        key_value << @first.load_next_from_io(io, lenght)
+        key_value << @second.load_next_from_io(io, read_int(io))
         key_value
       end
 

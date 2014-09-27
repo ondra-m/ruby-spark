@@ -1,5 +1,3 @@
-require_relative "base.rb"
-
 module Spark
   module Serializer
     class Marshal < Base
