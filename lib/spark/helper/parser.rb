@@ -10,7 +10,12 @@ module Spark
       module Methods
         def to_java_hash(hash)
           hash_map = HashMap.new
-          hash.each_pair {|key, value| hash_map.put(key, value)}
+          hash.each_pair do |key, value|
+            begin
+              hash_map.put(key, value)
+            rescue RuntimeError
+            end
+          end
           hash_map
         end
 
