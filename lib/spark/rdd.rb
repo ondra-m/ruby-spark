@@ -265,7 +265,7 @@ module Spark
     #
     def count
       # nil is for seq_op => it means the all result go directly to one worker for combine
-      @count ||= self.map_partitions("lambda{|iterator| iterator.size }")
+      @count ||= self.map_partitions("lambda{|iterator| iterator.to_a.size }")
                      .aggregate(0, nil, "lambda{|sum, item| sum + item }")
     end
 
@@ -367,7 +367,7 @@ module Spark
 
     # Return an RDD created by coalescing all elements within each partition into an array.
     #
-    # rdd = $sc.parallelize(0..10, 3)
+    # rdd = $sc.parallelize(0..10, 3, batch_size: 1)
     # rdd.glom.collect
     # => [[0, 1, 2], [3, 4, 5, 6], [7, 8, 9, 10]]
     #

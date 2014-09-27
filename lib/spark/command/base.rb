@@ -1,3 +1,6 @@
+# Bencharmak enum.new vs yield
+# https://speakerdeck.com/sferik/writing-fast-ruby
+
 class Spark::Command::Base
 
   DEFAULT_VARIABLE_OPTIONS = {

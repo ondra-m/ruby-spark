@@ -20,7 +20,7 @@ class Spark::Command::SortByKey < _Base
     iterator
   end
 
-  def run_as_enum(iterator, _)
+  def run_with_enum(iterator, _)
     if @spilling
       iterator = run_with_spilling(iterator)
     else

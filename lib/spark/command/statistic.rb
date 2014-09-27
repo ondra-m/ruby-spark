@@ -12,7 +12,7 @@ class Spark::Command::Sample < _Base
     sampler.sample(iterator)
   end
 
-  def run_as_enum(iterator, _)
+  def run_with_enum(iterator, _)
     sampler.sample_as_enum(iterator)
   end
 
