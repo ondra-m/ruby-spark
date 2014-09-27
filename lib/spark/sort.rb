@@ -1,8 +1,9 @@
 # require "algorithms"
 require "tmpdir"
+require "tempfile"
 
 module Spark
-  class ExternalSorter  
+  class ExternalSorter
 
     include Spark::Helper::System
 

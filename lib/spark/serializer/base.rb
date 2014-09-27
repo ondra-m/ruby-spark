@@ -54,7 +54,9 @@ module Spark
       # jruby: respond_to?(:iterator) => true
       #
       def load(source)
-        if source.is_a?(IO)
+        # Tempfile is Delegator for File so it is not IO
+        # second wasy is __getobj__.is_a?(IO)
+        if source.is_a?(IO) || source.is_a?(Tempfile)
           load_from_io(source)
         # elsif source.is_a?(Array)
         #   load_from_array(source)
@@ -134,7 +136,9 @@ module Spark
       end
 
       def read_int(io)
-        unpack_int(io.read(4))
+        bytes = io.read(4)
+        return DATA_EOF if bytes.nil?
+        unpack_int(bytes)
       end
 
       # ===========================================================================
