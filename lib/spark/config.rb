@@ -8,6 +8,10 @@ module Spark
 
     include Spark::Helper::System
 
+    PROPERTIES = {
+      "spark.shuffle.spill" => :boolean
+    }
+
     # Initialize java SparkConf and load default configuration.
     def initialize
       @spark_conf = SparkConf.new(true)
@@ -50,7 +54,16 @@ module Spark
 
     # Rescue from NoSuchElementException
     def get(key)
-      spark_conf.get(key.to_s) rescue nil
+      value = spark_conf.get(key.to_s)
+
+      case PROPERTIES[key]
+      when :boolean
+        parse_boolean(value)
+      else
+        value
+      end
+    rescue
+      nil
     end
 
     def get_all
@@ -65,7 +78,7 @@ module Spark
       if read_only?
         raise Spark::ConfigurationError, "Configuration is ready only"
       else
-        spark_conf.set(key.to_s, value)
+        spark_conf.set(key.to_s, value.to_s)
       end
     end
 
@@ -75,6 +88,15 @@ module Spark
 
     def set_master(master)
       set("spark.master", master)
+    end
+
+    def parse_boolean(value)
+      case value
+      when "true"
+        true
+      when "false"
+        false
+      end
     end
 
     # =============================================================================

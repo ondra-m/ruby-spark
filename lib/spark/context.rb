@@ -47,8 +47,8 @@ module Spark
 
     def get_serializer(serializer, *args)
       serializer   = Spark::Serializer.get(serializer)
-      serializer ||= Spark::Serializer.get(config("spark.ruby.serializer"))
-      serializer.new(config("spark.ruby.batch_size")).set(*args)
+      serializer ||= Spark::Serializer.get(config["spark.ruby.serializer"])
+      serializer.new(config["spark.ruby.batch_size"]).set(*args)
     end
 
     # Set a local property that affects jobs submitted from this thread, such as the
@@ -81,11 +81,12 @@ module Spark
     # be changed at runtime.
     #
     def config(key=nil)
-      if key
-        Spark.config[key]
-      else
-        Spark.config.get_all
-      end
+      # if key
+      #   Spark.config[key]
+      # else
+      #   Spark.config.get_all
+      # end
+      Spark.config
     end
 
     # Distribute a local Ruby collection to form an RDD
@@ -106,7 +107,7 @@ module Spark
       use = jruby? ? (options[:use] || :direct) : :file
       serializer = get_serializer(options[:serializer], options[:batch_size])
 
-      if data.is_a?(Array) && config("spark.ruby.parallelize_strategy") == "deep_copy"
+      if data.is_a?(Array) && config["spark.ruby.parallelize_strategy"] == "deep_copy"
         data = data.deep_copy
       else
         # For enumerator or range

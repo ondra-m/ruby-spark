@@ -12,6 +12,7 @@ module Spark
           hash_map = HashMap.new
           hash.each_pair do |key, value|
             begin
+              # RJB raise Object is NULL (but new record is put correctly)
               hash_map.put(key, value)
             rescue RuntimeError
             end

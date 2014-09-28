@@ -3,6 +3,40 @@ require "tmpdir"
 require "tempfile"
 
 module Spark
+  module InternalSorter
+    class Base
+      def initialize(key_function)
+        @key_function = key_function
+      end
+    end
+
+    class Ascending < Base
+      def sort(data)
+        data.sort_by!(&@key_function)
+      end
+    end
+
+    class Descending < Ascending
+      def sort(data)
+        super
+        data.reverse!
+      end
+    end
+
+    def self.get(ascending, key_function)
+      if ascending
+        type = Ascending
+      else
+        type = Descending
+      end
+
+      type.new(key_function)
+    end
+  end
+end
+
+
+module Spark
   class ExternalSorter
 
     include Spark::Helper::System
@@ -43,15 +77,17 @@ module Spark
       return to_enum(__callee__, iterator, key_function) unless block_given?
 
       create_temp_folder
+      internal_sorter = Spark::InternalSorter.get(ascending, key_function)
 
       # Make N sorted enumerators
-      parts = make_parts(iterator, ascending, key_function)
+      parts = make_parts(iterator, internal_sorter)
 
       return [] if parts.empty?
 
       # Need new key function because items have new structure
       # From: [1,2,3] to [[1, Enumerator],[2, Enumerator],[3, Enumerator]]
       key_function_with_enum = lambda{|(key, _)| key_function[key]}
+      internal_sorter = Spark::InternalSorter.get(ascending, key_function_with_enum)
 
       heap  = []
       enums = []
@@ -69,14 +105,14 @@ module Spark
 
       # Parts can be empty but heap not
       while parts.any? || heap.any?
-        heap.sort_by!(&key_function_with_enum)
+        internal_sorter.sort(heap)
 
         # Since parts are sorted and heap contains EVAL_N_VALUES method
         # can add EVAL_N_VALUES items to the result
         EVAL_N_VALUES.times {
           break if heap.empty?
 
-          item, enum = ascending ? heap.shift : heap.pop
+          item, enum = heap.shift
           enums << enum
 
           yield item
@@ -109,7 +145,7 @@ module Spark
 
       # New part is created when current part exceeds memory limit (is variable)
       # Every new part have more memory because of ruby GC
-      def make_parts(iterator, ascending, key_function)
+      def make_parts(iterator, internal_sorter)
         slice = START_SLICE_SIZE
 
         parts = []
@@ -123,12 +159,10 @@ module Spark
             break
           end
 
-          # Carefully memory_limit is variable 
+          # Carefully memory_limit is variable
           if memory_usage > memory_limit
             # Sort current part with origin key_function
-            part.sort_by!(&key_function)
-            # Reverse is faster than sort_by
-            part.reverse! unless ascending
+            internal_sorter.sort(part)
             # Tempfile for current part
             # will be destroyed on #destroy_temp_folder
             file = Tempfile.new("part", @dir)
@@ -148,8 +182,7 @@ module Spark
 
         # Last part which is not in the file
         if part.any?
-          part.sort_by!(&key_function)
-          part.reverse! unless ascending
+          internal_sorter.sort(part)
           parts << part.each
         end
 

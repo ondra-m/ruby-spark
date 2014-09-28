@@ -501,8 +501,16 @@ module Spark
 
     # Return a fixed-size sampled subset of this RDD in an array
     #
+    # rdd = $sc.parallelize(0..100)
+    #
+    # rdd.take_sample(true, 10)
+    # => [90, 84, 74, 44, 27, 22, 72, 96, 80, 54]
+    #
+    # rdd.take_sample(false, 10)
+    # => [5, 35, 30, 48, 22, 33, 40, 75, 42, 32]
+    #
     def take_sample(with_replacement, num, seed=nil)
-      
+
       if num < 0
         raise Spark::RDDError, "Size have to be greater than 0"
       elsif num == 0
