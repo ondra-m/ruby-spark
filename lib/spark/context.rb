@@ -104,7 +104,8 @@ module Spark
     def parallelize(data, num_slices=nil, options={})
       num_slices ||= default_parallelism
 
-      use = jruby? ? (options[:use] || :direct) : :file
+      # use = jruby? ? (options[:use] || :direct) : :file
+      use = :file
       serializer = get_serializer(options[:serializer], options[:batch_size])
 
       if data.is_a?(Array) && config["spark.ruby.parallelize_strategy"] == "deep_copy"

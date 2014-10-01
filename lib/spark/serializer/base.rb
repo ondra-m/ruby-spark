@@ -94,7 +94,7 @@ module Spark
           break if lenght == DATA_EOF
 
           result = load_next_from_io(io, lenght)
-          if batched?
+          if batched? && result.respond_to?(:each)
             result.each {|item| yield item }
           else
             yield result
@@ -160,12 +160,12 @@ module Spark
         io.flush
       end
 
-      # # For direct serialization
-      # def dump_to_java(data)
-      #   data.map! do |item|
-      #     serialize(item).to_java_bytes
-      #   end
-      # end
+      # For direct serialization
+      def dump_to_java(data)
+        data.map! do |item|
+          serialize(item).to_java_bytes
+        end
+      end
 
       # Rescue cannot be defined
       #

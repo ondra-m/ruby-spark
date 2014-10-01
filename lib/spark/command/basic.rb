@@ -153,7 +153,6 @@ class Spark::Command::PartitionBy
 
     def run(iterator, *)
       iterator.map! do |key, value|
-        log [key, value].inspect
         [pack_long(@partition_func.call(key)), [key, value]]
       end
       iterator.flatten!(1)

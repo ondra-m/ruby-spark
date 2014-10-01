@@ -477,7 +477,7 @@ module Spark
     #
     def partition_by(num_partitions, partition_func=nil)
       num_partitions ||= default_reduce_partitions
-      partition_func ||= "lambda{|x| x.hash}"
+      partition_func ||= "lambda{|x| Spark::Digest.portable_hash(x.to_s)}"
 
       _partition_by(num_partitions, Spark::Command::PartitionBy::Basic, partition_func)
     end
@@ -592,7 +592,7 @@ module Spark
     # def merge(x,y)
     #   x+y
     # end
-    # rdd = $sc.parallelize(["a","b","c","a","b","c","a","c"]).map(lambda{|x| [x, 1]})
+    # rdd = $sc.parallelize(["a","b","c","a","b","c","a","c"],2, batch_size: 1).map(lambda{|x| [x, 1]})
     # rdd.combine_by_key(:combiner, :merge, :merge).collect_as_hash
     #
     # => {"a"=>3, "b"=>2, "c"=>3}

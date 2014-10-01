@@ -23,7 +23,7 @@ class Spark::Command::Base
   end
 
   def log(message=nil)
-    $stdout.puts %{==> [#{Time.now.strftime("%H:%M")}] [#{self.class.name}] #{message}}
+    $stdout.puts %{==> #{Time.now.strftime("%H:%M:%S")} [#{self.class.name}] #{message}}
     $stdout.flush
   end
 
