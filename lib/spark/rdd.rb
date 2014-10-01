@@ -666,6 +666,25 @@ module Spark
     # => [["a", 3], ["b", 2], ["c", 1]]
     #
     def sort_by_key(ascending=true, num_partitions=nil)
+      self.sort_by("lambda{|(key, _)| key}")
+    end
+
+    # Sorts this RDD by the given key_function
+    #
+    # This is a different implementation than spark. Sort by doesn't use
+    # key_by method first. It can be slower but take less memory and
+    # you can always use map.sort_by_key
+    #
+    # rdd = $sc.parallelize(["aaaaaaa", "cc", "b", "eeee", "ddd"])
+    #
+    # rdd.sort_by.collect
+    # => ["aaaaaaa", "b", "cc", "ddd", "eeee"]
+    #
+    # rdd.sort_by(lambda{|x| x.size}).collect
+    # => ["b", "cc", "ddd", "eeee", "aaaaaaa"]
+    #
+    def sort_by(key_function=nil, ascending=true, num_partitions=nil)
+      key_function   ||= "lambda{|x| x}"
       num_partitions ||= default_reduce_partitions
 
       command_klass = Spark::Command::SortByKey
@@ -686,7 +705,7 @@ module Spark
       if num_partitions == 1
         rdd = self
         rdd = rdd.coalesce(1) if partitions_size > 1
-        return rdd.new_pipelined_from_command(command_klass, ascending, spilling, memory, serializer)
+        return rdd.new_pipelined_from_command(command_klass, key_function, ascending, spilling, memory, serializer)
       end
 
       # Compute boundary of collection
@@ -695,16 +714,16 @@ module Spark
       count = self.count
       sample_size = num_partitions * 20.0
       fraction = [sample_size / [count, 1].max, 1.0].min
-      samples = self.sample(false, fraction, 1).keys.collect
-      samples.sort_by!
-      # Reverse is much faster than sort_by
+      samples = self.sample(false, fraction, 1).map(key_function).collect
+      samples.sort!
+      # Reverse is much faster than reverse sort_by
       samples.reverse! if !ascending
 
       # Determine part bounds
       bounds = determine_bounds(samples, num_partitions)
 
-      shuffled = _partition_by(num_partitions, Spark::Command::PartitionBy::Sorting, bounds, ascending, num_partitions)
-      shuffled.new_pipelined_from_command(command_klass, ascending, spilling, memory, serializer)
+      shuffled = _partition_by(num_partitions, Spark::Command::PartitionBy::Sorting, key_function, bounds, ascending, num_partitions)
+      shuffled.new_pipelined_from_command(command_klass, key_function, ascending, spilling, memory, serializer)
     end
 
     # Pass each value in the key-value pair RDD through a map function without changing
@@ -759,6 +778,7 @@ module Spark
     alias_method :foreachPartition, :foreach_partition
     alias_method :mapValues, :map_values
     alias_method :takeSample, :take_sample
+    alias_method :sortBy, :sort_by
     alias_method :sortByKey, :sort_by_key
 
     private

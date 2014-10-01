@@ -1,5 +1,3 @@
-// package ruby_spark;
-
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -11,19 +9,10 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/** Murmur hash 2.0.
- * 
- * The murmur hash is a relative fast hash function from
- * http://murmurhash.googlepages.com/ for platforms with efficient
- * multiplication.
- *
- * http://d3s.mff.cuni.cz/~holub/sw/javamurmurhash/
- *
- */
-
 @JRubyModule(name="Spark::Digest")
 public class Digest extends RubyObject{
 
+  // Have to be the same as in C extension
   final static long PORTABLE_HASH_SEED = 16154832;
 
   public Digest(final Ruby ruby, RubyClass rubyClass) {

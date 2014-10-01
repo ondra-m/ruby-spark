@@ -4,6 +4,7 @@ _Base = Spark::Command::Base
 # Sort
 
 class Spark::Command::SortByKey < _Base
+  variable :key_function
   variable :ascending,  function: false, type: [TrueClass, FalseClass]
   variable :spilling,   function: false, type: [TrueClass, FalseClass]
   variable :memory,     function: false, type: [Numeric, NilClass]
@@ -16,7 +17,6 @@ class Spark::Command::SortByKey < _Base
       run_without_spilling(iterator)
     end
 
-    # iterator.reverse! if !@ascending
     iterator
   end
 
@@ -35,11 +35,11 @@ class Spark::Command::SortByKey < _Base
 
     def run_with_spilling(iterator)
       sorter = Spark::ExternalSorter.new(@memory, @serializer)
-      sorter.sort_by(iterator, @ascending, lambda{|(key,_)| key})
+      sorter.sort_by(iterator, @ascending, @key_function)
     end
 
     def run_without_spilling(iterator)
-      iterator.sort_by!{|(key, _)| key}
+      iterator.sort_by!(&@key_function)
       iterator.reverse! unless @ascending
     end
 

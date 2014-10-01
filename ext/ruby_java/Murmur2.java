@@ -1,5 +1,3 @@
-// package ruby_spark;
-
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
