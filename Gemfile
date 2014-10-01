@@ -25,6 +25,7 @@ end
 
 group :development do
   gem 'rspec'
+  gem 'rake-compiler'
   gem 'guard'
   gem 'guard-rspec'
 end

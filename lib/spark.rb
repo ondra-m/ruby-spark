@@ -1,6 +1,8 @@
 # - přidat reserver partitions
 # - každá metoda bude třída (execute, validate - activerecord style, serialize)
 
+require "ruby_spark_ext"
+
 require "spark/ext/object"
 require "spark/ext/hash"
 require "spark/ext/string"

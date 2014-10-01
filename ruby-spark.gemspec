@@ -20,6 +20,14 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
+  if RUBY_PLATFORM =~ /java/
+    extensions = ["ext/ruby_java/extconf.rb"]
+  else
+    extensions = ["ext/ruby_c/extconf.rb"]
+  end
+
+  spec.extensions = extensions
+
   spec.add_development_dependency "bundler", "~> 1.6"
   spec.add_development_dependency "rake"
 end
