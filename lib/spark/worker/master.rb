@@ -129,7 +129,8 @@ module Master
       ::Thread.abort_on_exception = true
 
       # For synchronous access to socket IO
-      $mutex = Mutex.new
+      $mutex_for_command  = Mutex.new
+      $mutex_for_iterator = Mutex.new
 
       super
     end

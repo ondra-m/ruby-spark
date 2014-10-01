@@ -134,6 +134,10 @@ module Worker
 
     private
 
+      def load_command
+        $mutex_for_command.synchronize { super }
+      end
+
       # Threads changing for reading is very slow
       # Faster way is do it one by one
       def load_iterator
@@ -144,7 +148,7 @@ module Worker
           client_socket.wait_readable
         end
 
-        $mutex.synchronize { super }
+        $mutex_for_iterator.synchronize { super }
       end
 
   end
