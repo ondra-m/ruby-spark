@@ -151,9 +151,16 @@ class Spark::Command::PartitionBy
   class Base < Spark::Command::Base
     include Spark::Helper::Serialize
 
+    def prepare
+      super
+
+      # Default. Keep it after super because Sorting has own key_function.
+      @key_function ||= lambda{|x| x[0]}
+    end
+
     def run(iterator, *)
-      iterator.map! do |key, value|
-        [pack_long(@partition_func.call(key)), [key, value]]
+      iterator.map! do |item|
+        [pack_long(@partition_func.call(@key_function[item])), item]
       end
       iterator.flatten!(1)
       iterator
@@ -163,7 +170,7 @@ class Spark::Command::PartitionBy
       return to_enum(:run_with_enum, iterator) unless block_given?
 
       iterator.each do |item|
-        yield pack_long(@partition_func.call(item[0]))
+        yield pack_long(@partition_func.call(@key_function[item]))
         yield item
       end
     end
@@ -174,34 +181,28 @@ class Spark::Command::PartitionBy
   end
 
   class Sorting < Base
+    variable :key_function
     variable :bounds, function: false, type: Array
     variable :ascending, function: false, type: [TrueClass, FalseClass]
     variable :num_partitions, function: false, type: Numeric
 
-    def create_partition_func
+    def prepare
+      super
+
       # Index by bisect alghoritm
-      @partition_func = Proc.new do |key|
+      @partition_func ||= Proc.new do |key|
         count = 0
         @bounds.each{|i|
           break if i >= key
           count += 1
         }
+
         if @ascending
           count
         else
           @num_partitions - 1 - count
         end
       end
-    end
-
-    def run(iterator, *)
-      create_partition_func
-      super
-    end
-
-    def run_with_enum(iterator, *)
-      create_partition_func
-      super
     end
 
   end # Sorting

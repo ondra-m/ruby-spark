@@ -75,17 +75,18 @@ class Spark::Command::Base
     run(iterator, split_index)
   end
 
-  def initialized?
-    !!@initialized
+  def prepared?
+    !!@prepared
   end
 
-  # This is called before every executing
+  # This is called before execution. Executing will be stopped if 
+  # some command contains error (e.g. badly serialized lambda).
   #
   # == What is doing?
   # * evaluting function (now it is just a string)
   #
-  def before_run
-    return if initialized?
+  def prepare
+    return if prepared?
 
     to_function = settings.variables.select {|_, options| options[:function]}
     to_function.each do |name, options|
@@ -105,7 +106,11 @@ class Spark::Command::Base
       instance_variable_set(name, result)
     end
 
-    @initialized = true
+    @prepared = true
+  end
+
+  # This method is called before every execution.
+  def before_run
   end
 
   def enum

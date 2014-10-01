@@ -23,6 +23,9 @@ module Spark
       # Require necessary libraries
       libraries.each{|lib| require lib}
 
+      # Prepare for running
+      @commands.each(&:prepare)
+
       # Run all task
       @commands.each do |command|
         iterator = command.execute(iterator, split_index)
