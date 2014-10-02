@@ -20,6 +20,20 @@ RSpec::shared_examples "a cogroupping by key" do |workers|
   end
 end
 
+RSpec::shared_examples "a groupping by" do |workers|
+  it "with #{workers || 'default'} worker" do
+    rdd = rdd_numbers(workers)
+    rdd = rdd.group_by(key_function1)
+
+    expect(rdd.collect_as_hash).to eql(numbers.group_by(&key_function1))
+
+    rdd = rdd_words(workers)
+    rdd = rdd.group_by(key_function2)
+
+    expect(rdd.collect_as_hash).to eql(words.group_by(&key_function2))
+  end
+end
+
 RSpec::describe "Spark::RDD" do
 
   def make_result(*hashes)
@@ -70,6 +84,26 @@ RSpec::describe "Spark::RDD" do
     it_behaves_like "a cogroupping by key", nil
     it_behaves_like "a cogroupping by key", 1
     it_behaves_like "a cogroupping by key", rand(2..10)
+  end
+
+  context "group_by" do
+    let(:key_function1) { lambda{|x| x%2} }
+    let(:key_function2) { lambda{|x| x.size} }
+
+    let(:numbers) { Generator.numbers }
+    let(:words)   { Generator.words }
+
+    def rdd_numbers(workers)
+      $sc.parallelize(numbers)
+    end
+
+    def rdd_words(workers)
+      $sc.parallelize(words)
+    end
+
+    it_behaves_like "a groupping by", nil
+    it_behaves_like "a groupping by", 1
+    it_behaves_like "a groupping by", rand(2..10)
   end
 
 end

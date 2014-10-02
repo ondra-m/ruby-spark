@@ -611,6 +611,16 @@ module Spark
       PipelinedRDD.new(shuffled, merge_comm)
     end
 
+    # Return an RDD of grouped items.
+    #
+    # rdd = $sc.parallelize(0..5)
+    # rdd.group_by(lambda{|x| x%2}).collect
+    # => [[0, [0, 2, 4]], [1, [1, 3, 5]]]
+    #
+    def group_by(f, num_partitions=nil)
+      self.key_by(f).group_by_key(num_partitions)
+    end
+
     # Group the values for each key in the RDD into a single sequence. Allows controlling the
     # partitioning of the resulting key-value pair RDD by passing a Partitioner.
     #
@@ -726,6 +736,16 @@ module Spark
       shuffled.new_pipelined_from_command(command_klass, key_function, ascending, spilling, memory, serializer)
     end
 
+    # Creates array of the elements in this RDD by applying function f.
+    #
+    # rdd = $sc.parallelize(0..5)
+    # rdd.key_by(lambda{|x| x%2}).collect
+    # => [[0, 0], [1, 1], [0, 2], [1, 3], [0, 4], [1, 5]]
+    #
+    def key_by(f)
+      new_pipelined_from_command(Spark::Command::KeyBy, f)
+    end
+
     # Pass each value in the key-value pair RDD through a map function without changing
     # the keys. This also retains the original RDD's partitioning.
     #
@@ -780,6 +800,8 @@ module Spark
     alias_method :takeSample, :take_sample
     alias_method :sortBy, :sort_by
     alias_method :sortByKey, :sort_by_key
+    alias_method :keyBy, :key_by
+    alias_method :groupBy, :group_by
 
     private
 

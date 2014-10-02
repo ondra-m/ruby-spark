@@ -258,3 +258,25 @@ class Spark::Command::ForeachPartition < _Base
     nil
   end
 end
+
+# -------------------------------------------------------------------------------------------------
+# KeyBy
+
+class Spark::Command::KeyBy < _Base
+  variable :key_function
+
+  def run(iterator, *)
+    iterator.map! do |item|
+      [@key_function.call(item), item]
+    end
+    iterator
+  end
+
+  def run_with_enum(iterator, *)
+    return to_enum(:run_with_enum, iterator) unless block_given?
+
+    iterator.each do |item|
+      yield [@key_function.call(item), item]
+    end
+  end
+end
