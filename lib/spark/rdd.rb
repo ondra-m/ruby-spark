@@ -167,9 +167,13 @@ module Spark
     #
     def collect
       # @command.serializer.load(jrdd.collect.toArray.to_a)
-      @command.serializer.load(jrdd.collect)
+      collect_from_iterator(jrdd.collect.iterator)
     # rescue
     #   nil
+    end
+
+    def collect_from_iterator(iterator)
+      @command.serializer.load_from_iterator(iterator)
     end
 
     # Convert an Array to Hash

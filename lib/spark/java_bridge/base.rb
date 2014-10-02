@@ -5,14 +5,17 @@ module Spark
       include Spark::Helper::System
 
       JAVA_OBJECTS = [
+        "java.util.ArrayList",
         "org.apache.spark.SparkConf",
         "org.apache.spark.api.java.JavaSparkContext",
         "org.apache.spark.api.ruby.RubyRDD",
         "org.apache.spark.api.ruby.RubyWorker",
         "org.apache.spark.api.ruby.PairwiseRDD",
         "org.apache.spark.ui.ruby.RubyTab",
+        "org.apache.spark.api.python.PythonRDD",
         "org.apache.spark.api.python.PythonPartitioner",
         "scala.collection.mutable.HashMap",
+        :JInteger  => "java.lang.Integer",
         :JLogger   => "org.apache.log4j.Logger",
         :JLevel    => "org.apache.log4j.Level",
         :JPriority => "org.apache.log4j.Priority",

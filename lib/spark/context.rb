@@ -171,6 +171,31 @@ module Spark
       Spark::RDD.new(@jcontext.wholeTextFiles(path, min_partitions), self, serializer, deserializer)
     end
 
+    # Executes the given partition function f on the specified set of partitions,
+    # returning the result as an array of elements.
+    #
+    # If partitions is not specified, this will run over all partitions.
+    #
+    # rdd = $sc.parallelize(0..10, 5, batch_size: 1)
+    # $sc.run_job(rdd, lambda{|x| x.to_s}, [0,2])
+    # => ["[0, 1]", "[4, 5]"]
+    #
+    def run_job(rdd, f, partitions=nil, allow_local=false)
+      if !partitions.nil? && !partitions.is_a?(Array)
+        raise Spark::ContextError, "Partitions must be nil or Array"
+      end
+
+      if partitions.nil?
+        partitions = (0...rdd.partitions_size).to_a
+      end
+
+      partitions = to_java_array_list(convert_to_java_int(partitions))
+
+      mapped = rdd.map_partitions(f)
+      iterator = PythonRDD.runJob(rdd.context.sc, mapped.jrdd, partitions, allow_local)
+      mapped.collect_from_iterator(iterator)
+    end
+
 
     # Aliases
     alias_method :textFile, :text_file
@@ -180,6 +205,7 @@ module Spark
     alias_method :getLocalProperty, :get_local_property
     alias_method :setCallSite, :set_call_site
     alias_method :getCallSite, :get_call_site
+    alias_method :runJob, :run_job
 
   end
 end

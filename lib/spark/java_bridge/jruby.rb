@@ -8,9 +8,7 @@ module Spark
         jars.each {|jar| require jar}
 
         java_objects.each do |key, value|
-          if value.split(".").first == "scala"
-            value = "Java.#{value}"
-          end
+          value = "Java::#{value}"
           Object.const_set(key, eval(value)) rescue nil
         end
       end

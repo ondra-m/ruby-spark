@@ -27,4 +27,8 @@ module Spark
   # Parser helper
   class ParseError < StandardError
   end
+
+  # Validation in context
+  class ContextError < StandardError
+  end
 end

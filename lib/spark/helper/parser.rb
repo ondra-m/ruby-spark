@@ -20,6 +20,22 @@ module Spark
           hash_map
         end
 
+        def convert_to_java_int(data)
+          if data.is_a?(Array)
+            data.map{|x| JInteger.new(x)}
+          else
+            JInteger.new(data)
+          end
+        end
+
+        def to_java_array_list(array)
+          array_list = ArrayList.new
+          array.each do |item|
+            array_list.add(item)
+          end
+          array_list
+        end
+
         # Parse and convert memory size. Shifting be better but Float doesn't support it.
         #
         # == Examples:
