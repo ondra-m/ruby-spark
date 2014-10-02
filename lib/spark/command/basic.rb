@@ -57,7 +57,7 @@ class Spark::Command::MapPartitionsWithIndex < _Base
     iterator = @partition_function.call(iterator, index)
     iterator
   end
-  alias_method :run_with_enum, :run
+  # alias_method :run_with_enum, :run
 end
 
 # -------------------------------------------------------------------------------------------------
@@ -69,7 +69,7 @@ class Spark::Command::MapPartitions < Spark::Command::MapPartitionsWithIndex
     iterator = @partition_function.call(iterator)
     iterator
   end
-  alias_method :run_with_enum, :run
+  # alias_method :run_with_enum, :run
 end
 
 # -------------------------------------------------------------------------------------------------
