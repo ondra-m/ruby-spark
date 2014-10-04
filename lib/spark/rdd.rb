@@ -182,6 +182,58 @@ module Spark
       Hash[collect]
     end
 
+    # Take the first num elements of the RDD.
+    #
+    # It works by first scanning one partition, and use the results from
+    # that partition to estimate the number of additional partitions needed
+    # to satisfy the limit.
+    #
+    # rdd = $sc.parallelize(0..100, 20, batch_size: 1)
+    # rdd.take(5)
+    # => [0, 1, 2, 3, 4]
+    #
+    def take(count)
+      buffer = []
+
+      parts_count = self.partitions_size
+      # No parts was scanned, yet
+      last_scanned = -1
+
+      # 0,-1 = send full part (no parts has index -1)
+      buffer += context.run_job_with_command(self, [0], true, Spark::Command::Take, 0, -1)
+      last_scanned = 0
+
+      # Assumption. Depend on batch_size and how Spark divided data.
+      items_per_part = buffer.size
+      left = count - buffer.size
+
+      while left > 0 && last_scanned < parts_count
+        
+        parts_for_scanned = Array.new((left.to_f/items_per_part.to_f).ceil) do
+          last_scanned += 1
+        end
+
+        # We cannot take exact number of items because workers are isolated from each other.
+        # => once you take e.g. 50% from last part and left is still > 0 then its very
+        # difficult merge new items
+        buffer += context.run_job_with_command(self, parts_for_scanned, true, Spark::Command::Take, left, last_scanned)
+
+        left = count - buffer.size
+      end
+
+      buffer.slice!(0, count)
+    end
+
+    # Return the first element in this RDD.
+    #
+    # rdd = $sc.parallelize(0..100)
+    # rdd.first
+    # => 0
+    #
+    def first
+      self.take(0)[0]
+    end
+
     # Reduces the elements of this RDD using the specified lambda or method.
     #
     # rdd = $sc.parallelize(0..10)

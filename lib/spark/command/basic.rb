@@ -280,3 +280,32 @@ class Spark::Command::KeyBy < _Base
     end
   end
 end
+
+# -------------------------------------------------------------------------------------------------
+# Take
+
+class Spark::Command::Take < _Base
+  variable :total,     function: false, type: Numeric
+  variable :last_part, function: false, type: Numeric
+
+  def run(iterator, index)
+    if index == @last_part && iterator.size > @total
+      return iterator.slice!(0, @total)
+    end
+
+    iterator
+  end
+
+  # def run_with_enum(iterator, index)
+  #   if index == @last_part
+  #     return to_enum(:run_with_enum, iterator, index) unless block_given?
+
+  #     begin
+  #       @total.times { yield iterator.next }
+  #     rescue StopIteration
+  #     end
+  #   else
+  #     iterator
+  #   end
+  # end
+end
