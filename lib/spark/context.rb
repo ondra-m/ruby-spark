@@ -181,17 +181,30 @@ module Spark
     # => ["[0, 1]", "[4, 5]"]
     #
     def run_job(rdd, f, partitions=nil, allow_local=false)
+      run_job_with_command(rdd, partitions, allow_local, Spark::Command::MapPartitions, f)
+    end
+
+    # Execute the given command on specific set of partitions.
+    #
+    def run_job_with_command(rdd, partitions, allow_local, command, *args)
       if !partitions.nil? && !partitions.is_a?(Array)
         raise Spark::ContextError, "Partitions must be nil or Array"
       end
 
+      partitions_size = rdd.partitions_size
+
+      # Execute all parts
       if partitions.nil?
-        partitions = (0...rdd.partitions_size).to_a
+        partitions = (0...partitions_size).to_a
       end
 
+      # Can happend when you use coalesce
+      partitions.delete_if {|part| part >= partitions_size}
+
+      # Rjb represent Fixnum as Integer but Jruby as Long
       partitions = to_java_array_list(convert_to_java_int(partitions))
 
-      mapped = rdd.map_partitions(f)
+      mapped = rdd.new_pipelined_from_command(command, *args)
       iterator = PythonRDD.runJob(rdd.context.sc, mapped.jrdd, partitions, allow_local)
       mapped.collect_from_iterator(iterator)
     end
@@ -206,6 +219,7 @@ module Spark
     alias_method :setCallSite, :set_call_site
     alias_method :getCallSite, :get_call_site
     alias_method :runJob, :run_job
+    alias_method :runJobWithCommand, :run_job_with_command
 
   end
 end
