@@ -5,6 +5,8 @@ _Base = Spark::Command::Base
 
 class Spark::Command::CombineByKey
 
+  # ---------------
+
   class Base < Spark::Command::Base
     def run(iterator, *)
       _run(iterator).to_a
@@ -17,9 +19,11 @@ class Spark::Command::CombineByKey
     end
   end
 
+  # ---------------
+
   class Combine < Base
-    variable :merge_value
     variable :create_combiner
+    variable :merge_value
 
     def _run(iterator)
       # Not use combiners[key] ||= ..
@@ -36,6 +40,8 @@ class Spark::Command::CombineByKey
     end
   end
 
+  # ---------------
+
   class Merge < Base
     variable :merge_combiners
 
@@ -51,6 +57,30 @@ class Spark::Command::CombineByKey
       combiners
     end
   end
+
+  # ---------------
+
+  class CombineWithZero < Base
+    variable :zero_value, function: false, type: Object
+    variable :merge_value
+
+    def _run(iterator)
+      # Not use combiners[key] ||= ..
+      # it tests nil and not has_key?
+      combiners = {}
+      iterator.each do |key, value|
+        unless combiners.has_key?(key)
+          combiners[key] = @zero_value
+        end
+
+        combiners[key] = @merge_value.call(combiners[key], value)
+      end
+      combiners
+    end
+  end
+
+  
+  # ---------------
 
 end
 

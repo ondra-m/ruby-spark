@@ -648,23 +648,17 @@ module Spark
     # def merge(x,y)
     #   x+y
     # end
-    # rdd = $sc.parallelize(["a","b","c","a","b","c","a","c"],2, batch_size: 1).map(lambda{|x| [x, 1]})
+    # rdd = $sc.parallelize(["a","b","c","a","b","c","a","c"], 2, batch_size: 1).map(lambda{|x| [x, 1]})
     # rdd.combine_by_key(:combiner, :merge, :merge).collect_as_hash
     #
     # => {"a"=>3, "b"=>2, "c"=>3}
     #
     def combine_by_key(create_combiner, merge_value, merge_combiners, num_partitions=nil)
-      num_partitions ||= default_reduce_partitions
-
-      # Combine key
-      combine_comm = add_command(Spark::Command::CombineByKey::Combine, merge_value, create_combiner)
-      combined = PipelinedRDD.new(self, combine_comm)
-
-      # Merge items
-      shuffled = combined.partition_by(num_partitions)
-      merge_comm = shuffled.add_command(Spark::Command::CombineByKey::Merge, merge_combiners)
-
-      PipelinedRDD.new(shuffled, merge_comm)
+      _combine_by_key(
+        [Spark::Command::CombineByKey::Combine, create_combiner, merge_value],
+        [Spark::Command::CombineByKey::Merge, merge_combiners],
+        num_partitions
+      )
     end
 
     # Return an RDD of grouped items.
@@ -693,6 +687,46 @@ module Spark
       merge_combiners = "lambda{|combiner_1, combiner_2| combiner_1 += combiner_2; combiner_1}"
 
       combine_by_key(create_combiner, merge_value, merge_combiners, num_partitions)
+    end
+
+    # Merge the values for each key using an associative function f
+    # and a neutral `zero_value` which may be added to the result an
+    # arbitrary number of times, and must not change the result
+    # (e.g., 0 for addition, or 1 for multiplication.).
+    #
+    # rdd = $sc.parallelize([["a", 1], ["b", 2], ["a", 3], ["a", 4], ["c", 5]])
+    # rdd.fold_by_key(1, lambda{|x,y| x+y})
+    # => [["a", 9], ["c", 6], ["b", 3]]
+    # 
+    def fold_by_key(zero_value, f, num_partitions=nil)
+      _combine_by_key(
+        [Spark::Command::CombineByKey::CombineWithZero, zero_value, f],
+        [Spark::Command::CombineByKey::Merge, f],
+        num_partitions
+      )
+    end
+
+    # Aggregate the values of each key, using given combine functions and a neutral
+    # `zero value`.
+    #
+    # def combine(x,y)
+    #   x+y
+    # end
+    #
+    # def merge(x,y)
+    #   x*y
+    # end
+    # 
+    # rdd = $sc.parallelize([["a", 1], ["b", 2], ["a", 3], ["a", 4], ["c", 5]], 2, batch_size: 1)
+    # rdd.aggregate_by_key(1, :combine, :merge)
+    # => [["b", 3], ["a", 16], ["c", 6]]
+    #
+    def aggregate_by_key(zero_value, seq_func, comb_func, num_partitions=nil)
+      _combine_by_key(
+        [Spark::Command::CombineByKey::CombineWithZero, zero_value, seq_func],
+        [Spark::Command::CombineByKey::Merge, comb_func],
+        num_partitions
+      )
     end
 
     # The same functionality as cogroup but this can grouped only 2 rdd's and you
@@ -858,6 +892,8 @@ module Spark
     alias_method :sortByKey, :sort_by_key
     alias_method :keyBy, :key_by
     alias_method :groupBy, :group_by
+    alias_method :foldByKey, :fold_by_key
+    alias_method :aggregateByKey, :aggregate_by_key
 
     private
 
@@ -898,6 +934,26 @@ module Spark
 
         # Reset deserializer
         RDD.new(new_jrdd, context, @command.serializer, keyed.serializer)
+      end
+
+      # For using a different combine_by_key
+      #
+      # == Used for:
+      # * combine_by_key
+      # * fold_by_key (with zero value)
+      #
+      def _combine_by_key(combine, merge, num_partitions)
+        num_partitions ||= default_reduce_partitions
+
+        # Combine key
+        combine_comm = add_command(combine.shift, *combine)
+        combined = PipelinedRDD.new(self, combine_comm)
+
+        # Merge items
+        shuffled = combined.partition_by(num_partitions)
+        merge_comm = shuffled.add_command(merge.shift, *merge)
+
+        PipelinedRDD.new(shuffled, merge_comm)
       end
 
   end
