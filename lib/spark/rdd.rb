@@ -759,6 +759,40 @@ module Spark
       unioned.group_by_key
     end
 
+    # Return each (key, value) pair in self RDD that has no pair with matching
+    # key in other RDD.
+    #
+    # rdd1 = $sc.parallelize([["a", 1], ["a", 2], ["b", 3], ["c", 4]])
+    # rdd2 = $sc.parallelize([["b", 5], ["c", 6]])
+    # rdd1.subtract_by_key(rdd2).collect
+    # => [["a", 1], ["a", 2]]
+    #
+    def subtract_by_key(other, num_partitions=nil)
+      create_combiner = "lambda{|item| [[item]]}"
+      merge_value     = "lambda{|combiner, item| combiner.first << item; combiner}"
+      merge_combiners = "lambda{|combiner_1, combiner_2| combiner_1 += combiner_2; combiner_1}"
+
+      self.union(other)
+          .combine_by_key(create_combiner, merge_value, merge_combiners, num_partitions)
+          .filter("lambda{|(key,values)| values.size == 1}")
+          .flat_map_values("lambda{|item| item.first}")
+    end
+
+    # Return an RDD with the elements from self that are not in other.
+    #
+    # rdd1 = $sc.parallelize([["a", 1], ["a", 2], ["b", 3], ["c", 4]])
+    # rdd2 = $sc.parallelize([["a", 2], ["c", 6]])
+    # rdd1.subtract(rdd2).collect
+    # => [["a", 1], ["b", 3], ["c", 4]]
+    #
+    def subtract(other, num_partitions=nil)
+      mapping_function = "lambda{|x| [x,nil]}"
+
+      self.map(mapping_function)
+          .subtract_by_key(other.map(mapping_function), num_partitions)
+          .keys
+    end
+
     # Sort the RDD by key
     #
     # rdd = $sc.parallelize([["c", 1], ["b", 2], ["a", 3]])
@@ -906,6 +940,7 @@ module Spark
     alias_method :groupBy, :group_by
     alias_method :foldByKey, :fold_by_key
     alias_method :aggregateByKey, :aggregate_by_key
+    alias_method :subtractByKey, :subtract_by_key
 
     private
 
