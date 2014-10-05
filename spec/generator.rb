@@ -28,4 +28,10 @@ class Generator
       [word(2), rand(1..10)]
     end
   end
+
+  def self.hash_with_values(size=1000, values_count=10)
+    Array.new(size) do
+      [word(2), Array.new(values_count) { rand(1..10) }]
+    end
+  end
 end

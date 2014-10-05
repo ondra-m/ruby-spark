@@ -701,13 +701,9 @@ module Spark
     # rdd = $sc.parallelize([["a", 1], ["b", 2], ["a", 3], ["a", 4], ["c", 5]])
     # rdd.fold_by_key(1, lambda{|x,y| x+y})
     # => [["a", 9], ["c", 6], ["b", 3]]
-    # 
+    #
     def fold_by_key(zero_value, f, num_partitions=nil)
-      _combine_by_key(
-        [Spark::Command::CombineByKey::CombineWithZero, zero_value, f],
-        [Spark::Command::CombineByKey::Merge, f],
-        num_partitions
-      )
+      self.aggregate_by_key(zero_value, f, f, num_partitions)
     end
 
     # Aggregate the values of each key, using given combine functions and a neutral
@@ -850,8 +846,20 @@ module Spark
     # => [["ruby", "RUBY"], ["scala", "SCALA"], ["java", "JAVA"]]
     #
     def map_values(f)
-      comm = add_command(Spark::Command::MapValues, f)
-      PipelinedRDD.new(self, comm)
+      new_pipelined_from_command(Spark::Command::MapValues, f)
+    end
+
+    # Pass each value in the key-value pair RDD through a flat_map function
+    # without changing the keys; this also retains the original RDD's
+    # partitioning.
+    #
+    # rdd = $sc.parallelize([["a", [1,2]], ["b", [3]]])
+    # rdd = rdd.flat_map_values(lambda{|x| x*2})
+    # rdd.collect
+    # => [["a", 1], ["a", 2], ["a", 1], ["a", 2], ["b", 3], ["b", 3]]
+    #
+    def flat_map_values(f)
+      new_pipelined_from_command(Spark::Command::FlatMapValues, f)
     end
 
     # Return an RDD with the first element of PairRDD

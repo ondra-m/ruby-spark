@@ -91,8 +91,9 @@ class Spark::Command::MapValues < _Base
   variable :map_function
 
   def run(iterator, *)
-    iterator.map do |item|
+    iterator.map! do |item|
       item[1] = @map_function.call(item[1])
+      item
     end
     iterator
   end
@@ -103,6 +104,37 @@ class Spark::Command::MapValues < _Base
     iterator.each do |item|
       item[1] = @map_function.call(item[1])
       yield item
+    end
+  end
+end
+
+# -------------------------------------------------------------------------------------------------
+# FlatMapValues
+
+class Spark::Command::FlatMapValues < _Base
+  variable :map_function
+
+  def run(iterator, *)
+    iterator.map! do |(key, values)|
+      values = @map_function.call(values)
+      values.flatten!
+      values.map! do |value|
+        [key, value]
+      end
+    end
+    iterator.flatten!(1)
+    iterator
+  end
+
+  def run_with_enum(iterator, *)
+    return to_enum(:run_with_enum, iterator) unless block_given?
+
+    iterator.each do |(key, values)|
+      values = @map_function.call(values)
+      values.flatten!
+      values.each do |value|
+        yield [key, value]
+      end
     end
   end
 end
