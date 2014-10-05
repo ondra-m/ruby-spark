@@ -8,7 +8,10 @@ require "generator"
 # Keep it on method because its called from config test
 def spark_start
   Spark::Logger.disable
-  Spark.config["spark.ruby.parallelize_strategy"] = "deep_copy"
+  Spark.config do
+    set "spark.ruby.parallelize_strategy", "deep_copy"
+    set "spark.ruby.batch_size", 100
+  end
   Spark.start
   $sc = Spark.context
 end
