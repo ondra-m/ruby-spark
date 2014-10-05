@@ -198,27 +198,31 @@ module Spark
       parts_count = self.partitions_size
       # No parts was scanned, yet
       last_scanned = -1
-
-      # 0,-1 = send full part (no parts has index -1)
-      buffer += context.run_job_with_command(self, [0], true, Spark::Command::Take, 0, -1)
-      last_scanned = 0
+      
+      while buffer.empty?
+        last_scanned += 1
+        buffer += context.run_job_with_command(self, [last_scanned], true, Spark::Command::Take, 0, -1)
+      end
 
       # Assumption. Depend on batch_size and how Spark divided data.
       items_per_part = buffer.size
       left = count - buffer.size
 
       while left > 0 && last_scanned < parts_count
-        
-        parts_for_scanned = Array.new((left.to_f/items_per_part.to_f).ceil) do
+        parts_to_take = (left.to_f/items_per_part).ceil
+        parts_for_scanned = Array.new(parts_to_take) do
           last_scanned += 1
         end
 
         # We cannot take exact number of items because workers are isolated from each other.
         # => once you take e.g. 50% from last part and left is still > 0 then its very
         # difficult merge new items
-        buffer += context.run_job_with_command(self, parts_for_scanned, true, Spark::Command::Take, left, last_scanned)
+        items = context.run_job_with_command(self, parts_for_scanned, true, Spark::Command::Take, left, last_scanned)
+        buffer += items
 
         left = count - buffer.size
+        # Average size of all parts
+        items_per_part = [items_per_part, items.size].reduce(0){|sum, x| sum + x.to_f/2}
       end
 
       buffer.slice!(0, count)
@@ -231,7 +235,7 @@ module Spark
     # => 0
     #
     def first
-      self.take(0)[0]
+      self.take(1)[0]
     end
 
     # Reduces the elements of this RDD using the specified lambda or method.

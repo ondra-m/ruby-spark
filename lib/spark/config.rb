@@ -9,7 +9,8 @@ module Spark
     include Spark::Helper::System
 
     PROPERTIES = {
-      "spark.shuffle.spill" => :boolean
+      "spark.shuffle.spill" => :boolean,
+      "spark.ruby.batch_size" => :integer
     }
 
     # Initialize java SparkConf and load default configuration.
@@ -59,6 +60,8 @@ module Spark
       case PROPERTIES[key]
       when :boolean
         parse_boolean(value)
+      when :integer
+        parse_integer(value)
       else
         value
       end
@@ -97,6 +100,10 @@ module Spark
       when "false"
         false
       end
+    end
+
+    def parse_integer(value)
+      value.to_i
     end
 
     # =============================================================================
