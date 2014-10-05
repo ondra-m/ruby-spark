@@ -57,29 +57,62 @@ RSpec::shared_examples "a words counting" do |workers|
   end
 end
 
-RSpec::describe "Spark::RDD.reduce_by_key" do
-  context "throught parallelize" do
-    let(:lines) { Generator.lines }
+RSpec::describe "Spark::RDD" do
+  context ".reduce_by_key" do
+    context "throught parallelize" do
+      let(:lines) { Generator.lines }
 
-    def rdd(workers)
-      $sc.parallelize(lines, workers)
+      def rdd(workers)
+        $sc.parallelize(lines, workers)
+      end
+
+      it_behaves_like "a words counting", nil
+      it_behaves_like "a words counting", 1
+      it_behaves_like "a words counting", rand(2..10)
     end
 
-    it_behaves_like "a words counting", nil
-    it_behaves_like "a words counting", 1
-    it_behaves_like "a words counting", rand(2..10)
+    context "throught text_file" do
+      let(:file)  { File.join("spec", "inputs", "lorem_300.txt") }
+      let(:lines) { File.readlines(file).map(&:strip) }
+
+      def rdd(workers)
+        $sc.text_file(file, workers)
+      end
+
+      it_behaves_like "a words counting", nil
+      it_behaves_like "a words counting", 1
+      it_behaves_like "a words counting", rand(2..10)
+    end
   end
 
-  context "throught text_file" do
-    let(:file)  { File.join("spec", "inputs", "lorem_300.txt") }
-    let(:lines) { File.readlines(file).map(&:strip) }
+  context ".fold_by_key" do
+    let(:numbers)    { Generator.numbers }
+    let(:zero_value) { 0 }
+    let(:rdd)        { $sc.parallelize(numbers) }
+    let(:map)        { lambda{|x| [x, 1]} }
+    let(:add)        { lambda{|x,y| x+y} }
 
-    def rdd(workers)
-      $sc.text_file(file, workers)
+    let(:result) do
+      _result = {}
+      numbers.map(&map).each do |key, value|
+        _result[key] ||= zero_value
+        _result[key] = add.call(_result[key], value)
+      end
+      _result
     end
 
-    it_behaves_like "a words counting", nil
-    it_behaves_like "a words counting", 1
-    it_behaves_like "a words counting", rand(2..10)
+    def fold_by_key(num_partitions=nil)
+      rdd.map(map).fold_by_key(zero_value, add, num_partitions).collect_as_hash
+    end
+
+    it "default num_partitions" do
+      expect(fold_by_key).to eq(result)
+    end
+
+    it "default num_partitions" do
+      expect(
+        fold_by_key rand(1..10)
+      ).to eq(result)
+    end
   end
 end
