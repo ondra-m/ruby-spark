@@ -610,7 +610,7 @@ module Spark
       index = 0
       while samples.size < num
         log_warning("Needed to re-sample due to insufficient sample size. Repeat #{index}")
-        samples = self.sample(with_replacement, fraction, rng.rand(0..Integer::MAX))
+        samples = self.sample(with_replacement, fraction, rng.rand(0..Integer::MAX)).collect
         index += 1
       end
 
