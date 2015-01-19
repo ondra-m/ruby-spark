@@ -1,114 +1,158 @@
-require "thor"
+require 'commander'
+
+module Commander
+  module UI
+    # Disable paging
+    # for 'classic' help
+    def self.enable_paging
+    end
+  end
+end
 
 module Spark
-  class CLI < Thor
+  class CLI
+    include Commander::Methods
 
-    # class_option :verbose, :type => :boolean
-    # class_option :silence, :type => :boolean
-    class_option :version, :type => :boolean
-
-    desc "", ""
-    def default
-      print_version if options[:version]
-    end
-    default_task :default
-
-    IRB_HISTORY_FILE = File.join(Dir.home, ".irb_spark_history")
+    IRB_HISTORY_FILE = File.join(Dir.home, '.irb_spark_history')
     IRB_HISTORY_SIZE = 100
 
-    desc "install", "build spark and gem extensions"
-    option :"ivy-version", default: Spark::Build::DEFAULT_IVY_VERSION, 
-                           banner: "ivy version",
-                           desc: "Version of ivy which will build the SPARK"
-    option :"hadoop-version", default: Spark::Build::DEFAULT_HADOOP_VERSION, 
-                              banner: "hadoop version",
-                              desc: "Version of hadoop which will stored with the SPARK"
-    option :"spark-home", default: Spark.target_dir,
-                          banner: "directory",
-                          desc: "Directory where SPARK will be stored"
-    option :"spark-core", default: Spark::Build::DEFAULT_CORE_VERSION,
-                          banner: "version",
-                          desc: "Version of SPARK core"
-    option :"spark-version", default: Spark::Build::DEFAULT_SPARK_VERSION,
-                             banner: "version",
-                             desc: "Version of SPARK"
-    def install
-      Spark::Build.spark(options)
-      Spark::Build.ext(options[:"spark-home"])
-    end
+    def run
+      program :name, 'RubySpark'
+      program :version, Spark::VERSION
+      program :description, 'Ruby wrapper for Spark'
 
-    desc "build_ext", "build only ruby extensions"
-    option :"spark-home", default: Spark.target_dir,
-                          banner: "directory of file",
-                          desc: "Directory  of single jar file where SPARK is located"
-    def build_ext
-      Spark::Build.ext(options[:"spark-home"])
-    end
-    map :rebuild => :build_ext
+      global_option('-d', '--debug', 'Logging message to stdout'){ $debug = true }
+      default_command :help
 
-    desc "irb", "start ruby shell for spark"
-    option :spark
-    def irb
-      # Load Java and Spark
-      Spark.load_lib(options[:spark])
-      $sc = Spark::Context.new
-      Spark.print_logo("Spark context is loaded as $sc")
 
-      # Load IRB
-      require "irb"
-      require "irb/completion"
-      require "irb/ext/save-history"
+      # Install ---------------------------------------------------------------
+      command :install do |c|
+        c.syntax = 'install [options]'
+        c.description = 'Build spark and gem extensions'
+        c.option '--ivy-version STRING', String, 'Version of ivy build tool'
+        c.option '--hadoop-version STRING', String, 'Version of hadoop which will stored with the SPARK'
+        c.option '--spark-home STRING', String, 'Directory where SPARK will be stored'
+        c.option '--spark-core STRING', String, 'Version of SPARK core'
+        c.option '--spark-version STRING', String, 'Version of SPARK'
 
-      begin
-        file = File.expand_path(IRB_HISTORY_FILE)
-        if File.exists?(file)
-          lines = IO.readlines(file).collect { |line| line.chomp }
-          Readline::HISTORY.push(*lines)
+        c.action do |args, options|
+          options.default ivy_version: Spark::Build::DEFAULT_IVY_VERSION,
+                          hadoop_version: Spark::Build::DEFAULT_HADOOP_VERSION,
+                          spark_home: Spark.target_dir,
+                          spark_core: Spark::Build::DEFAULT_CORE_VERSION,
+                          spark_version: Spark::Build::DEFAULT_SPARK_VERSION
+
+          Spark::Build.spark(options)
+          Spark::Build.ext(options.spark_home)
+          puts
+          puts 'Everything is OK'
         end
-        Kernel.at_exit do
-          lines = Readline::HISTORY.to_a.reverse.uniq.reverse
-          lines = lines[-IRB_HISTORY_SIZE, IRB_HISTORY_SIZE] if lines.nitems > IRB_HISTORY_SIZE
-          File.open(IRB_HISTORY_FILE, File::WRONLY | File::CREAT | File::TRUNC) { |io| io.puts lines.join("\n") }
+      end
+
+
+      # Rebuild ---------------------------------------------------------------
+      command :build_ext do |c|
+        c.syntax = 'build_ext [options]'
+        c.description = 'Build only ruby extensions'
+        c.option '--spark-home STRING', String, 'Directory where SPARK will be stored'
+
+        c.action do |args, options|
+          options.default spark_home: Spark.target_dir
+          Spark::Build.ext(options.spark_home)
         end
-      rescue
+      end
+      alias_command :rebuild, :build_ext
+
+
+      # Pry -------------------------------------------------------------------
+      command :pry do |c|
+        c.syntax = 'pry [options]'
+        c.description = 'Start ruby shell for spark'
+        c.option '--spark-home STRING', String, 'Directory where SPARK is stored'
+        c.option '--[no-]start', 'Start SPARK immediately'
+        c.option '--[no-]logger', 'Enable/disable logger (default: enable)'
+
+        c.action do |args, options|
+          options.default start: true, logger: true
+
+          Spark.load_lib(options.spark_home)
+          Spark::Logger.disable unless options.logger
+
+          Spark.config do
+            set_app_name 'Pry RubySpark'
+          end
+
+          if options.start
+            # Load Java and Spark
+            Spark.start
+            $sc = Spark.context
+
+            Spark.print_logo('Spark context is loaded as $sc')
+          else
+            Spark.print_logo('You can start Spark with Spark.start')
+          end
+
+          # Load Pry
+          require 'pry'
+          Pry.start
+        end
       end
 
-      ARGV.clear # Clear Thor ARGV, otherwise IRB will parse it
-      ARGV.concat ["--readline", "--prompt-mode", "simple"]
-      IRB.start
-    end
 
-    desc "pry", "start ruby shell for spark"
-    option :spark
-    option :start,  :default => true
-    option :logger, :default => true
-    def pry
-      Spark.load_lib(options[:spark])
-      Spark::Logger.disable if !options[:logger]
+      # IRB -------------------------------------------------------------------
+      command :irb do |c|
+        c.syntax = 'irb [options]'
+        c.description = 'Start ruby shell for spark'
+        c.option '--spark-home STRING', String, 'Directory where SPARK is stored'
+        c.option '--[no-]start', 'Start SPARK immediately'
+        c.option '--[no-]logger', 'Enable/disable logger (default: enable)'
 
-      Spark.config do
-        set_app_name "Pry RubySpark"
+        c.action do |args, options|
+          options.default start: true, logger: true
+
+          Spark.load_lib(options.spark_home)
+          Spark::Logger.disable unless options.logger
+
+          Spark.config do
+            set_app_name 'Pry RubySpark'
+          end
+
+          if options.start
+            # Load Java and Spark
+            Spark.start
+            $sc = Spark.context
+
+            Spark.print_logo('Spark context is loaded as $sc')
+          else
+            Spark.print_logo('You can start Spark with Spark.start')
+          end
+
+          # Load IRB
+          require 'irb'
+          require 'irb/completion'
+          require 'irb/ext/save-history'
+
+          begin
+            file = File.expand_path(IRB_HISTORY_FILE)
+            if File.exists?(file)
+              lines = IO.readlines(file).collect { |line| line.chomp }
+              Readline::HISTORY.push(*lines)
+            end
+            Kernel.at_exit do
+              lines = Readline::HISTORY.to_a.reverse.uniq.reverse
+              lines = lines[-IRB_HISTORY_SIZE, IRB_HISTORY_SIZE] if lines.nitems > IRB_HISTORY_SIZE
+              File.open(IRB_HISTORY_FILE, File::WRONLY | File::CREAT | File::TRUNC) { |io| io.puts lines.join("\n") }
+            end
+          rescue
+          end
+
+          ARGV.clear # Clear Thor ARGV, otherwise IRB will parse it
+          ARGV.concat ['--readline', '--prompt-mode', 'simple']
+          IRB.start
+        end
       end
 
-      if options[:start]
-        # Load Java and Spark
-        Spark.start
-        $sc = Spark.context
-
-        Spark.print_logo("Spark context is loaded as $sc")
-      else
-        Spark.print_logo("You can start Spark with Spark.start")
-      end
-
-      # Load IRB
-      require "pry"
-      Pry.start
-    end
-
-    no_tasks do
-      def print_version
-        puts Spark::VERSION
-      end
+      run!
     end
 
   end

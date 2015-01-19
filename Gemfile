@@ -4,7 +4,8 @@ gemspec
 
 gem 'sourcify', '0.6.0.rc4'
 gem 'method_source'
-gem 'thor'
+# gem 'thor'
+gem 'commander'
 gem 'pry'
 gem 'nio4r'
 gem 'distribution'
