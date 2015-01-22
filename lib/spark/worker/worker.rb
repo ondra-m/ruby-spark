@@ -10,6 +10,8 @@ require "socket"
 # =================================================================================================
 # Worker
 #
+# Iterator is LAZY !!!
+#
 module Worker
   class Base
 
@@ -75,7 +77,7 @@ module Worker
       end
 
       def load_iterator
-        @iterator = @command.deserializer.load(client_socket)
+        @iterator = @command.deserializer.load(client_socket).lazy
       end
 
       def compute

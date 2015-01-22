@@ -67,8 +67,13 @@ class Spark::Command::Base
     before_run
 
     # Run has to be implemented on child
-    if iterator.is_a?(Enumerator) && respond_to?(:run_with_enum)
-      return run_with_enum(iterator, split_index)
+
+    # if iterator.is_a?(Enumerator) && respond_to?(:run_with_enum)
+    #   return run_with_enum(iterator, split_index)
+    # end
+
+    if iterator.is_a?(Enumerator::Lazy) && respond_to?(:lazy_run)
+      return lazy_run(iterator, split_index)
     end
 
     iterator = iterator.to_a

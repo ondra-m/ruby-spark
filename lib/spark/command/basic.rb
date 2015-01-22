@@ -13,11 +13,17 @@ class Spark::Command::Map < _Base
     iterator
   end
 
-  def run_with_enum(iterator, *)
-    return to_enum(:run_with_enum, iterator) unless block_given?
+  # def run_with_enum(iterator, *)
+  #   return to_enum(:run_with_enum, iterator) unless block_given?
 
-    iterator.each do |item|
-      yield @map_function.call(item)
+  #   iterator.each do |item|
+  #     yield @map_function.call(item)
+  #   end
+  # end
+
+  def lazy_run(iterator, *)
+    iterator.map do |item|
+      @map_function.call(item)
     end
   end
 end
