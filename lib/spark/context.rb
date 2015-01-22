@@ -22,7 +22,8 @@ module Spark
       Spark.config.valid!
       @jcontext = JavaSparkContext.new(Spark.config.spark_conf)
 
-      ui.attachTab(RubyTab.new(ui, to_java_hash(RbConfig::CONFIG)))
+      # Does not work on 1.2
+      # ui.attachTab(RubyTab.new(ui, to_java_hash(RbConfig::CONFIG)))
 
       set_call_site("Ruby") # description of stage
     end

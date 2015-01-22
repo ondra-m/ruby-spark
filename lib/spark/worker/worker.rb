@@ -1,11 +1,11 @@
 #!/usr/bin/env ruby
 
 # Load root of the gem
-lib = File.expand_path(File.join("..", ".."), File.dirname(__FILE__))
+lib = File.expand_path(File.join('..', '..'), File.dirname(__FILE__))
 $LOAD_PATH.unshift(lib) if File.directory?(lib) && !$LOAD_PATH.include?(lib)
 
-require "ruby-spark.rb"
-require "socket"
+require 'ruby-spark.rb'
+require 'socket'
 
 # =================================================================================================
 # Worker
@@ -22,7 +22,7 @@ module Worker
     attr_accessor :client_socket
 
     def initialize(port)
-      self.client_socket = TCPSocket.open("localhost", port)
+      self.client_socket = TCPSocket.open('localhost', port)
       # Send back worker ID
       write(pack_long(id))
     end
@@ -102,7 +102,7 @@ module Worker
       def log(message=nil)
         return if !$DEBUG
 
-        $stdout.puts %{==> #{Time.now.strftime("%H:%M:%S")} [#{id}] #{message}}
+        $stdout.puts %{==> #{Time.now.strftime('%H:%M:%S')} [#{id}] #{message}}
         $stdout.flush
       end
 
@@ -120,7 +120,7 @@ module Worker
     private
 
       def before_start
-        $PROGRAM_NAME = "RubySparkWorker"
+        $PROGRAM_NAME = 'RubySparkWorker'
       end
 
   end
