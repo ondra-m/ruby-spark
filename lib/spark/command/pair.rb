@@ -12,10 +12,8 @@ class Spark::Command::CombineByKey
       _run(iterator).to_a
     end
 
-    def run_with_enum(iterator, *)
-      return to_enum(:run_with_enum, iterator) unless block_given?
-
-      _run(iterator).each {|item| yield item}
+    def lazy_run(iterator, *)
+      _run(iterator).lazy
     end
   end
 
@@ -98,12 +96,10 @@ class Spark::Command::MapValues < _Base
     iterator
   end
 
-  def run_with_enum(iterator, *)
-    return to_enum(:run_with_enum, iterator) unless block_given?
-
-    iterator.each do |item|
+  def lazy_run(iterator, *)
+    iterator.map do |item|
       item[1] = @map_function.call(item[1])
-      yield item
+      item
     end
   end
 end
@@ -117,7 +113,7 @@ class Spark::Command::FlatMapValues < _Base
   def run(iterator, *)
     iterator.map! do |(key, values)|
       values = @map_function.call(values)
-      values.flatten!
+      values.flatten!(1)
       values.map! do |value|
         [key, value]
       end
@@ -126,15 +122,25 @@ class Spark::Command::FlatMapValues < _Base
     iterator
   end
 
-  def run_with_enum(iterator, *)
-    return to_enum(:run_with_enum, iterator) unless block_given?
+  # def run_with_enum(iterator, *)
+  #   return to_enum(:run_with_enum, iterator) unless block_given?
 
-    iterator.each do |(key, values)|
-      values = @map_function.call(values)
-      values.flatten!
-      values.each do |value|
-        yield [key, value]
-      end
-    end
-  end
+  #   iterator.each do |(key, values)|
+  #     values = @map_function.call(values)
+  #     values.flatten!
+  #     values.each do |value|
+  #       yield [key, value]
+  #     end
+  #   end
+  # end
+
+  # def lazy_run(iterator, *)
+  #   iterator.flat_map do |(key, values)|
+  #     values = @map_function.call(values)
+  #     values.flatten!(1)
+  #     values.map! do |value|
+  #       [key, value]
+  #     end
+  #   end
+  # end
 end

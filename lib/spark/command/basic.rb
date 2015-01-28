@@ -13,14 +13,6 @@ class Spark::Command::Map < _Base
     iterator
   end
 
-  # def run_with_enum(iterator, *)
-  #   return to_enum(:run_with_enum, iterator) unless block_given?
-
-  #   iterator.each do |item|
-  #     yield @map_function.call(item)
-  #   end
-  # end
-
   def lazy_run(iterator, *)
     iterator.map do |item|
       @map_function.call(item)
@@ -37,20 +29,6 @@ class Spark::Command::FlatMap < Spark::Command::Map
     iterator.flatten!(1)
     iterator
   end
-
-  # def run_with_enum(iterator, *)
-  #   return to_enum(:run_with_enum, iterator) unless block_given?
-
-  #   iterator.each do |item|
-  #     item = @map_function.call(item)
-  #     if item.is_a?(Array)
-  #       item.flatten!
-  #       item.each {|x| yield x}
-  #     else
-  #       yield item
-  #     end
-  #   end
-  # end
 
   def lazy_run(iterator, *)
     iterator.flat_map do |item|
@@ -71,7 +49,7 @@ class Spark::Command::MapPartitionsWithIndex < _Base
   end
 
   # User should controll if there is Enumerator or not
-  alias_method :lazy_run, :run
+  # alias_method :lazy_run, :run
 end
 
 # -------------------------------------------------------------------------------------------------
@@ -83,7 +61,7 @@ class Spark::Command::MapPartitions < Spark::Command::MapPartitionsWithIndex
     iterator = @partition_function.call(iterator)
     iterator
   end
-  alias_method :lazy_run, :run
+  # alias_method :lazy_run, :run
 end
 
 # -------------------------------------------------------------------------------------------------
@@ -98,14 +76,6 @@ class Spark::Command::Filter < _Base
     end
     iterator
   end
-
-  # def run_with_enum(iterator, *)
-  #   return to_enum(:run_with_enum, iterator) unless block_given?
-
-  #   iterator.each do |item|
-  #     yield item if @filter_function.call(item)
-  #   end
-  # end
 
   def lazy_run(iterator, *)
     iterator.select do |item|
@@ -123,14 +93,6 @@ class Spark::Command::Compact < _Base
     iterator
   end
 
-  # def run_with_enum(iterator, *)
-  #   return to_enum(:run_with_enum, iterator) unless block_given?
-
-  #   iterator.each do |item|
-  #     yield item unless item.nil?
-  #   end
-  # end
-
   def lazy_run(iterator, *)
     iterator.select do |item|
       !item.nil?
@@ -145,11 +107,6 @@ class Spark::Command::Glom < _Base
   def run(iterator, *)
     [iterator]
   end
-
-  # def run_with_enum(iterator, *)
-  #   return to_enum(:run_with_enum, iterator) unless block_given?
-  #   yield run(iterator.to_a)[0]
-  # end
 
   def lazy_run(iterator, *)
     run(iterator.to_a)
@@ -189,20 +146,26 @@ class Spark::Command::PartitionBy
 
     def run(iterator, *)
       iterator.map! do |item|
-        [pack_long(@partition_func.call(@key_function[item])), item]
+        make_partition_item(item)
       end
       iterator.flatten!(1)
       iterator
     end
 
-    def run_with_enum(iterator, *)
-      return to_enum(:run_with_enum, iterator) unless block_given?
-
-      iterator.each do |item|
-        yield pack_long(@partition_func.call(@key_function[item]))
-        yield item
+    def lazy_run(iterator, *)
+      iterator.flat_map do |item|
+        make_partition_item(item)
       end
     end
+
+    private
+
+      def make_partition_item(item)
+        [
+          pack_long(@partition_func.call(@key_function[item])),
+          item
+        ]
+      end
   end
 
   class Basic < Base
@@ -248,7 +211,7 @@ class Spark::Command::Aggregate < _Base
     [iterator.reduce(@zero_value, &@reduce_func)]
   end
 
-  def run_with_enum(iterator, *)
+  def lazy_run(iterator, *)
     run(iterator)
   end
 end
@@ -301,11 +264,9 @@ class Spark::Command::KeyBy < _Base
     iterator
   end
 
-  def run_with_enum(iterator, *)
-    return to_enum(:run_with_enum, iterator) unless block_given?
-
-    iterator.each do |item|
-      yield [@key_function.call(item), item]
+  def lazy_run(iterator, *)
+    iterator.map do |item|
+      [@key_function.call(item), item]
     end
   end
 end
