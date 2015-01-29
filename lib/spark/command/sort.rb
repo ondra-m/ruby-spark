@@ -10,6 +10,11 @@ class Spark::Command::SortByKey < _Base
   variable :memory,     function: false, type: [Numeric, NilClass]
   variable :serializer, function: false, type: Spark::Serializer::Base
 
+  # Currently disabled
+  def before_run
+    @spilling = false
+  end
+
   def run(iterator, _)
     if @spilling
       iterator = run_with_spilling(iterator.each)

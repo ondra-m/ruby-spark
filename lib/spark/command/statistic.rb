@@ -12,8 +12,8 @@ class Spark::Command::Sample < _Base
     sampler.sample(iterator)
   end
 
-  def run_with_enum(iterator, _)
-    sampler.sample_as_enum(iterator)
+  def lazy_run(iterator, _)
+    sampler.lazy_sample(iterator)
   end
 
   def sampler

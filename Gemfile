@@ -25,6 +25,7 @@ platform :jruby do
 end
 
 group :development do
+  gem 'benchmark-ips'
   gem 'rspec'
   gem 'rake-compiler'
   gem 'guard'

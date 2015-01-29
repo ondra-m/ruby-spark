@@ -41,7 +41,7 @@ module Spark
     end
 
     # Poisson Sampler
-    #
+    # -------------------------------------------------------------------------
     class Poisson < Base
 
       def sample(iterator)
@@ -54,10 +54,10 @@ module Spark
         iterator
       end
 
-      def sample_as_enum(iterator)
-        iterator.defer do |out, inp|
+      def lazy_sample(iterator)
+        Enumerator::Lazy.new(iterator) do |yielder, value| 
           count = rng.rand
-          count.times { out << inp }
+          count.times { yielder << value }
         end
       end
 
@@ -68,7 +68,7 @@ module Spark
     end
 
     # Uniform Sampler
-    #
+    # -------------------------------------------------------------------------
     class Uniform < Base
 
       def sample(iterator)
@@ -76,9 +76,9 @@ module Spark
         iterator
       end
 
-      def sample_as_enum(iterator)
-        iterator.defer do |out, inp|
-          out << inp if rng.rand <= fraction
+      def lazy_sample(iterator)
+        iterator.select do |item|
+          rng.rand <= fraction
         end
       end
 
