@@ -1,10 +1,12 @@
-require "method_source"
-require "sourcify"
+require 'method_source'
+require 'sourcify'
 
-require "spark/command_validator"
+require 'spark/command_validator'
 
 module Spark
   class CommandBuilder
+
+    extend Forwardable
 
     include Spark::Helper::Serialize
     include Spark::Helper::System
@@ -12,16 +14,13 @@ module Spark
 
     attr_reader :command
 
+    def_delegators :@command, :serializer, :serializer=, :deserializer, :deserializer=, :libraries, :files
+
     def initialize(serializer, deserializer=nil)
       @command = Spark::Command.new
       self.serializer   = serializer
       self.deserializer = deserializer || serializer.dup
     end
-
-    def serializer;       @command.serializer;       end
-    def serializer=(x);   @command.serializer = x;   end
-    def deserializer;     @command.deserializer;     end
-    def deserializer=(x); @command.deserializer = x; end
 
     def self.error(message)
       raise Spark::CommandError, message
@@ -54,6 +53,10 @@ module Spark
       comm = klass.new(*built_args)
       @command.add_command(comm)
       self
+    end
+
+    def add_library(*libraries)
+      @command.libraries += libraries
     end
 
     # def attach_function(*args)
@@ -99,7 +102,7 @@ module Spark
         end
 
         def serialize_function_from_string(func)
-          {type: "proc", content: func}
+          {type: 'proc', content: func}
         end
 
         # Serialize Proc as String
@@ -110,7 +113,7 @@ module Spark
         def serialize_function_from_proc(proc)
           serialize_function_from_string(proc.to_source)
         rescue
-          raise Spark::SerializeError, "Proc can not be serialized. Use String instead."
+          raise Spark::SerializeError, 'Proc can not be serialized. Use String instead.'
         end
 
         # Symbol represent name of the method
@@ -154,8 +157,12 @@ module Spark
         #   # => "def test(x)\n  x*x\nend\n"
         #
         def serialize_function_from_method(func)
-          {type: "method", name: func.name, content: func.source}
+          {type: 'method', name: func.name, content: func.source}
         rescue
+          raise Spark::SerializeError, 'Method can not be serialized. Use full path or Proc.'
+        end
+
+        # Load all files and store content
           raise Spark::SerializeError, "Method can not be serialized. Use full path or Proc."
         end
 

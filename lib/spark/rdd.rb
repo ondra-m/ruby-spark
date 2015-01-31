@@ -6,12 +6,16 @@
 module Spark
   class RDD
 
+    extend Forwardable
+
     attr_reader :jrdd, :context, :command
 
     include Spark::Helper::Logger
     include Spark::Helper::Parser
     include Spark::Helper::Statistic
     include Spark::Helper::Partition
+
+    def_delegators :@command, :serializer, :deserializer, :libraries, :files
 
     # Initializing RDD, this method is root of all Pipelined RDD - its unique
     # If you call some operations on this class it will be computed in Java
@@ -42,35 +46,18 @@ module Spark
     # =============================================================================
     # Commad and serializer
 
-    # # Attach method as Symbol or Proc
-    # def attach_function(*args)
-    #   @command.attach_function(*args)
-    #   self
-    # end
-
-    # # Add library which will be loaded on worker
-    # def attach_library(*args)
-    #   @command.attach_library(*args)
-    #   self
-    # end
-
-    # Make a copy of command for new PipelinedRDD
-    # .dup and .clone does not do deep copy of @command.template
-    #
-    # Method should be private but _reduce need it public to
-    # avoid recursion (and Stack level too deep)
-    #
-    # def add_task(args, main_func=nil, options={})
-    #   add_task_by_type(:simple, args).attach_function!(main: main_func)
-    # end
-
-    # def add_task_by_type(type, args, options={})
-    #   @command.deep_copy
-    #           .add_task(type, args)
-    # end
-
     def add_command(klass, *args)
       @command.deep_copy.add_command(klass, *args)
+    end
+
+    # Add ruby library
+    # Libraries will be included before computing
+    #
+    # rdd.add_library('pry').add_library('nio4r', 'distribution')
+    # 
+    def add_library(*libraries)
+      @command.add_library(*libraries)
+      self
     end
 
     def new_pipelined_from_command(klass, *args)
@@ -78,13 +65,6 @@ module Spark
       PipelinedRDD.new(self, comm)
     end
 
-    def serializer
-      @command.serializer
-    end
-
-    def deserializer
-      @command.deserializer
-    end
 
     # =============================================================================
     # Variables and non-computing functions
@@ -94,7 +74,7 @@ module Spark
     end
 
     def default_reduce_partitions
-      config["spark.default.parallelism"] || partitions_size
+      config['spark.default.parallelism'] || partitions_size
     end
 
     # Count of ParallelCollectionPartition
@@ -109,7 +89,7 @@ module Spark
 
     # Persist this RDD with the default storage level MEMORY_ONLY_SER because of serialization.
     def cache
-      persist("memory_only_ser")
+      persist('memory_only_ser')
     end
 
     # Set this RDD's storage level to persist its values across operations after the first time
@@ -294,7 +274,7 @@ module Spark
     # => 10
     #
     def max
-      self.reduce("lambda{|memo, item| memo > item ? memo : item }")
+      self.reduce('lambda{|memo, item| memo > item ? memo : item }')
     end
 
     # Return the min of this RDD
@@ -304,7 +284,7 @@ module Spark
     # => 0
     #
     def min
-      self.reduce("lambda{|memo, item| memo < item ? memo : item }")
+      self.reduce('lambda{|memo, item| memo < item ? memo : item }')
     end
 
     # Return the sum of this RDD
@@ -314,7 +294,7 @@ module Spark
     # => 55
     #
     def sum
-      self.reduce("lambda{|sum, item| sum + item}")
+      self.reduce('lambda{|sum, item| sum + item}')
     end
 
     # Return the number of values in this RDD
@@ -325,8 +305,8 @@ module Spark
     #
     def count
       # nil is for seq_op => it means the all result go directly to one worker for combine
-      @count ||= self.map_partitions("lambda{|iterator| iterator.to_a.size }")
-                     .aggregate(0, nil, "lambda{|sum, item| sum + item }")
+      @count ||= self.map_partitions('lambda{|iterator| iterator.to_a.size }')
+                     .aggregate(0, nil, 'lambda{|sum, item| sum + item }')
     end
 
     # Applies a function f to all elements of this RDD.
@@ -336,8 +316,7 @@ module Spark
     # => nil
     #
     def foreach(f, options={})
-      comm = add_command(Spark::Command::Foreach, f)
-      PipelinedRDD.new(self, comm).collect
+      new_rdd_from_command(Spark::Command::Foreach, f).collect
       nil
     end
 
@@ -348,8 +327,7 @@ module Spark
     # => nil
     #
     def foreach_partition(f, options={})
-      comm = add_command(Spark::Command::ForeachPartition, f)
-      PipelinedRDD.new(self, comm).collect
+      new_rdd_from_command(Spark::Command::ForeachPartition, f).collect
       nil
     end
 
@@ -364,8 +342,7 @@ module Spark
     # => [0, 2, 4, 6, 8, 10]
     #
     def map(f)
-      comm = add_command(Spark::Command::Map, f)
-      PipelinedRDD.new(self, comm)
+      new_rdd_from_command(Spark::Command::Map, f)
     end
 
     # Return a new RDD by first applying a function to all elements of this
@@ -376,8 +353,7 @@ module Spark
     # => [0, 1, 1, 1, 2, 1, 3, 1, 4, 1, 5, 1]
     #
     def flat_map(f)
-      comm = add_command(Spark::Command::FlatMap, f)
-      PipelinedRDD.new(self, comm)
+      new_rdd_from_command(Spark::Command::FlatMap, f)
     end
 
     # Return a new RDD by applying a function to each partition of this RDD.
@@ -387,20 +363,18 @@ module Spark
     # => [15, 40]
     #
     def map_partitions(f)
-      comm = add_command(Spark::Command::MapPartitions, f)
-      PipelinedRDD.new(self, comm)
+      new_rdd_from_command(Spark::Command::MapPartitions, f)
     end
 
     # Return a new RDD by applying a function to each partition of this RDD, while tracking the index
     # of the original partition.
     #
-    # rdd = $sc.parallelize(0...4, 4)
-    # rdd.map_partitions_with_index(lambda{|part, index| part[0] * index}).collect
+    # rdd = $sc.parallelize(0...4, 4, batch_size: 1)
+    # rdd.map_partitions_with_index(lambda{|part, index| part.first * index}).collect
     # => [0, 1, 4, 9]
     #
     def map_partitions_with_index(f, options={})
-      comm = add_command(Spark::Command::MapPartitionsWithIndex, f)
-      PipelinedRDD.new(self, comm)
+      new_rdd_from_command(Spark::Command::MapPartitionsWithIndex, f)
     end
 
     # Return a new RDD containing only the elements that satisfy a predicate.
@@ -410,8 +384,7 @@ module Spark
     # => [0, 2, 4, 6, 8, 10]
     #
     def filter(f)
-      comm = add_command(Spark::Command::Filter, f)
-      PipelinedRDD.new(self, comm)
+      new_rdd_from_command(Spark::Command::Filter, f)
     end
 
     # Return a new RDD containing non-nil elements.
@@ -421,8 +394,7 @@ module Spark
     # => [1, 2, 3]
     #
     def compact
-      comm = add_command(Spark::Command::Compact)
-      PipelinedRDD.new(self, comm)
+      new_rdd_from_command(Spark::Command::Compact)
     end
 
     # Return an RDD created by coalescing all elements within each partition into an array.
@@ -432,8 +404,7 @@ module Spark
     # => [[0, 1, 2], [3, 4, 5, 6], [7, 8, 9, 10]]
     #
     def glom
-      comm = add_command(Spark::Command::Glom)
-      PipelinedRDD.new(self, comm)
+      new_rdd_from_command(Spark::Command::Glom)
     end
 
     # Return a new RDD that is reduced into num_partitions partitions.
@@ -455,9 +426,9 @@ module Spark
     # => [1, 2, 3]
     #
     def distinct
-      self.map("lambda{|x| [x, nil]}")
-          .reduce_by_key("lambda{|x,_| x}")
-          .map("lambda{|x| x[0]}")
+      self.map('lambda{|x| [x, nil]}')
+          .reduce_by_key('lambda{|x,_| x}')
+          .map('lambda{|x| x[0]}')
     end
 
     # Return a shuffled RDD.
@@ -469,8 +440,7 @@ module Spark
     def shuffle(seed=nil)
       seed ||= Random.new_seed
 
-      comm = add_command(Spark::Command::Shuffle, seed)
-      PipelinedRDD.new(self, comm)
+      new_rdd_from_command(Spark::Command::Shuffle, seed)
     end
 
     # Return the union of this RDD and another one. Any identical elements will appear multiple
@@ -520,8 +490,8 @@ module Spark
     # => [1, 4, 5]
     #
     def intersection(other)
-      mapping_function = "lambda{|item| [item, nil]}"
-      filter_function  = "lambda{|(key, values)| values.size > 1}"
+      mapping_function = 'lambda{|item| [item, nil]}'
+      filter_function  = 'lambda{|(key, values)| values.size > 1}'
 
       self.map(mapping_function)
           .cogroup(other.map(mapping_function))
@@ -537,7 +507,7 @@ module Spark
     #
     def partition_by(num_partitions, partition_func=nil)
       num_partitions ||= default_reduce_partitions
-      partition_func ||= "lambda{|x| Spark::Digest.portable_hash(x.to_s)}"
+      partition_func ||= 'lambda{|x| Spark::Digest.portable_hash(x.to_s)}'
 
       _partition_by(num_partitions, Spark::Command::PartitionBy::Basic, partition_func)
     end
@@ -555,8 +525,7 @@ module Spark
     # => [3, 5, 9, 32, 44, 55, 66, 68, 75, 80, 86, 91, 98]
     #
     def sample(with_replacement, fraction, seed=nil)
-      comm = add_command(Spark::Command::Sample, with_replacement, fraction, seed)
-      PipelinedRDD.new(self, comm)
+      new_rdd_from_command(Spark::Command::Sample, with_replacement, fraction, seed)
     end
 
     # Return a fixed-size sampled subset of this RDD in an array
@@ -572,7 +541,7 @@ module Spark
     def take_sample(with_replacement, num, seed=nil)
 
       if num < 0
-        raise Spark::RDDError, "Size have to be greater than 0"
+        raise Spark::RDDError, 'Size have to be greater than 0'
       elsif num == 0
         return []
       end
@@ -633,7 +602,7 @@ module Spark
     # => {"a"=>3, "b"=>2, "c"=>3}
     #
     def reduce_by_key(f, num_partitions=nil)
-      combine_by_key("lambda {|x| x}", f, f, num_partitions)
+      combine_by_key('lambda {|x| x}', f, f, num_partitions)
     end
 
     # Generic function to combine the elements for each key using a custom set of aggregation
@@ -686,9 +655,9 @@ module Spark
     # => [["a", [1, 2]], ["b", [3]]]
     #
     def group_by_key(num_partitions=nil)
-      create_combiner = "lambda{|item| [item]}"
-      merge_value     = "lambda{|combiner, item| combiner << item; combiner}"
-      merge_combiners = "lambda{|combiner_1, combiner_2| combiner_1 += combiner_2; combiner_1}"
+      create_combiner = 'lambda{|item| [item]}'
+      merge_value     = 'lambda{|combiner, item| combiner << item; combiner}'
+      merge_combiners = 'lambda{|combiner_1, combiner_2| combiner_1 += combiner_2; combiner_1}'
 
       combine_by_key(create_combiner, merge_value, merge_combiners, num_partitions)
     end
@@ -768,14 +737,14 @@ module Spark
     # => [["a", 1], ["a", 2]]
     #
     def subtract_by_key(other, num_partitions=nil)
-      create_combiner = "lambda{|item| [[item]]}"
-      merge_value     = "lambda{|combiner, item| combiner.first << item; combiner}"
-      merge_combiners = "lambda{|combiner_1, combiner_2| combiner_1 += combiner_2; combiner_1}"
+      create_combiner = 'lambda{|item| [[item]]}'
+      merge_value     = 'lambda{|combiner, item| combiner.first << item; combiner}'
+      merge_combiners = 'lambda{|combiner_1, combiner_2| combiner_1 += combiner_2; combiner_1}'
 
       self.union(other)
           .combine_by_key(create_combiner, merge_value, merge_combiners, num_partitions)
-          .filter("lambda{|(key,values)| values.size == 1}")
-          .flat_map_values("lambda{|item| item.first}")
+          .filter('lambda{|(key,values)| values.size == 1}')
+          .flat_map_values('lambda{|item| item.first}')
     end
 
     # Return an RDD with the elements from self that are not in other.
@@ -786,7 +755,7 @@ module Spark
     # => [["a", 1], ["b", 3], ["c", 4]]
     #
     def subtract(other, num_partitions=nil)
-      mapping_function = "lambda{|x| [x,nil]}"
+      mapping_function = 'lambda{|x| [x,nil]}'
 
       self.map(mapping_function)
           .subtract_by_key(other.map(mapping_function), num_partitions)
@@ -800,7 +769,7 @@ module Spark
     # => [["a", 3], ["b", 2], ["c", 1]]
     #
     def sort_by_key(ascending=true, num_partitions=nil)
-      self.sort_by("lambda{|(key, _)| key}")
+      self.sort_by('lambda{|(key, _)| key}')
     end
 
     # Sorts this RDD by the given key_function
@@ -818,14 +787,15 @@ module Spark
     # => ["b", "cc", "ddd", "eeee", "aaaaaaa"]
     #
     def sort_by(key_function=nil, ascending=true, num_partitions=nil)
-      key_function   ||= "lambda{|x| x}"
+      key_function   ||= 'lambda{|x| x}'
       num_partitions ||= default_reduce_partitions
 
       command_klass = Spark::Command::SortByKey
 
       # Allow spill data to disk due to memory limit
-      spilling = config["spark.shuffle.spill"] || false
-      memory   = config["spark.ruby.worker.memory"]
+      # spilling = config['spark.shuffle.spill'] || false
+      spilling = false
+      memory   = config['spark.ruby.worker.memory']
 
       # Set spilling to false if worker has unlimited memory
       if memory.empty?
@@ -839,7 +809,7 @@ module Spark
       if num_partitions == 1
         rdd = self
         rdd = rdd.coalesce(1) if partitions_size > 1
-        return rdd.new_pipelined_from_command(command_klass, key_function, ascending, spilling, memory, serializer)
+        return rdd.new_rdd_from_command(command_klass, key_function, ascending, spilling, memory, serializer)
       end
 
       # Compute boundary of collection
@@ -857,7 +827,7 @@ module Spark
       bounds = determine_bounds(samples, num_partitions)
 
       shuffled = _partition_by(num_partitions, Spark::Command::PartitionBy::Sorting, key_function, bounds, ascending, num_partitions)
-      shuffled.new_pipelined_from_command(command_klass, key_function, ascending, spilling, memory, serializer)
+      shuffled.new_rdd_from_command(command_klass, key_function, ascending, spilling, memory, serializer)
     end
 
     # Creates array of the elements in this RDD by applying function f.
@@ -867,7 +837,7 @@ module Spark
     # => [[0, 0], [1, 1], [0, 2], [1, 3], [0, 4], [1, 5]]
     #
     def key_by(f)
-      new_pipelined_from_command(Spark::Command::KeyBy, f)
+      new_rdd_from_command(Spark::Command::KeyBy, f)
     end
 
     # Pass each value in the key-value pair RDD through a map function without changing
@@ -880,7 +850,7 @@ module Spark
     # => [["ruby", "RUBY"], ["scala", "SCALA"], ["java", "JAVA"]]
     #
     def map_values(f)
-      new_pipelined_from_command(Spark::Command::MapValues, f)
+      new_rdd_from_command(Spark::Command::MapValues, f)
     end
 
     # Pass each value in the key-value pair RDD through a flat_map function
@@ -893,7 +863,7 @@ module Spark
     # => [["a", 1], ["a", 2], ["a", 1], ["a", 2], ["b", 3], ["b", 3]]
     #
     def flat_map_values(f)
-      new_pipelined_from_command(Spark::Command::FlatMapValues, f)
+      new_rdd_from_command(Spark::Command::FlatMapValues, f)
     end
 
     # Return an RDD with the first element of PairRDD
@@ -903,7 +873,7 @@ module Spark
     # => [1, 3, 5]
     #
     def keys
-      self.map("lambda{|(key, _)| key}")
+      self.map('lambda{|(key, _)| key}')
     end
 
     # Return an RDD with the second element of PairRDD
@@ -913,7 +883,7 @@ module Spark
     # => [2, 4, 6]
     #
     def values
-      self.map("lambda{|(_, value)| value}")
+      self.map('lambda{|(_, value)| value}')
     end
 
 
@@ -921,6 +891,8 @@ module Spark
     alias_method :partitionsSize, :partitions_size
     alias_method :defaultReducePartitions, :default_reduce_partitions
     alias_method :setName, :set_name
+    alias_method :addFiles, :add_file
+    alias_method :addLibrary, :add_library
 
     alias_method :flatMap, :flat_map
     alias_method :mapPartitions, :map_partitions
@@ -952,8 +924,7 @@ module Spark
           # Partitions are already reduced
           rdd = self
         else
-          comm = add_command(klass, seq_op, zero_value)
-          rdd = PipelinedRDD.new(self, comm)
+          rdd = new_rdd_from_command(klass, seq_op, zero_value)
         end
 
         # Send all results to one worker and combine results
@@ -969,8 +940,7 @@ module Spark
 
       def _partition_by(num_partitions, klass, *args)
         # RDD is transform from [key, value] to [hash, [key, value]]
-        comm = add_command(klass, *args)
-        keyed = PipelinedRDD.new(self, comm)
+        keyed = new_rdd_from_command(klass, *args)
         keyed.serializer.unbatch!
 
         # PairwiseRDD and PythonPartitioner are borrowed from Python
@@ -993,8 +963,7 @@ module Spark
         num_partitions ||= default_reduce_partitions
 
         # Combine key
-        combine_comm = add_command(combine.shift, *combine)
-        combined = PipelinedRDD.new(self, combine_comm)
+        combined = new_rdd_from_command(combine.shift, *combine)
 
         # Merge items
         shuffled = combined.partition_by(num_partitions)

@@ -1,4 +1,4 @@
-require "tempfile"
+require 'tempfile'
 
 # Necessary libraries
 Spark.load_lib
@@ -25,7 +25,7 @@ module Spark
       # Does not work on 1.2
       # ui.attachTab(RubyTab.new(ui, to_java_hash(RbConfig::CONFIG)))
 
-      set_call_site("Ruby") # description of stage
+      set_call_site('Ruby') # description of stage
     end
 
     def stop
@@ -48,8 +48,8 @@ module Spark
 
     def get_serializer(serializer, *args)
       serializer   = Spark::Serializer.get(serializer)
-      serializer ||= Spark::Serializer.get(config["spark.ruby.serializer"])
-      serializer.new(config["spark.ruby.batch_size"]).set(*args)
+      serializer ||= Spark::Serializer.get(config['spark.ruby.serializer'])
+      serializer.new(config['spark.ruby.batch_size']).set(*args)
     end
 
     # Set a local property that affects jobs submitted from this thread, such as the
@@ -68,7 +68,7 @@ module Spark
     # Support function for API backtraces.
     #
     def set_call_site(site)
-      set_local_property("externalCallSite", site)
+      set_local_property('externalCallSite', site)
     end
 
     # Capture the current user callsite and return a formatted version for printing. If the user
@@ -128,7 +128,7 @@ module Spark
       use = :file
       serializer = get_serializer(options[:serializer], options[:batch_size])
 
-      if data.is_a?(Array) && config["spark.ruby.parallelize_strategy"] == "deep_copy"
+      if data.is_a?(Array) && config['spark.ruby.parallelize_strategy'] == 'deep_copy'
         data = data.deep_copy
       else
         # For enumerator or range
@@ -140,7 +140,7 @@ module Spark
         serializer.dump_to_java(data)
         jrdd = jcontext.parallelize(data, num_slices)
       when :file
-        file = Tempfile.new("to_parallelize")
+        file = Tempfile.new('to_parallelize')
         serializer.dump(data, file)
         file.close # not unlink
         jrdd = RubyRDD.readRDDFromFile(jcontext, file.path, num_slices)
@@ -186,7 +186,7 @@ module Spark
     def whole_text_files(path, min_partitions=nil, options={})
       min_partitions ||= default_parallelism
       serializer = get_serializer(options[:serializer], options[:batch_size])
-      deserializer = get_serializer("Pair", get_serializer("UTF8"), get_serializer("UTF8"))
+      deserializer = get_serializer('Pair', get_serializer('UTF8'), get_serializer('UTF8'))
 
       Spark::RDD.new(@jcontext.wholeTextFiles(path, min_partitions), self, serializer, deserializer)
     end
@@ -208,7 +208,7 @@ module Spark
     #
     def run_job_with_command(rdd, partitions, allow_local, command, *args)
       if !partitions.nil? && !partitions.is_a?(Array)
-        raise Spark::ContextError, "Partitions must be nil or Array"
+        raise Spark::ContextError, 'Partitions must be nil or Array'
       end
 
       partitions_size = rdd.partitions_size
@@ -224,7 +224,7 @@ module Spark
       # Rjb represent Fixnum as Integer but Jruby as Long
       partitions = to_java_array_list(convert_to_java_int(partitions))
 
-      mapped = rdd.new_pipelined_from_command(command, *args)
+      mapped = rdd.new_rdd_from_command(command, *args)
       iterator = PythonRDD.runJob(rdd.context.sc, mapped.jrdd, partitions, allow_local)
       mapped.collect_from_iterator(iterator)
     end
