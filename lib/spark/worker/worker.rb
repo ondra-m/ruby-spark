@@ -7,6 +7,8 @@ $LOAD_PATH.unshift(lib) if File.directory?(lib) && !$LOAD_PATH.include?(lib)
 require 'ruby-spark.rb'
 require 'socket'
 
+require_relative 'spark_files'
+
 # =================================================================================================
 # Worker
 #
@@ -31,6 +33,7 @@ module Worker
       before_start
 
       load_split_index
+      load_files
       load_command
       load_iterator
 
@@ -70,6 +73,10 @@ module Worker
 
       def load_split_index
         @split_index = read_int
+      end
+
+      def load_files
+        SparkFiles.root_directory = read(read_int)
       end
 
       def load_command

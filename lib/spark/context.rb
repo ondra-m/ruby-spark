@@ -90,6 +90,25 @@ module Spark
       Spark.config
     end
 
+    # Add a file to be downloaded with this Spark job on every node.
+    # The path of file passed can be either a local file, a file in HDFS
+    # (or other Hadoop-supported filesystems), or an HTTP, HTTPS or FTP URI.
+    #
+    # To access the file in Spark jobs, use `SparkFiles.get(file_name)` with the
+    # filename to find its download location.
+    #
+    # `echo 10 > test.txt`
+    #
+    # $sc.add_file('test.txt')
+    # $sc.parallelize(0..5).map(lambda{|x| x * SparkFiles.get_content('test.txt').to_i}).collect
+    # => [0, 10, 20, 30, 40, 50]
+    #
+    def add_file(*files)
+      files.each do |file|
+        sc.addFile(file)
+      end
+    end
+
     # Distribute a local Ruby collection to form an RDD
     # Direct method can be slow so be careful, this method update data inplace
     #
@@ -221,6 +240,7 @@ module Spark
     alias_method :getCallSite, :get_call_site
     alias_method :runJob, :run_job
     alias_method :runJobWithCommand, :run_job_with_command
+    alias_method :addFile, :add_file
 
   end
 end

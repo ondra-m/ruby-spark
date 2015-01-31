@@ -112,6 +112,9 @@ class RubyRDD[T: ClassTag](
           // Partition index
           dataOut.writeInt(split.index)
 
+          // Spark files
+          PythonRDD.writeUTF(SparkFiles.getRootDirectory, dataOut)
+
           // // Broadcast variables
           // dataOut.writeInt(broadcastVars.length)
           // for (broadcast <- broadcastVars) {
