@@ -2,6 +2,7 @@ package org.apache.spark.api.ruby
 
 import java.io._
 import java.net._
+import java.util.ArrayList
 
 import scala.util.Try
 import scala.reflect.ClassTag
@@ -10,7 +11,7 @@ import scala.collection.JavaConversions._
 import org.apache.spark._
 import org.apache.spark.{SparkEnv, Partition, SparkException, TaskContext}
 import org.apache.spark.api.java.{JavaSparkContext, JavaPairRDD, JavaRDD}
-// import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.util.Utils
 import org.apache.spark.InterruptibleIterator
@@ -25,7 +26,8 @@ import org.apache.spark.api.python.PythonRDD
 class RubyRDD[T: ClassTag](
   parent: RDD[T],
   command: Array[Byte],
-  workerDir: String)
+  workerDir: String,
+  broadcastVars: ArrayList[Broadcast[RubyBroadcast]])
 
   extends RDD[Array[Byte]](parent){
 
@@ -115,13 +117,12 @@ class RubyRDD[T: ClassTag](
           // Spark files
           PythonRDD.writeUTF(SparkFiles.getRootDirectory, dataOut)
 
-          // // Broadcast variables
-          // dataOut.writeInt(broadcastVars.length)
-          // for (broadcast <- broadcastVars) {
-          //   dataOut.writeLong(broadcast.id)
-          //   dataOut.writeInt(broadcast.value.length)
-          //   dataOut.write(broadcast.value)
-          // }
+          // Broadcast variables
+          dataOut.writeInt(broadcastVars.length)
+          for (broadcast <- broadcastVars) {
+            dataOut.writeLong(broadcast.value.id)
+            PythonRDD.writeUTF(broadcast.value.path, dataOut)
+          }
 
           // Serialized command
           dataOut.writeInt(command.length)
@@ -276,6 +277,10 @@ object RubyRDD extends Logging {
       case eof: EOFException => {}
     }
     JavaRDD.fromRDD(sc.sc.parallelize(objs, parallelism))
+  }
+
+  def readBroadcastFromFile(sc: JavaSparkContext, path: String, id: Int): Broadcast[RubyBroadcast] = {
+    sc.broadcast(new RubyBroadcast(path, id))
   }
 
 }

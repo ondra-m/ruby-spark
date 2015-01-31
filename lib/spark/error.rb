@@ -31,4 +31,10 @@ module Spark
   # Validation in context
   class ContextError < StandardError
   end
+
+  # Broadcasts
+  # Existing keys
+  # Wrong ID
+  class BroadcastError < StandardError
+  end
 end

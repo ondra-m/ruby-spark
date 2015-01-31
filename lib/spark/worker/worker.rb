@@ -9,6 +9,8 @@ require 'socket'
 
 require_relative 'spark_files'
 
+Broadcast = Spark::Broadcast
+
 # =================================================================================================
 # Worker
 #
@@ -34,6 +36,7 @@ module Worker
 
       load_split_index
       load_files
+      load_broadcast
       load_command
       load_iterator
 
@@ -67,6 +70,10 @@ module Worker
         unpack_int(read(4))
       end
 
+      def read_long
+        unpack_long(read(8))
+      end
+
       def flush
         client_socket.flush
       end
@@ -81,6 +88,13 @@ module Worker
 
       def load_command
         @command = Marshal.load(read(read_int))
+      end
+
+      def load_broadcast
+        count = read_int
+        count.times do
+          Spark::Broadcast.load(read_long, read(read_int))
+        end
       end
 
       def load_iterator

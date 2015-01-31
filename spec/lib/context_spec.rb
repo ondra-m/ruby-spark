@@ -26,4 +26,22 @@ RSpec::describe Spark::Context do
     expect(rdd_result).to eql(result)
   end
 
+  it ".broadcast" do
+    workers = rand(1..5)
+
+    values1 = [1,2,3]
+    values2 = [4,5,6]
+
+    broadcast1 = $sc.broadcast(values1, 1)
+    broadcast2 = $sc.broadcast(values2, 2)
+
+    rdd = $sc.parallelize(0..5, workers)
+    rdd = rdd.broadcast(broadcast1, broadcast2)
+    rdd = rdd.map_partitions(lambda{|_| Broadcast[1] + Broadcast[2] })
+
+    expect(rdd.sum).to eql(
+      (values1 + values2).reduce(:+) * workers
+    )
+  end
+
 end

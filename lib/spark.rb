@@ -28,6 +28,7 @@ module Spark
   autoload :JavaBridge,     "spark/java_bridge"
   autoload :ExternalSorter, "spark/sort"
   autoload :Constant,       "spark/constant"
+  autoload :Broadcast,      "spark/broadcast"
 
   include Helper::System
   include Helper::Logger

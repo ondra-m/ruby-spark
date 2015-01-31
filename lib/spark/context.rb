@@ -12,7 +12,7 @@ module Spark
     include Spark::Helper::System
     include Spark::Helper::Parser
 
-    attr_reader :jcontext
+    attr_reader :jcontext, :temp_dir
 
     # Constructor for Ruby context. Configuration is automatically is taken
     # from Spark. Config will be automatically set to default if user start
@@ -24,6 +24,9 @@ module Spark
 
       # Does not work on 1.2
       # ui.attachTab(RubyTab.new(ui, to_java_hash(RbConfig::CONFIG)))
+
+      spark_local_dir = JUtils.getLocalDir(sc.conf)
+      @temp_dir = JUtils.createTempDir(spark_local_dir).getAbsolutePath
 
       set_call_site('Ruby') # description of stage
     end
@@ -109,6 +112,23 @@ module Spark
       end
     end
 
+    # Broadcast a read-only variable to the cluster, returning a Spark::Broadcast
+    # object for reading it in distributed functions. The variable will
+    # be sent to each cluster only once.
+    #
+    # broadcast1 = $sc.broadcast('a', 1)
+    # broadcast2 = $sc.broadcast('b', 2)
+    #
+    # rdd = $sc.parallelize(0..5, 4)
+    # rdd = rdd.broadcast(broadcast1, broadcast2)
+    # rdd = rdd.map_partitions_with_index(lambda{|part, index| [Broadcast[1] * index, Broadcast[2] * index] })
+    # rdd.collect
+    # => ["", "", "a", "b", "aa", "bb", "aaa", "bbb"]
+    #
+    def broadcast(value, id=nil)
+      Spark::Broadcast.new(self, value, id)
+    end
+
     # Distribute a local Ruby collection to form an RDD
     # Direct method can be slow so be careful, this method update data inplace
     #
@@ -140,7 +160,7 @@ module Spark
         serializer.dump_to_java(data)
         jrdd = jcontext.parallelize(data, num_slices)
       when :file
-        file = Tempfile.new('to_parallelize')
+        file = Tempfile.new('to_parallelize', temp_dir)
         serializer.dump(data, file)
         file.close # not unlink
         jrdd = RubyRDD.readRDDFromFile(jcontext, file.path, num_slices)
@@ -165,7 +185,7 @@ module Spark
       min_partitions ||= default_parallelism
       serializer = get_serializer(options[:serializer], options[:batch_size])
 
-      Spark::RDD.new(@jcontext.textFile(path, min_partitions), self, serializer, get_serializer("UTF8"))
+      Spark::RDD.new(@jcontext.textFile(path, min_partitions), self, serializer, get_serializer('UTF8'))
     end
 
     # Read a directory of text files from HDFS, a local file system (available on all nodes), or any
