@@ -80,16 +80,26 @@ module Spark
           end
         end
 
-        stdin, stdout, stderr, wait_thr = Open3.popen3(cmd)
-        stdin.close
-        stdout.close
-        # stderr.close
+        output = `#{cmd}`
 
-        if wait_thr.value.success?
+        if $?.success?
           puts ' ... OK'
         else
-          raise Spark::BuildError, "'#{cmd}' \n failed: #{stderr}"
+          raise Spark::BuildError, "'#{cmd}' \n failed: #{output}"
         end
+
+        # Popen3 does not work for scalac
+        #
+        # stdin, stdout, stderr, wait_thr = Open3.popen3(cmd)
+        # stdin.close
+        # stdout.close
+        # # stderr.close
+        #
+        # if wait_thr.value.success?
+        #   puts ' ... OK'
+        # else
+        #   raise Spark::BuildError, "'#{cmd}' \n failed: #{stderr}"
+        # end
       end
 
   end
