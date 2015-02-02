@@ -1,6 +1,3 @@
-require 'method_source'
-require 'sourcify'
-
 require 'spark/command_validator'
 
 module Spark
@@ -14,7 +11,8 @@ module Spark
 
     attr_reader :command
 
-    def_delegators :@command, :serializer, :serializer=, :deserializer, :deserializer=, :libraries, :files
+    def_delegators :@command, :serializer, :serializer=, :deserializer, :deserializer=, :libraries, 
+                   :accumulators, :accumulators=
 
     def initialize(serializer, deserializer=nil)
       @command = Spark::Command.new
@@ -28,6 +26,14 @@ module Spark
 
     def error(message)
       self.class.error(message)
+    end
+
+    # Deep copy without accumulators
+    # => prevent recreating Accumulator class
+    def deep_copy
+      copy = Marshal.load(Marshal.dump(self))
+      copy.accumulators = self.accumulators.dup
+      copy
     end
 
     # Serialize Command class for worker
@@ -59,22 +65,9 @@ module Spark
       @command.libraries += libraries
     end
 
-    # def attach_function(*args)
-    #   @command.last << parse(true, *args)
-    #   self
-    # end
-
-    # # The same as `attach_function` but without validation. 
-    # # This should be used only from RDD.
-    # def attach_function!(*args)
-    #   @command.last << parse(false, *args)
-    #   self
-    # end
-
-    # def attach_library(*args)
-    #   @command.libraries << args.flatten
-    #   self
-    # end
+    def add_accumulator(*accumulators)
+      @command.accumulators += accumulators
+    end
 
     private
 
@@ -160,10 +153,6 @@ module Spark
           {type: 'method', name: func.name, content: func.source}
         rescue
           raise Spark::SerializeError, 'Method can not be serialized. Use full path or Proc.'
-        end
-
-        # Load all files and store content
-          raise Spark::SerializeError, "Method can not be serialized. Use full path or Proc."
         end
 
   end

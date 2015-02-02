@@ -44,4 +44,39 @@ RSpec::describe Spark::Context do
     )
   end
 
+  it ".accumulator" do
+    accum1 = $sc.accumulator(0, 1)
+    accum2 = $sc.accumulator(1, 2, :*, 1)
+    accum3 = $sc.accumulator(0, 3, lambda{|max, val| val > max ? val : max})
+
+    accum1 += 1
+
+    accum2.add(2)
+    accum2.add(2)
+    accum2.add(2)
+
+    accum3.add(9)
+    accum3.add(6)
+    accum3.add(7)
+
+    expect(accum1.value).to eql(1)
+    expect(accum2.value).to eql(8)
+    expect(accum3.value).to eql(9)
+
+    func = Proc.new do |_, index|
+      Accumulator[1].add(1)
+      Accumulator[2].add(2)
+      Accumulator[3].add(index * 10)
+    end
+
+    rdd = $sc.parallelize(0..4, 4)
+    rdd = rdd.accumulator(accum1, accum2).accumulator(accum3)
+    rdd = rdd.map_partitions_with_index(func)
+    rdd.collect
+
+    expect(accum1.value).to eql(5)
+    expect(accum2.value).to eql(128)
+    expect(accum3.value).to eql(30)
+  end
+
 end

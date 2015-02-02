@@ -9,4 +9,5 @@ object RubyConstant {
   val KILL_WORKER_AND_WAIT = 3
   val SUCCESSFULLY_KILLED = 4
   val UNSUCCESSFUL_KILLING = 5
+  val ACCUMULATOR_ACK = 6
 }

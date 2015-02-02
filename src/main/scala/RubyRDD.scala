@@ -2,7 +2,7 @@ package org.apache.spark.api.ruby
 
 import java.io._
 import java.net._
-import java.util.ArrayList
+import java.util.{List, ArrayList, Collections}
 
 import scala.util.Try
 import scala.reflect.ClassTag
@@ -27,7 +27,8 @@ class RubyRDD[T: ClassTag](
   parent: RDD[T],
   command: Array[Byte],
   workerDir: String,
-  broadcastVars: ArrayList[Broadcast[RubyBroadcast]])
+  broadcastVars: ArrayList[Broadcast[RubyBroadcast]],
+  accumulator: Accumulator[List[Array[Byte]]])
 
   extends RDD[Array[Byte]](parent){
 
@@ -53,8 +54,9 @@ class RubyRDD[T: ClassTag](
       // Start a thread to feed the process input from our parent's iterator
       val writerThread = new WriterThread(env, worker, split, context)
 
-      context.addOnCompleteCallback { () =>
+      context.addTaskCompletionListener { context =>
         writerThread.shutdownOnTaskCompletion()
+        writerThread.join()
 
         // Cleanup the worker socket. This will also cause the worker to exit.
         try {
@@ -179,7 +181,15 @@ class RubyRDD[T: ClassTag](
               val obj = new Array[Byte](length)
               stream.readFully(obj)
               obj
-            case RubyConstant.WORKER_DONE => null
+            case RubyConstant.WORKER_DONE =>
+              val numAccumulatorUpdates = stream.readInt()
+              (1 to numAccumulatorUpdates).foreach { _ =>
+                val updateLen = stream.readInt()
+                val update = new Array[Byte](updateLen)
+                stream.readFully(update)
+                accumulator += Collections.singletonList(update)
+              }
+              null
             case RubyConstant.WORKER_ERROR =>
               // Exception from worker
               val length = stream.readInt()

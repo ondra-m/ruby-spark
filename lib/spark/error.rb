@@ -37,4 +37,10 @@ module Spark
   # Wrong ID
   class BroadcastError < StandardError
   end
+
+  # Accumulators
+  # Existing keys
+  # Wrong ID
+  class AccumulatorError < StandardError
+  end
 end

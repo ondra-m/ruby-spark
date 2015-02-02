@@ -1,7 +1,10 @@
 # - přidat reserver partitions
 # - každá metoda bude třída (execute, validate - activerecord style, serialize)
 
+require 'method_source'
 require 'forwardable'
+require 'sourcify'
+require 'socket'
 require "ruby_spark_ext"
 
 require "spark/ext/object"
@@ -29,6 +32,7 @@ module Spark
   autoload :ExternalSorter, "spark/sort"
   autoload :Constant,       "spark/constant"
   autoload :Broadcast,      "spark/broadcast"
+  autoload :Accumulator,    "spark/accumulator"
 
   include Helper::System
   include Helper::Logger

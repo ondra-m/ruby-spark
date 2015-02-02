@@ -144,6 +144,13 @@ module Spark
       @broadcasts += broadcasts
       self
     end
+
+    def accumulator(*accumulators)
+      if accumulators.empty?
+        return @command.accumulator
+      end
+
+      @command.add_accumulator(*accumulators)
       self
     end
 
@@ -903,7 +910,7 @@ module Spark
     alias_method :partitionsSize, :partitions_size
     alias_method :defaultReducePartitions, :default_reduce_partitions
     alias_method :setName, :set_name
-    alias_method :addFiles, :add_file
+    # alias_method :addFiles, :add_file
     alias_method :addLibrary, :add_library
 
     alias_method :flatMap, :flat_map

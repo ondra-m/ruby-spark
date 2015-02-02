@@ -11,6 +11,7 @@ module Spark
         'org.apache.spark.api.ruby.RubyRDD',
         'org.apache.spark.api.ruby.RubyWorker',
         'org.apache.spark.api.ruby.PairwiseRDD',
+        'org.apache.spark.api.ruby.RubyAccumulatorParam',
         'org.apache.spark.ui.ruby.RubyTab',
         'org.apache.spark.api.python.PythonRDD',
         'org.apache.spark.api.python.PythonPartitioner',

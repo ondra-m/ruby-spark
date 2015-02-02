@@ -9,7 +9,8 @@ require 'socket'
 
 require_relative 'spark_files'
 
-Broadcast = Spark::Broadcast
+Broadcast   = Spark::Broadcast
+Accumulator = Spark::Accumulator
 
 # =================================================================================================
 # Worker
@@ -66,6 +67,17 @@ module Worker
         client_socket.write(data)
       end
 
+      def write_int(data)
+        write(pack_int(data))
+      end
+
+      def write_data(data)
+        serialized = Marshal.dump(data)
+
+        write_int(serialized.size)
+        write(serialized)
+      end
+
       def read_int
         unpack_int(read(4))
       end
@@ -117,6 +129,13 @@ module Worker
 
       def finish
         write(pack_int(WORKER_DONE))
+
+        changed = Accumulator.changed
+        write_int(changed.size)
+        changed.each do |accumulator|
+          write_data([accumulator.id, accumulator.value])
+        end
+
         flush
       end
 

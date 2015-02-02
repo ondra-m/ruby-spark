@@ -8,5 +8,6 @@ module Spark
     KILL_WORKER_AND_WAIT = 3
     SUCCESSFULLY_KILLED = 4
     UNSUCCESSFUL_KILLING = 5
+    ACCUMULATOR_ACK = 6
   end
 end

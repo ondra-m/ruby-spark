@@ -12,7 +12,7 @@ module Spark
     include Spark::Helper::System
     include Spark::Helper::Parser
 
-    attr_reader :jcontext, :temp_dir
+    attr_reader :jcontext, :jaccumulator, :temp_dir
 
     # Constructor for Ruby context. Configuration is automatically is taken
     # from Spark. Config will be automatically set to default if user start
@@ -28,10 +28,15 @@ module Spark
       spark_local_dir = JUtils.getLocalDir(sc.conf)
       @temp_dir = JUtils.createTempDir(spark_local_dir).getAbsolutePath
 
+      accum_server = Spark::Accumulator::Server
+      accum_server.start
+      @jaccumulator = @jcontext.accumulator(ArrayList.new, RubyAccumulatorParam.new(accum_server.host, accum_server.port))
+
       set_call_site('Ruby') # description of stage
     end
 
     def stop
+      Spark::Accumulator::Server.stop
       @jcontext.stop
     end
 
@@ -127,6 +132,24 @@ module Spark
     #
     def broadcast(value, id=nil)
       Spark::Broadcast.new(self, value, id)
+    end
+
+    # Create an Accumulator with the given initial value, using a given
+    # accum_param helper object to define how to add values of the
+    # data type if provided.
+    #
+    # accum = $sc.accumulator(7, 1)
+    #
+    # rdd = $sc.parallelize(0..5, 4)
+    # rdd = rdd.accumulator(accum)
+    # rdd = rdd.map_partitions(lambda{|_| Accumulator[1].add(1) })
+    # rdd = rdd.collect
+    #
+    # accum.value
+    # => 11
+    #
+    def accumulator(value, id=nil, accum_param=:+, zero_value=0)
+      Spark::Accumulator.new(value, id, accum_param, zero_value)
     end
 
     # Distribute a local Ruby collection to form an RDD

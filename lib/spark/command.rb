@@ -2,11 +2,14 @@ module Spark
   class Command
 
     attr_accessor :serializer, :deserializer
-    attr_accessor :libraries
+    attr_accessor :libraries, :accumulators
 
     def initialize
+      @serializer = nil
+      @deserializer = nil
       @commands = []
       @libraries = []
+      @accumulators = []
     end
 
     def build
