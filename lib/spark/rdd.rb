@@ -32,7 +32,7 @@ module Spark
       @checkpointed = false
 
       @command = Spark::CommandBuilder.new(serializer, deserializer)
-      @broadcast = []
+      @broadcasts = []
     end
 
 
@@ -138,10 +138,12 @@ module Spark
 
     def broadcast(*broadcasts)
       if broadcasts.empty?
-        return @broadcast    
+        return @broadcasts    
       end
       
-      @broadcast += broadcasts
+      @broadcasts += broadcasts
+      self
+    end
       self
     end
 
@@ -1012,7 +1014,7 @@ module Spark
 
       @context = prev.context
       @command = command
-      @broadcast = prev.broadcast.dup
+      @broadcasts = prev.broadcast.dup
     end
 
     def pipelinable?
@@ -1030,9 +1032,9 @@ module Spark
         command = @command.build
         class_tag = @prev_jrdd.classTag
 
-        broadcasts = to_java_array_list(@broadcast.map(&:jbroadcast))
+        broadcasts = to_java_array_list(@broadcasts.map(&:jbroadcast))
 
-        ruby_rdd = RubyRDD.new(@prev_jrdd.rdd, command, Spark.worker_dir, broadcasts, class_tag)
+        ruby_rdd = RubyRDD.new(@prev_jrdd.rdd, command, Spark.worker_dir, broadcasts, @context.jaccumulator, class_tag)
         ruby_rdd.asJavaRDD
       end
 
