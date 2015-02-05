@@ -7,12 +7,13 @@ require 'sourcify'
 require 'socket'
 require "ruby_spark_ext"
 
+require "spark/ext/module"
 require "spark/ext/object"
 require "spark/ext/hash"
 require "spark/ext/string"
 require "spark/ext/integer"
-require "spark/ext/enumerator"
 require "spark/ext/ip_socket"
+require "spark/ext/io"
 require "spark/version"
 require "spark/error"
 

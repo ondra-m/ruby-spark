@@ -1,21 +1,35 @@
-class Hash
-  
-  # Destructively convert all keys to strings.
-  if !method_defined?(:stringify_keys)
-    def stringify_keys!
-      transform_keys!{ |key| key.to_s }
-    end
-  end
-
-  # Destructively convert all keys using the block operations.
-  # Same as transform_keys but modifies +self+.
-  if !method_defined?(:transform_keys!)
-    def transform_keys!
-      keys.each do |key|
-        self[yield(key)] = delete(key)
+module Spark
+  module CoreExtension
+    module Hash
+      module ClassMethods
       end
-      self
+      
+      module InstanceMethods
+        # Destructively convert all keys to strings.
+        def stringify_keys_with_spark!
+          transform_keys!{ |key| key.to_s }
+        end
+
+        # Destructively convert all keys using the block operations.
+        # Same as transform_keys but modifies +self+.
+        def transform_keys_with_spark!
+          keys.each do |key|
+            self[yield(key)] = delete(key)
+          end
+          self
+        end
+      end
+      
+      def self.included(base)
+        base.extend(ClassMethods)
+        base.send(:include, InstanceMethods)
+        base.class_eval do
+          patch_unless_exist :stringify_keys!, :spark
+          patch_unless_exist :transform_keys!, :spark
+        end
+      end
     end
   end
-
 end
+
+Hash.include(Spark::CoreExtension::Hash)
