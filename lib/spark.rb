@@ -5,6 +5,9 @@ require 'method_source'
 require 'forwardable'
 require 'sourcify'
 require 'socket'
+
+require "pry"
+
 require "ruby_spark_ext"
 
 require "spark/ext/module"

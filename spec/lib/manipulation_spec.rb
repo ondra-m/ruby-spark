@@ -87,4 +87,28 @@ RSpec::describe "Spark::RDD" do
     expect(rdd.shuffle.collect).to_not eql(data)
   end
 
+  context ".cartesian" do
+    let(:data1) { Generator.numbers(100) }
+    let(:data2) { Generator.numbers(100) }
+    let(:result) { data1.product(data2).map(&:to_s).sort }
+
+    it "unbatched" do
+      rdd1 = $sc.parallelize(data1, 2, batch_size: 1)
+      rdd2 = $sc.parallelize(data2, 2, batch_size: 1)
+
+      rdd = rdd1.cartesian(rdd2).map(lambda{|x| x.to_s})
+
+      expect(rdd.collect.sort).to eql(result)
+    end
+
+    it "batched" do
+      rdd1 = $sc.parallelize(data1, 2, batch_size: rand(4..10))
+      rdd2 = $sc.parallelize(data2, 2, batch_size: rand(4..10))
+
+      rdd = rdd1.cartesian(rdd2).map(lambda{|x| x.to_s})
+
+      expect(rdd.collect.sort).to eql(result)
+    end
+  end
+
 end

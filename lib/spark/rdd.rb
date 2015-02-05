@@ -165,14 +165,17 @@ module Spark
     #          jruby => ArrayList
     #
     def collect
-      # @command.serializer.load(jrdd.collect.toArray.to_a)
       collect_from_iterator(jrdd.collect.iterator)
-    # rescue
-    #   nil
     end
 
     def collect_from_iterator(iterator)
-      @command.serializer.load_from_iterator(iterator)
+      if self.is_a?(PipelinedRDD)
+        klass = @command.serializer
+      else
+        klass = @command.deserializer
+      end
+
+      klass.load_from_iterator(iterator)
     end
 
     # Convert an Array to Hash
@@ -435,6 +438,22 @@ module Spark
     def coalesce(num_partitions)
       new_jrdd = jrdd.coalesce(num_partitions)
       RDD.new(new_jrdd, context, @command.serializer, @command.deserializer)
+    end
+
+    # Return the Cartesian product of this RDD and another one, that is, the
+    # RDD of all pairs of elements `(a, b)` where `a` is in `self` and
+    # `b` is in `other`.
+    #
+    # rdd1 = $sc.parallelize([1,2,3])
+    # rdd2 = $sc.parallelize([4,5,6])
+    #
+    # rdd1.cartesian(rdd2).collect
+    # => [[1, 4], [1, 5], [1, 6], [2, 4], [2, 5], [2, 6], [3, 4], [3, 5], [3, 6]]
+    #
+    def cartesian(other)
+      _deserializer = Spark::Serializer::Cartesian.new.set(self.deserializer, other.deserializer)
+      new_jrdd = jrdd.cartesian(other.jrdd)
+      RDD.new(new_jrdd, context, serializer, _deserializer)
     end
 
     # Return a new RDD containing the distinct elements in this RDD.

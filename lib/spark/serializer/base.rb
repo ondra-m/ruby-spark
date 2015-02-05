@@ -106,29 +106,33 @@ module Spark
         deserialize(io.read(lenght))
       end
 
-      # def load_from_array(array)
-      #   array.map! do |item|
-      #     if item.is_a?(String)
-      #       # do nothing
-      #     else
-      #       item = pack_unsigned_chars(item)
-      #     end
-      #     deserialize(item)
-      #   end
-      # end
-
       # Load from Java iterator by calling hasNext and next
       #
       def load_from_iterator(iterator)
         result = []
         while iterator.hasNext
           item = iterator.next
+
+          # mri: data are String
+          # jruby: data are bytes Array
+
           if item.is_a?(String)
-            # do nothing
+            # Serialized data
+            result << deserialize(item)
           else
-            item = pack_unsigned_chars(item.to_a)
+            # Java object
+            if try(item, :getClass)
+              case item.getClass.name
+              when '[B'
+                # Array of bytes
+                result << deserialize(pack_unsigned_chars(item.to_a))
+              when 'scala.Tuple2'
+                # Tuple2
+                result << deserialize(item._1, item._2)
+              end
+            end
           end
-          result << deserialize(item)
+
         end
 
         result.flatten!(1) if batched?
@@ -174,7 +178,7 @@ module Spark
       #
       def try(object, method)
         begin
-          object.send(method)
+          object.__send__(method)
           return true
         rescue
           return false
