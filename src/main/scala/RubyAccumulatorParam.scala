@@ -14,7 +14,7 @@ import org.apache.spark.util.Utils
  * Internal class that acts as an `AccumulatorParam` for Ruby accumulators. Inside, it
  * collects a list of pickled strings that we pass to Ruby through a socket.
  *
- * Copied from PythonAccumulatorParam (spark 1.2)
+ * Partly copied from PythonAccumulatorParam (spark 1.2)
  */
 private class RubyAccumulatorParam(serverHost: String, serverPort: Int)
   extends AccumulatorParam[List[Array[Byte]]] {
@@ -23,9 +23,11 @@ private class RubyAccumulatorParam(serverHost: String, serverPort: Int)
 
   val bufferSize = SparkEnv.get.conf.getInt("spark.buffer.size", 65536)
 
-  private var socket: Socket = null
-  private var socketOutputStream: DataOutputStream = null
-  private var socketInputStream:  DataInputStream = null
+  // Socket shoudl not be serialized
+  // Otherwise: SparkException: Task not serializable
+  @transient var socket: Socket = null
+  @transient var socketOutputStream: DataOutputStream = null
+  @transient var socketInputStream:  DataInputStream = null
 
   def openSocket(){
     synchronized {
