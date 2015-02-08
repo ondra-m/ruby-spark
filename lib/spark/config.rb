@@ -10,7 +10,8 @@ module Spark
 
     PROPERTIES = {
       "spark.shuffle.spill" => :boolean,
-      "spark.ruby.batch_size" => :integer
+      "spark.ruby.batch_size" => :integer,
+      "spark.ruby.accumulator_connection" => :integer
     }
 
     # Initialize java SparkConf and load default configuration.
@@ -118,6 +119,7 @@ module Spark
       set("spark.ruby.parallelize_strategy", default_parallelize_strategy)
       set("spark.ruby.serializer", default_serializer)
       set("spark.ruby.batch_size", default_batch_size)
+      set("spark.ruby.accumulator_connection", default_accumulator_connection)
     end
 
     def default_app_name
@@ -146,6 +148,10 @@ module Spark
 
     def default_worker_memory
       ENV["SPARK_RUBY_WORKER_MEMORY"] || ""
+    end
+
+    def default_accumulator_connection
+      ENV["SPARK_RUBY_ACCUMULATOR_CONNECTION"] || 2
     end
 
     # How to handle with data in method parallelize.

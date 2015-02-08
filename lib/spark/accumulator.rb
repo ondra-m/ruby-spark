@@ -237,22 +237,24 @@ module Spark
 
       attr_reader :server, :host, :port
 
-      def self.start
+      def self.instance
         @instance ||= Spark::Accumulator::Server.new
       end
 
+      def self.start
+        instance
+      end
+
       def self.stop
-        @instance && @instance.stop
+        instance.stop
       end
 
       def self.host
-        start
-        @instance.host
+        instance.host
       end
 
       def self.port
-        start
-        @instance.port
+        instance.port
       end
 
       def initialize
@@ -281,6 +283,7 @@ module Spark
 
       def handle_connection(socket)
         @threads << Thread.new do
+          puts "1 ---"
           until socket.closed?
             count = socket.read_int
             count.times do
@@ -288,9 +291,10 @@ module Spark
               Spark::Accumulator.get(data[0]).add(data[1])
             end
 
-            # socket.write_int(Spark::Constant::ACCUMULATOR_ACK)
+            socket.write_int(Spark::Constant::ACCUMULATOR_ACK)
+            socket.flush
           end
-
+          puts "2 ---"
         end
       end
 

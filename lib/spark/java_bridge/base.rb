@@ -16,6 +16,7 @@ module Spark
         'org.apache.spark.api.python.PythonRDD',
         'org.apache.spark.api.python.PythonPartitioner',
         'scala.collection.mutable.HashMap',
+        'org.apache.spark.api.ruby.RubyAccumulatorParam',
         :JInteger  => 'java.lang.Integer',
         :JLogger   => 'org.apache.log4j.Logger',
         :JLevel    => 'org.apache.log4j.Level',

@@ -28,9 +28,9 @@ module Spark
       spark_local_dir = JUtils.getLocalDir(sc.conf)
       @temp_dir = JUtils.createTempDir(spark_local_dir).getAbsolutePath
 
-      accum_server = Spark::Accumulator::Server
-      accum_server.start
-      @jaccumulator = @jcontext.accumulator(ArrayList.new, RubyAccumulatorParam.new(accum_server.host, accum_server.port))
+      server = Spark::Accumulator::Server.start
+      RubyAccumulatorParam.prepare(server.host, server.port)
+      @jaccumulator = @jcontext.accumulator(ArrayList.new, RubyAccumulatorParam.new(true))
 
       set_call_site('Ruby') # description of stage
     end
