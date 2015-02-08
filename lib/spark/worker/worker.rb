@@ -24,27 +24,55 @@ module Worker
     include Spark::Helper::System
     include Spark::Constant
 
-    attr_accessor :client_socket
+    attr_accessor :socket
 
     def initialize(port)
-      self.client_socket = TCPSocket.open('localhost', port)
+      # Open socket to Spark
+      @socket = TCPSocket.open('localhost', port)
+
       # Send back worker ID
-      write(pack_long(id))
+      socket.write_long(id)
     end
 
     def run
       before_start
 
-      load_split_index
-      load_files
-      load_broadcast
-      load_command
-      load_iterator
+      # Load split index
+      @split_index = socket.read_int
 
+      # Load files
+      SparkFiles.root_directory = socket.read_string
+
+      # Load broadcast
+      count = socket.read_int
+      count.times do
+        Spark::Broadcast.load(socket.read_long, socket.read_string)
+      end
+
+      # Load command
+      @command = socket.read_data
+
+      # Load iterator
+      @iterator = @command.deserializer.load(socket).lazy
+
+      # Compute
       compute
 
-      send_result
-      finish
+      # Send result
+      @command.serializer.dump(@iterator, socket)
+
+      # Finish
+      socket.write_int(WORKER_DONE)
+
+      # Send changed accumulator
+      changed = Accumulator.changed
+      socket.write_int(changed.size)
+      changed.each do |accumulator|
+        socket.write_data([accumulator.id, accumulator.value])
+      end
+
+      # Send it
+      socket.flush
 
       before_end
     end
@@ -59,60 +87,6 @@ module Worker
         # Should be implemented in sub-classes
       end
 
-      def read(size)
-        client_socket.read(size)
-      end
-
-      def write(data)
-        client_socket.write(data)
-      end
-
-      def write_int(data)
-        write(pack_int(data))
-      end
-
-      def write_data(data)
-        serialized = Marshal.dump(data)
-
-        write_int(serialized.size)
-        write(serialized)
-      end
-
-      def read_int
-        unpack_int(read(4))
-      end
-
-      def read_long
-        unpack_long(read(8))
-      end
-
-      def flush
-        client_socket.flush
-      end
-
-      def load_split_index
-        @split_index = read_int
-      end
-
-      def load_files
-        SparkFiles.root_directory = read(read_int)
-      end
-
-      def load_command
-        @command = Marshal.load(read(read_int))
-      end
-
-      def load_broadcast
-        count = read_int
-        count.times do
-          Spark::Broadcast.load(read_long, read(read_int))
-        end
-      end
-
-      def load_iterator
-        @iterator = @command.deserializer.load(client_socket).lazy
-      end
-
       def compute
         begin
           @iterator = @command.execute(@iterator, @split_index)
@@ -121,22 +95,6 @@ module Worker
           write(pack_int(e.message.size))
           write(e.message)
         end
-      end
-
-      def send_result
-        @command.serializer.dump(@iterator, client_socket)
-      end
-
-      def finish
-        write(pack_int(WORKER_DONE))
-
-        changed = Accumulator.changed
-        write_int(changed.size)
-        changed.each do |accumulator|
-          write_data([accumulator.id, accumulator.value])
-        end
-
-        flush
       end
 
       def log(message=nil)
@@ -185,9 +143,9 @@ module Worker
       def load_iterator
         # Wait for incoming connection for preventing deadlock
         if jruby?
-          client_socket.io_wait
+          socket.io_wait
         else
-          client_socket.wait_readable
+          socket.wait_readable
         end
 
         $mutex_for_iterator.synchronize { super }

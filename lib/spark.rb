@@ -1,43 +1,38 @@
-# - přidat reserver partitions
-# - každá metoda bude třída (execute, validate - activerecord style, serialize)
-
 require 'method_source'
 require 'forwardable'
 require 'sourcify'
 require 'socket'
 
-require "pry"
+require 'ruby_spark_ext'
 
-require "ruby_spark_ext"
-
-require "spark/ext/module"
-require "spark/ext/object"
-require "spark/ext/hash"
-require "spark/ext/string"
-require "spark/ext/integer"
-require "spark/ext/ip_socket"
-require "spark/ext/io"
-require "spark/version"
-require "spark/error"
+require 'spark/ext/module'
+require 'spark/ext/object'
+require 'spark/ext/hash'
+require 'spark/ext/string'
+require 'spark/ext/integer'
+require 'spark/ext/ip_socket'
+require 'spark/ext/io'
+require 'spark/version'
+require 'spark/error'
 
 module Spark
-  autoload :Context,        "spark/context"
-  autoload :Config,         "spark/config"
-  autoload :RDD,            "spark/rdd"
-  autoload :CLI,            "spark/cli"
-  autoload :Build,          "spark/build"
-  autoload :Serializer,     "spark/serializer"
-  autoload :Helper,         "spark/helper"
-  autoload :StorageLevel,   "spark/storage_level"
-  autoload :Command,        "spark/command"
-  autoload :CommandBuilder, "spark/command_builder"
-  autoload :Sampler,        "spark/sampler"
-  autoload :Logger,         "spark/logger"
-  autoload :JavaBridge,     "spark/java_bridge"
-  autoload :ExternalSorter, "spark/sort"
-  autoload :Constant,       "spark/constant"
-  autoload :Broadcast,      "spark/broadcast"
-  autoload :Accumulator,    "spark/accumulator"
+  autoload :Context,        'spark/context'
+  autoload :Config,         'spark/config'
+  autoload :RDD,            'spark/rdd'
+  autoload :CLI,            'spark/cli'
+  autoload :Build,          'spark/build'
+  autoload :Serializer,     'spark/serializer'
+  autoload :Helper,         'spark/helper'
+  autoload :StorageLevel,   'spark/storage_level'
+  autoload :Command,        'spark/command'
+  autoload :CommandBuilder, 'spark/command_builder'
+  autoload :Sampler,        'spark/sampler'
+  autoload :Logger,         'spark/logger'
+  autoload :JavaBridge,     'spark/java_bridge'
+  autoload :ExternalSorter, 'spark/sort'
+  autoload :Constant,       'spark/constant'
+  autoload :Broadcast,      'spark/broadcast'
+  autoload :Accumulator,    'spark/accumulator'
 
   include Helper::System
   include Helper::Logger
@@ -108,7 +103,7 @@ module Spark
   def self.stop
     @context.stop
     RubyWorker.stopServer
-    log_info("Workers were stopped")
+    log_info('Workers were stopped')
   rescue
     nil
   ensure
@@ -123,7 +118,7 @@ module Spark
 
   # Root of the gem
   def self.root
-    @root ||= File.expand_path("..", File.dirname(__FILE__))
+    @root ||= File.expand_path('..', File.dirname(__FILE__))
   end
 
   # Default directory for java extensions
