@@ -1,5 +1,5 @@
 if !ENV.has_key?("JAVA_HOME")
-  raise Spark::ConfigurationError, "Environment variable JAVA_HOME is not set" 
+  raise "Environment variable JAVA_HOME is not set" 
 end
 
 require 'socket'
