@@ -299,3 +299,60 @@ class Spark::Command::Take < _Base
   #   end
   # end
 end
+
+# -------------------------------------------------------------------------------------------------
+# Pipe
+
+class Spark::Command::Pipe < _Base
+  variable :cmds, function: false, type: Array
+
+  def before_run
+    require 'open3'
+
+    @in, @out, @threads = Open3.pipeline_rw(*@cmds)
+  end
+
+  def run(iterator, *)
+    create_writing_thread(iterator)
+
+    new_iterator = []
+
+    # Read full input
+    begin
+      loop {
+        new_iterator << @out.readline.rstrip
+      }
+    rescue EOFError
+    end
+
+    new_iterator
+  end
+
+  def lazy_run(iterator, *)
+    create_writing_thread(iterator)
+
+    Enumerator::Lazy.new([nil]) do |yielder, _|
+      begin
+        loop {
+          yielder << @out.readline.rstrip
+        }
+      rescue EOFError
+      end
+    end
+  end
+
+  private
+
+    def create_writing_thread(iterator)
+      @writing_thread = Thread.new do
+        # Send complete iterator to the pipe
+        iterator.each do |item|
+          @in.puts(item.to_s.rstrip)
+        end
+
+        # Input must be closed for EOFError
+        @in.close
+      end
+    end
+
+end

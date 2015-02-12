@@ -55,7 +55,7 @@ module Spark
     # Libraries will be included before computing
     #
     # rdd.add_library('pry').add_library('nio4r', 'distribution')
-    # 
+    #
     def add_library(*libraries)
       @command.add_library(*libraries)
       self
@@ -138,9 +138,9 @@ module Spark
 
     def broadcast(*broadcasts)
       if broadcasts.empty?
-        return @broadcasts    
+        return @broadcasts
       end
-      
+
       @broadcasts += broadcasts
       self
     end
@@ -200,7 +200,7 @@ module Spark
       parts_count = self.partitions_size
       # No parts was scanned, yet
       last_scanned = -1
-      
+
       while buffer.empty?
         last_scanned += 1
         buffer += context.run_job_with_command(self, [last_scanned], true, Spark::Command::Take, 0, -1)
@@ -253,7 +253,7 @@ module Spark
     # Aggregate the elements of each partition, and then the results for all the partitions, using a
     # given associative function and a neutral "zero value".
     #
-    # The function f(x, y) is allowed to modify x and return it as its result value to avoid 
+    # The function f(x, y) is allowed to modify x and return it as its result value to avoid
     # object allocation; however, it should not modify y.
     #
     # Be careful, zero_values is applied to all stages. See example.
@@ -280,7 +280,7 @@ module Spark
     #
     # seq = lambda{|x,y| x+y}
     # com = lambda{|x,y| x*y}
-    
+
     # rdd = $sc.parallelize(1..10, 2, batch_size: 1)
     # rdd.aggregate(1, seq, com)
     # => 656
@@ -625,6 +625,37 @@ module Spark
       samples[0, num]
     end
 
+    # Return an RDD created by piping elements to a forked external process.
+    #
+    # == Cmds:
+    #   cmd = [env,] command... [,options]
+    #
+    #   env: hash
+    #     name => val : set the environment variable
+    #     name => nil : unset the environment variable
+    #   command...:
+    #     commandline                 : command line string which is passed to the standard shell
+    #     cmdname, arg1, ...          : command name and one or more arguments (This form does
+    #                                   not use the shell. See below for caveats.)
+    #     [cmdname, argv0], arg1, ... : command name, argv[0] and zero or more arguments (no shell)
+    #   options: hash
+    #
+    #   See http://ruby-doc.org/core-2.2.0/Process.html#method-c-spawn
+    #
+    # == Examples:
+    #   $sc.parallelize(0..5).pipe('cat').collect
+    #   => ["0", "1", "2", "3", "4", "5"]
+    #
+    #   rdd = $sc.parallelize(0..5)
+    #   rdd = rdd.pipe('cat', "awk '{print $1*10}'")
+    #   rdd = rdd.map(lambda{|x| x.to_i + 1})
+    #   rdd.collect
+    #   => [1, 11, 21, 31, 41, 51]
+    #
+    def pipe(*cmds)
+      new_rdd_from_command(Spark::Command::Pipe, cmds)
+    end
+
 
     # =============================================================================
     # Pair functions
@@ -685,7 +716,7 @@ module Spark
     # Group the values for each key in the RDD into a single sequence. Allows controlling the
     # partitioning of the resulting key-value pair RDD by passing a Partitioner.
     #
-    # Note: If you are grouping in order to perform an aggregation (such as a sum or average) 
+    # Note: If you are grouping in order to perform an aggregation (such as a sum or average)
     # over each key, using reduce_by_key or combine_by_key will provide much better performance.
     #
     # rdd = $sc.parallelize([["a", 1], ["a", 2], ["b", 3]])
@@ -723,7 +754,7 @@ module Spark
     # def merge(x,y)
     #   x*y
     # end
-    # 
+    #
     # rdd = $sc.parallelize([["a", 1], ["b", 2], ["a", 3], ["a", 4], ["c", 5]], 2, batch_size: 1)
     # rdd.aggregate_by_key(1, :combine, :merge)
     # => [["b", 3], ["a", 16], ["c", 6]]

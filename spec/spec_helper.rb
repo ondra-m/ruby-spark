@@ -2,22 +2,26 @@
 # SimpleCov.start
 
 $LOAD_PATH.unshift File.dirname(__FILE__) + '/../lib'
-require "ruby-spark"
-require "generator"
+require 'ruby-spark'
+require 'generator'
 
 # Keep it on method because its called from config test
 def spark_start
   Spark::Logger.disable
   Spark.config do
-    set "spark.ruby.parallelize_strategy", "deep_copy"
-    set "spark.ruby.batch_size", 100
+    set 'spark.ruby.parallelize_strategy', 'deep_copy'
+    set 'spark.ruby.batch_size', 100
   end
   Spark.start
   $sc = Spark.context
 end
 
+def windows?
+  RbConfig::CONFIG['host_os'] =~ /mswin|mingw/
+end
+
 RSpec.configure do |config|
-  config.default_formatter = "doc"
+  config.default_formatter = 'doc'
   config.color = true
   config.tty   = true
 
