@@ -334,7 +334,50 @@ module Spark
     # Return a `StatCounter` object that captures the mean, variance
     # and count of the RDD's elements in one operation.
     def stats
-      new_rdd_from_command(Spark::Command::Stats).reduce('lambda{|memo, item| memo.merge(item)}')
+      @stats ||= new_rdd_from_command(Spark::Command::Stats).reduce('lambda{|memo, item| memo.merge(item)}')
+    end
+
+    # Compute the mean of this RDD's elements.
+    #
+    # $sc.parallelize([1, 2, 3]).mean
+    # => 2.0
+    def mean
+      stats.mean
+    end
+
+    # Compute the variance of this RDD's elements.
+    #
+    # $sc.parallelize([1, 2, 3]).variance
+    # => 0.666...
+    def variance
+      stats.variance
+    end
+
+    # Compute the standard deviation of this RDD's elements.
+    #
+    # $sc.parallelize([1, 2, 3]).stdev
+    # => 0.816...
+    def stdev
+      stats.stdev
+    end
+
+    # Compute the sample standard deviation of this RDD's elements (which
+    # corrects for bias in estimating the standard deviation by dividing by
+    # N-1 instead of N).
+    #
+    # $sc.parallelize([1, 2, 3]).sample_stdev
+    # => 1.0
+    def sample_stdev
+      stats.sample_stdev
+    end
+
+    # Compute the sample variance of this RDD's elements (which corrects
+    # for bias in estimating the variance by dividing by N-1 instead of N).
+    #
+    # $sc.parallelize([1, 2, 3]).sample_variance
+    # => 1.0
+    def sample_variance
+      stats.sample_variance
     end
 
     # Applies a function f to all elements of this RDD.
@@ -966,7 +1009,6 @@ module Spark
     alias_method :partitionsSize, :partitions_size
     alias_method :defaultReducePartitions, :default_reduce_partitions
     alias_method :setName, :set_name
-    # alias_method :addFiles, :add_file
     alias_method :addLibrary, :add_library
 
     alias_method :flatMap, :flat_map
@@ -988,6 +1030,8 @@ module Spark
     alias_method :foldByKey, :fold_by_key
     alias_method :aggregateByKey, :aggregate_by_key
     alias_method :subtractByKey, :subtract_by_key
+    alias_method :sampleStdev, :sample_stdev
+    alias_method :sampleVariance, :sample_variance
 
     private
 

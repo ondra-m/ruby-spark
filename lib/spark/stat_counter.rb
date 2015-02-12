@@ -71,6 +71,8 @@ module Spark
     alias_method :mean, :mu
     alias_method :max_value, :max
     alias_method :min_value, :min
+    alias_method :sampleStdev, :sample_stdev
+    alias_method :sampleVariance, :sample_variance
 
     private
 
