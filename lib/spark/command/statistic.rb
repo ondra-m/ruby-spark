@@ -30,3 +30,18 @@ class Spark::Command::Sample < _Base
     sampler = sampler.new(@fraction, @seed)
   end
 end
+
+# -------------------------------------------------------------------------------------------------
+# Stats
+
+class Spark::Command::Stats < _Base
+
+  def run(iterator, *)
+    [Spark::StatCounter.new(iterator)]
+  end
+
+  def lazy_run(iterator, *)
+    run(iterator)
+  end
+
+end

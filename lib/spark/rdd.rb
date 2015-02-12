@@ -331,6 +331,12 @@ module Spark
                      .aggregate(0, nil, 'lambda{|sum, item| sum + item }')
     end
 
+    # Return a `StatCounter` object that captures the mean, variance
+    # and count of the RDD's elements in one operation.
+    def stats
+      new_rdd_from_command(Spark::Command::Stats).reduce('lambda{|memo, item| memo.merge(item)}')
+    end
+
     # Applies a function f to all elements of this RDD.
     #
     # rdd = $sc.parallelize(0..5)

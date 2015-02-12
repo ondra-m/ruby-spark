@@ -1,1 +1,1 @@
-require_relative "spark"
+require_relative 'spark'

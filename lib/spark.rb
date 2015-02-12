@@ -33,6 +33,7 @@ module Spark
   autoload :Constant,       'spark/constant'
   autoload :Broadcast,      'spark/broadcast'
   autoload :Accumulator,    'spark/accumulator'
+  autoload :StatCounter,    'spark/stat_counter'
 
   include Helper::System
   include Helper::Logger
@@ -89,7 +90,7 @@ module Spark
     @context
   end
 
-  # Initialize spark context if not already. Config will be automatically 
+  # Initialize spark context if not already. Config will be automatically
   # loaded on constructor. From that point `config` will use configuration
   # from running Spark and will be locked only for reading.
   def self.start
