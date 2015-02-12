@@ -91,9 +91,8 @@ module Worker
         begin
           @iterator = @command.execute(@iterator, @split_index)
         rescue => e
-          write(pack_int(WORKER_ERROR))
-          write(pack_int(e.message.size))
-          write(e.message)
+          socket.write_int(WORKER_ERROR)
+          socket.write_string(e.message)
         end
       end
 
