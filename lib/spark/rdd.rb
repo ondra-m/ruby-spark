@@ -341,6 +341,7 @@ module Spark
     #
     # $sc.parallelize([1, 2, 3]).mean
     # => 2.0
+    #
     def mean
       stats.mean
     end
@@ -349,6 +350,7 @@ module Spark
     #
     # $sc.parallelize([1, 2, 3]).variance
     # => 0.666...
+    #
     def variance
       stats.variance
     end
@@ -357,6 +359,7 @@ module Spark
     #
     # $sc.parallelize([1, 2, 3]).stdev
     # => 0.816...
+    #
     def stdev
       stats.stdev
     end
@@ -367,6 +370,7 @@ module Spark
     #
     # $sc.parallelize([1, 2, 3]).sample_stdev
     # => 1.0
+    #
     def sample_stdev
       stats.sample_stdev
     end
@@ -376,8 +380,127 @@ module Spark
     #
     # $sc.parallelize([1, 2, 3]).sample_variance
     # => 1.0
+    #
     def sample_variance
       stats.sample_variance
+    end
+
+    # Compute a histogram using the provided buckets. The buckets
+    # are all open to the right except for the last which is closed.
+    # e.g. [1,10,20,50] means the buckets are [1,10) [10,20) [20,50],
+    # which means 1<=x<10, 10<=x<20, 20<=x<=50. And on the input of 1
+    # and 50 we would have a histogram of 1,0,1.
+    #
+    # If your histogram is evenly spaced (e.g. [0, 10, 20, 30]),
+    # this can be switched from an O(log n) inseration to O(1) per
+    # element(where n = # buckets).
+    #
+    # Buckets must be sorted and not contain any duplicates, must be
+    # at least two elements.
+    #
+    # == Examples:
+    #   rdd = $sc.parallelize(0..50)
+    #
+    #   rdd.histogram(2)
+    #   => [[0.0, 25.0, 50], [25, 26]]
+    #
+    #   rdd.histogram([0, 5, 25, 50])
+    #   => [[0, 5, 25, 50], [5, 20, 26]]
+    #
+    #   rdd.histogram([0, 15, 30, 45, 60])
+    #   => [[0, 15, 30, 45, 60], [15, 15, 15, 6]]
+    #
+    def histogram(buckets)
+
+      # -----------------------------------------------------------------------
+      # Integer
+      #
+      if buckets.is_a?(Integer)
+
+        # Validation
+        if buckets < 1
+          raise ArgumentError, "Bucket count must be >= 1, #{buckets} inserted."
+        end
+
+        # Filter invalid values
+        # Nil and NaN
+        func = 'lambda{|x|
+          if x.nil? || (x.is_a?(Float) && x.nan?)
+            false
+          else
+            true
+          end
+        }'
+        filtered = self.filter(func)
+
+        # Compute the minimum and the maximum
+        func = 'lambda{|memo, item|
+          [memo[0] < item[0] ? memo[0] : item[0],
+           memo[1] > item[1] ? memo[1] : item[1]]
+        }'
+        min, max = filtered.map('lambda{|x| [x, x]}').reduce(func)
+
+        # Min, max must be valid numbers
+        if (min.is_a?(Float) && !min.finite?) || (max.is_a?(Float) && !max.finite?)
+          raise Spark::RDDError, 'Histogram on either an empty RDD or RDD containing +/-infinity or NaN'
+        end
+
+        # Already finished
+        if min == max || buckets == 1
+          return [min, max], [filtered.count]
+        end
+
+        # Custom range
+        begin
+          span = max - min # increment
+          buckets = (0...buckets).map do |x|
+            min + (x * span) / buckets.to_f
+          end
+          buckets << max
+        rescue NoMethodError
+          raise Spark::RDDError, 'Can not generate buckets with non-number in RDD'
+        end
+
+        even = true
+
+      # -----------------------------------------------------------------------
+      # Array
+      #
+      elsif buckets.is_a?(Array)
+
+        if buckets.size < 2
+          raise ArgumentError, 'Buckets should have more than one value.'
+        end
+
+        if buckets.detect{|x| x.nil? || (x.is_a?(Float) && x.nan?)}
+          raise ArgumentError, 'Can not have nil or nan numbers in buckets.'
+        end
+
+        if buckets.detect{|x| buckets.count(x) > 1}
+          raise ArgumentError, 'Buckets should not contain duplicated values.'
+        end
+
+        if buckets.sort != buckets
+          raise ArgumentError, 'Buckets must be sorted.'
+        end
+
+        even = false
+
+      # -----------------------------------------------------------------------
+      # Other
+      #
+      else
+        raise Spark::RDDError, 'Buckets should be number or array.'
+      end
+
+      reduce_func = 'lambda{|memo, item|
+        memo.size.times do |i|
+          memo[i] += item[i]
+        end
+        memo
+      }'
+
+      return buckets, new_rdd_from_command(Spark::Command::Histogram, even, buckets).reduce(reduce_func)
     end
 
     # Applies a function f to all elements of this RDD.

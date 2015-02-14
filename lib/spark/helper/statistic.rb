@@ -1,11 +1,11 @@
 module Spark
   module Helper
     module Statistic
-      
+
       # Returns a sampling rate that guarantees a sample of size >= sampleSizeLowerBound 99.99% of
       # the time.
       #
-      # === How the sampling rate is determined:
+      # == How the sampling rate is determined:
       # Let p = num / total, where num is the sample size and total is the total number of
       # datapoints in the RDD. We're trying to compute q > p such that
       #   - when sampling with replacement, we're drawing each datapoint with prob_i ~ Pois(q),
@@ -43,6 +43,34 @@ module Spark
       def upper_binomial_bound(delta, total, fraction)
         gamma = -Math.log(delta) / total
         [1, fraction + gamma + Math.sqrt(gamma*gamma + 2*gamma*fraction)].min
+      end
+
+      # Bisect right
+      #
+      # == Examples:
+      #   data = [1,5,6,8,96,120,133]
+      #
+      #   bisect_right(data, 0)   # => 0
+      #   bisect_right(data, 1)   # => 1
+      #   bisect_right(data, 5)   # => 2
+      #   bisect_right(data, 9)   # => 4
+      #   bisect_right(data, 150) # => 7
+      #
+      def bisect_right(data, value, low=0, high=data.size)
+        if low < 0
+          raise ArgumentError, 'Low must be >= 0.'
+        end
+
+        while low < high
+          mid = (low + high) / 2
+          if value < data[mid]
+            high = mid
+          else
+            low = mid + 1
+          end
+        end
+
+        low
       end
 
     end
