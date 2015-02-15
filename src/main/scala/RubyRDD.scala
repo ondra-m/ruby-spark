@@ -168,7 +168,7 @@ class RubyRDD[T: ClassTag](
         }
         obj
       }
-      
+
       // -------------------------------------------------------------------------------------------
 
       private def read(): Array[Byte] = {
@@ -192,10 +192,31 @@ class RubyRDD[T: ClassTag](
               null
             case RubyConstant.WORKER_ERROR =>
               // Exception from worker
+
+              // message
               val length = stream.readInt()
               val obj = new Array[Byte](length)
               stream.readFully(obj)
-              throw new RubyException(new String(obj, "utf-8"), writerThread.exception.getOrElse(null))
+
+              // stackTrace
+              val stackTraceLen = stream.readInt()
+              val stackTrace = new Array[String](stackTraceLen)
+              (0 until stackTraceLen).foreach { i =>
+                val length = stream.readInt()
+                val obj = new Array[Byte](length)
+                stream.readFully(obj)
+
+                stackTrace(i) = new String(obj, "utf-8")
+              }
+
+              // Worker will be killed
+              stream.close
+
+              // exception
+              val exception = new RubyException(new String(obj, "utf-8"), writerThread.exception.getOrElse(null))
+              exception.appendToStackTrace(stackTrace)
+
+              throw exception
           }
         } catch {
 
@@ -248,7 +269,7 @@ class RubyRDD[T: ClassTag](
  *
  * Form an RDD[(Array[Byte], Array[Byte])] from key-value pairs returned from Ruby.
  * This is used by PySpark's shuffle operations.
- * Borrowed from Python Package -> need new deserializeLongValue -> 
+ * Borrowed from Python Package -> need new deserializeLongValue ->
  *   Marshal will add the same 4b header
  */
 
@@ -270,7 +291,7 @@ class PairwiseRDD(prev: RDD[Array[Byte]]) extends RDD[(Long, Array[Byte])](prev)
  */
 
 object RubyRDD extends Logging {
-  
+
   def readRDDFromFile(sc: JavaSparkContext, filename: String, parallelism: Int): JavaRDD[Array[Byte]] = {
     // Too slow
     // val file = new DataInputStream(new FileInputStream(filename))
@@ -302,4 +323,20 @@ object RubyRDD extends Logging {
  * =================================================================================================
  */
 
-class RubyException(msg: String, cause: Exception) extends RuntimeException(msg, cause)
+class RubyException(msg: String, cause: Exception) extends RuntimeException(msg, cause) {
+  def appendToStackTrace(toAdded: Array[String]) {
+    val newStactTrace = getStackTrace.toBuffer
+
+    var regexpMatch = "(.*):([0-9]+):in `([a-z]+)'".r
+
+    for(item <- toAdded) {
+      item match {
+        case regexpMatch(fileName, lineNumber, methodName) =>
+          newStactTrace += new StackTraceElement("RubyWorker", methodName, fileName, lineNumber.toInt)
+        case _ => null
+      }
+    }
+
+    setStackTrace(newStactTrace.toArray)
+  }
+}

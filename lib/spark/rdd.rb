@@ -166,6 +166,8 @@ module Spark
     #
     def collect
       collect_from_iterator(jrdd.collect.iterator)
+    rescue => e
+      raise Spark::RDDError, e.message
     end
 
     def collect_from_iterator(iterator)

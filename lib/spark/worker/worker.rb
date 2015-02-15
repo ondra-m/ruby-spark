@@ -35,46 +35,13 @@ module Worker
     end
 
     def run
-      before_start
-
-      # Load split index
-      @split_index = socket.read_int
-
-      # Load files
-      SparkFiles.root_directory = socket.read_string
-
-      # Load broadcast
-      count = socket.read_int
-      count.times do
-        Spark::Broadcast.load(socket.read_long, socket.read_string)
+      begin
+        compute
+      rescue => e
+        send_error(e)
+      else
+        successful_finish
       end
-
-      # Load command
-      @command = socket.read_data
-
-      # Load iterator
-      @iterator = @command.deserializer.load(socket).lazy
-
-      # Compute
-      compute
-
-      # Send result
-      @command.serializer.dump(@iterator, socket)
-
-      # Finish
-      socket.write_int(WORKER_DONE)
-
-      # Send changed accumulator
-      changed = Accumulator.changed
-      socket.write_int(changed.size)
-      changed.each do |accumulator|
-        socket.write_data([accumulator.id, accumulator.value])
-      end
-
-      # Send it
-      socket.flush
-
-      before_end
     end
 
     private
@@ -87,13 +54,77 @@ module Worker
         # Should be implemented in sub-classes
       end
 
+      # These methods must be on one method because iterator is Lazy
+      # which mean that exception can be raised at `serializer` or `compute`
       def compute
-        begin
-          @iterator = @command.execute(@iterator, @split_index)
-        rescue => e
-          socket.write_int(WORKER_ERROR)
-          socket.write_string(e.message)
+        before_start
+
+        # Load split index
+        @split_index = socket.read_int
+
+        # Load files
+        SparkFiles.root_directory = socket.read_string
+
+        # Load broadcast
+        count = socket.read_int
+        count.times do
+          Spark::Broadcast.load(socket.read_long, socket.read_string)
         end
+
+        # Load command
+        @command = socket.read_data
+
+        # Load iterator
+        @iterator = @command.deserializer.load(socket).lazy
+
+        # Compute
+        @iterator = @command.execute(@iterator, @split_index)
+
+        # Send result
+        @command.serializer.dump(@iterator, socket)
+      end
+
+      def send_error(e)
+        # Flag
+        socket.write_int(WORKER_ERROR)
+
+        # Message
+        socket.write_string(e.message)
+
+        # Backtrace
+        socket.write_int(e.backtrace.size)
+        e.backtrace.each do |item|
+          socket.write_string(item)
+        end
+
+        socket.flush
+
+        # Wait for spark
+        # Socket is closed before throwing an exception
+        # Singal that ruby exception was fully received
+        until socket.closed?
+          sleep(0.1)
+        end
+
+        # Depend on type of worker
+        kill_worker
+      end
+
+      def successful_finish
+        # Finish
+        socket.write_int(WORKER_DONE)
+
+        # Send changed accumulator
+        changed = Accumulator.changed
+        socket.write_int(changed.size)
+        changed.each do |accumulator|
+          socket.write_data([accumulator.id, accumulator.value])
+        end
+
+        # Send it
+        socket.flush
+
+        before_end
       end
 
       def log(message=nil)
@@ -118,6 +149,10 @@ module Worker
 
       def before_start
         $PROGRAM_NAME = 'RubySparkWorker'
+      end
+
+      def kill_worker
+        Process.exit(false)
       end
 
   end
@@ -148,6 +183,10 @@ module Worker
         end
 
         $mutex_for_iterator.synchronize { super }
+      end
+
+      def kill_worker
+        Thread.current.kill
       end
 
   end

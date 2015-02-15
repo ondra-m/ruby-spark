@@ -9,7 +9,8 @@ require "nio"
 require_relative "worker"
 
 # New process group
-# Process.setsid
+# Otherwise master can be killed from pry console
+Process.setsid
 
 # =================================================================================================
 # Master
