@@ -865,7 +865,7 @@ module Spark
     #   x+y
     # end
     # rdd = $sc.parallelize(["a","b","c","a","b","c","a","c"], 2, batch_size: 1).map(lambda{|x| [x, 1]})
-    # rdd.combine_by_key(:combiner, :merge, :merge).collect_as_hash
+    # rdd.combine_by_key(method(:combiner), method(:merge), method(:merge)).collect_as_hash
     #
     # => {"a"=>3, "b"=>2, "c"=>3}
     #
@@ -930,7 +930,7 @@ module Spark
     # end
     #
     # rdd = $sc.parallelize([["a", 1], ["b", 2], ["a", 3], ["a", 4], ["c", 5]], 2, batch_size: 1)
-    # rdd.aggregate_by_key(1, :combine, :merge)
+    # rdd.aggregate_by_key(1, method(:combine), method(:merge))
     # => [["b", 3], ["a", 16], ["c", 6]]
     #
     def aggregate_by_key(zero_value, seq_func, comb_func, num_partitions=nil)

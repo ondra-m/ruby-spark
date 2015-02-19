@@ -11,7 +11,7 @@ module Spark
 
     attr_reader :command
 
-    def_delegators :@command, :serializer, :serializer=, :deserializer, :deserializer=, :libraries, 
+    def_delegators :@command, :serializer, :serializer=, :deserializer, :deserializer=, :libraries,
                    :accumulators, :accumulators=
 
     def initialize(serializer, deserializer=nil)
@@ -20,13 +20,13 @@ module Spark
       self.deserializer = deserializer || serializer.dup
     end
 
-    def self.error(message)
-      raise Spark::CommandError, message
-    end
+    # def self.error(message)
+    #   raise Spark::CommandError, message
+    # end
 
-    def error(message)
-      self.class.error(message)
-    end
+    # def error(message)
+    #   self.class.error(message)
+    # end
 
     # Deep copy without accumulators
     # => prevent recreating Accumulator class
@@ -80,22 +80,26 @@ module Spark
         # * *method:* Method class
         #
         def serialize_function(func)
-          case func.class.name.to_sym
-          when :String
+          case func.class.name
+          when 'String'
             serialize_function_from_string(func)
-          when :Proc
-            serialize_function_from_proc(func)
-          when :Symbol
+          when 'Symbol'
             serialize_function_from_symbol(func)
-          when :Method
+          when 'Proc'
+            serialize_function_from_proc(func)
+          when 'Method'
             serialize_function_from_method(func)
           else
-            nil
+            raise Spark::CommandError, 'You must enter String, Symbol, Proc or Method.'
           end
         end
 
-        def serialize_function_from_string(func)
-          {type: 'proc', content: func}
+        def serialize_function_from_string(string)
+          {type: 'proc', content: string}
+        end
+
+        def serialize_function_from_symbol(symbol)
+          {type: 'symbol', content: symbol}
         end
 
         # Serialize Proc as String
@@ -109,48 +113,21 @@ module Spark
           raise Spark::SerializeError, 'Proc can not be serialized. Use String instead.'
         end
 
-        # Symbol represent name of the method
-        #
-        #   def test(x)
-        #     x*x
-        #   end
-        #   serialize_function_from_symbol(:test)
-        #
-        #   # => "def test(x)\n  x*x\nend\n"
-        #
-        def serialize_function_from_symbol(symbol)
-          symbol = symbol.to_s
-
-          # A::B.c
-          # => ['A::B', '.c']
-          splitted_func = symbol.split(/\.(\w+)$/)
-          method_name = splitted_func.last
-
-          if pry?
-            func = Pry::Method.from_str(symbol)
-          else
-            # A::B.c must be called as A::B.method(:c)
-            if splitted_func.size == 1
-              func = method(method_name)
-            else
-              func = eval(splitted_func[0]).method(method_name)
-            end
-          end
-          
-          serialize_function_from_method(func)
-        end
-
         # Serialize method as string
         #
         #   def test(x)
         #     x*x
         #   end
         #   serialize_function_from_method(method(:test))
-        # 
+        #
         #   # => "def test(x)\n  x*x\nend\n"
         #
-        def serialize_function_from_method(func)
-          {type: 'method', name: func.name, content: func.source}
+        def serialize_function_from_method(meth)
+          if pry?
+            meth = Pry::Method.new(meth)
+          end
+
+          {type: 'method', name: meth.name, content: meth.source}
         rescue
           raise Spark::SerializeError, 'Method can not be serialized. Use full path or Proc.'
         end

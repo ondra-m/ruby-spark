@@ -23,7 +23,7 @@ RSpec::shared_examples "a reducing" do |workers|
 
       rdd4 = rdd_lines(workers)
       rdd4 = rdd4.flat_map(split)
-      rdd4 = rdd4.reduce(:longest_words)
+      rdd4 = rdd4.reduce(method(:longest_words))
 
       result = lines.flat_map(&split).reduce(&lambda(&method(:longest_words)))
 

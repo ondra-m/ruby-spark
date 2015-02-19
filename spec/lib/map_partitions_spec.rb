@@ -6,7 +6,7 @@ end
 
 def func4_with_index(data, index)
   {
-    index => data.map{|x| x.to_i}.reduce(:*)
+    index => data.map(&:to_i).reduce(:*)
   }
 end
 
@@ -21,7 +21,7 @@ RSpec::shared_examples "a map partitions" do |workers|
       rdd3 = rdd(workers)
       rdd3 = rdd3.map_partitions(func1)
       rdd3 = rdd3.map_partitions(func2)
-      rdd3 = rdd3.map_partitions(:func3)
+      rdd3 = rdd3.map_partitions(method(:func3))
       result = func3(func2.call(func1.call(numbers)))
 
       # Not same number of workers
@@ -30,13 +30,13 @@ RSpec::shared_examples "a map partitions" do |workers|
       rdd4 = rdd(workers)
       rdd4 = rdd4.map_partitions(func1)
       rdd4 = rdd4.map_partitions(func2)
-      rdd4 = rdd4.map_partitions(:func3)
+      rdd4 = rdd4.map_partitions(method(:func3))
 
       expect(rdd4.collect).to eql(rdd3.collect)
     end
 
     it "with index" do
-      rdd2 = rdd(workers).map_partitions_with_index(:func4_with_index)
+      rdd2 = rdd(workers).map_partitions_with_index(method(:func4_with_index))
       result = rdd2.collect
 
       expect(result).to be_a(Array)
@@ -54,8 +54,8 @@ end
 
 RSpec::describe "Spark::RDD.map_partitions(_with_index)" do
   let(:func1) { lambda{|x| x.map(&:to_i)} }
-  let(:func2) { 
-    lambda{|x| 
+  let(:func2) {
+    lambda{|x|
       x.map{|y| y*2}
     }
   }

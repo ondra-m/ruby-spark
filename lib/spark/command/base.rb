@@ -1,6 +1,3 @@
-# Bencharmak enum.new vs yield
-# https://speakerdeck.com/sferik/writing-fast-ruby
-
 class Spark::Command::Base
 
   DEFAULT_VARIABLE_OPTIONS = {
@@ -79,7 +76,7 @@ class Spark::Command::Base
     !!@prepared
   end
 
-  # This is called before execution. Executing will be stopped if 
+  # This is called before execution. Executing will be stopped if
   # some command contains error (e.g. badly serialized lambda).
   #
   # == What is doing?
@@ -94,9 +91,11 @@ class Spark::Command::Base
       data = instance_variable_get(name)
 
       case data[:type]
-      when "proc"
+      when 'proc'
         result = eval(data[:content])
-      when "method"
+      when 'symbol'
+        result = lambda(&data[:content])
+      when 'method'
         # Method must me added to instance not Class
         instance_eval(data[:content])
         # Method will be available as Proc
@@ -111,10 +110,6 @@ class Spark::Command::Base
 
   # This method is called before every execution.
   def before_run
-  end
-
-  def enum
-    Enumerator.new
   end
 
 end

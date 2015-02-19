@@ -28,7 +28,7 @@ RSpec::shared_examples "a filtering" do |workers|
       expect(rdd2.collect).to eql(result)
 
       rdd3 = rdd_words(workers)
-      rdd3 = rdd3.filter(:func4)
+      rdd3 = rdd3.filter(method(:func4))
       result = words.select{|x| func4(x)}
 
       expect(rdd3.collect).to eql(result)
