@@ -34,6 +34,7 @@ module Spark
   autoload :Broadcast,      'spark/broadcast'
   autoload :Accumulator,    'spark/accumulator'
   autoload :StatCounter,    'spark/stat_counter'
+  autoload :Mllib,          'spark/mllib'
 
   include Helper::System
   include Helper::Logger

@@ -8,11 +8,6 @@ gem 'commander'
 gem 'pry'
 gem 'nio4r'
 gem 'distribution'
-# gem 'thor'
-# gem 'algorithms'
-# gem 'croupier', '>= 2.0.0.beta'
-# gem 'yaml'
-# gem 'childprocess'
 
 platform :mri do
   gem 'rjb'
@@ -21,7 +16,18 @@ platform :mri do
 end
 
 platform :jruby do
-  gem 'msgpack-jruby', :require => 'msgpack'
+  gem 'msgpack-jruby', require: 'msgpack'
+end
+
+group :stats do
+  gem 'nmatrix'
+  # gem 'statsample'
+  # gem 'statsample-glm'
+  # gem 'statsample-timeseries'
+  # gem 'statistics2'
+  # gem 'statsample-optimization' # libgsl0-dev
+  # gem 'narray'
+  # gem 'gsl-nmatrix'
 end
 
 group :development do
@@ -33,5 +39,5 @@ group :development do
 end
 
 group :test do
-  gem 'simplecov', :require => false
+  gem 'simplecov', require: false
 end
