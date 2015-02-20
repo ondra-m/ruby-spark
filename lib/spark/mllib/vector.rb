@@ -3,6 +3,18 @@ require 'nmatrix'
 module Spark
   module Mllib
     class Vector < ::NMatrix
+      def self.dot(array1, array2)
+        if array1.size != array2.size
+          raise ArgumentError, "incompatible dimensions"
+        end
+
+        result = 0
+        array1.size.times do |i|
+          result += array1[i] * array2[i]
+        end
+
+        return [result]
+      end
     end
   end
 end
@@ -24,6 +36,23 @@ module Spark
     class DenseVector < Vector
       def initialize(array)
         super([array.size], array.to_a, stype: :dense)
+      end
+
+      def dot(other)
+        # NMatrix 0.1.0 support dot product only fot same stype
+        if other.is_a?(NMatrix) && self.stype == other.stype
+          return super.to_a
+        end
+
+        if other.is_a?(SparseVector)
+          return other.dot(self)
+        end
+
+        if other.is_a?(Array)
+          return Vector.dot(self, other)
+        end
+
+        raise ArgumentError, "Incopatible type #{other.class}. Use NMatrix, Vector or Array."
       end
     end
   end
@@ -65,7 +94,20 @@ module Spark
       end
 
       def dot(other)
+        # NMatrix 0.1.0 support dot product only fot same stype
+        if other.is_a?(NMatrix) && self.stype == other.stype
+          return super.to_a
+        end
 
+        if other.is_a?(DenseVector)
+          return Vector.dot(self, other)
+        end
+
+        if other.is_a?(Array)
+          return Vector.dot(self, other)
+        end
+
+        raise ArgumentError, "Incopatible type #{other.class}. Use NMatrix, Vector or Array."
       end
     end
   end
