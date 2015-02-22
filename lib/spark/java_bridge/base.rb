@@ -15,6 +15,7 @@ module Spark
         'org.apache.spark.ui.ruby.RubyTab',
         'org.apache.spark.api.python.PythonRDD',
         'org.apache.spark.api.python.PythonPartitioner',
+        'org.apache.spark.mllib.api.ruby.RubyMLLibAPI',
         'scala.collection.mutable.HashMap',
         :JInteger  => 'java.lang.Integer',
         :JLogger   => 'org.apache.log4j.Logger',

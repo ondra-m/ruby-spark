@@ -3,6 +3,7 @@
   <dependencies>
     <dependency org="org.apache.hadoop" name="hadoop-client" rev="${hadoop.version}" />
     <dependency org="org.apache.spark" name="spark-core_${spark.core.version}" rev="${spark.version}" />
+    <dependency org="org.apache.spark" name="spark-mllib_${spark.core.version}" rev="${spark.version}" />
 
     <!-- For: class "javax.servlet.FilterRegistration"'s signer information does not match signer information of other classes in the same package (SecurityException) -->
     <dependency org="javax.servlet" name="javax.servlet-api" rev="3.0.1" />
