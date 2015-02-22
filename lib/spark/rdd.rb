@@ -154,6 +154,11 @@ module Spark
       self
     end
 
+    def to_java
+      rdd = self.reserialize('Marshal')
+      RubySerializer.rubyToJava(rdd.jrdd, rdd.serializer.batched?)
+    end
+
 
     # =============================================================================
     # Actions which return value

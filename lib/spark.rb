@@ -170,6 +170,7 @@ module Spark
   # Aliases
   class << self
     alias_method :sc, :context
+    alias_method :jb, :java_bridge
   end
 
 end
