@@ -4,55 +4,69 @@ module Spark
 
       # http://www.ruby-doc.org/core-2.1.1/String.html#method-i-unpack
 
-      def pack_unsigned_chars(data)
-        pack(data, :unsigned_chars)
-      end
+      DIRECTIVE_INTEGER_BIG_ENDIAN = 'l>'
+      DIRECTIVE_INTEGERS_BIG_ENDIAN = 'l>*'
+      DIRECTIVE_LONG_BIG_ENDIAN = 'q>'
+      DIRECTIVE_LONGS_BIG_ENDIAN = 'q>*'
+      DIRECTIVE_DOUBLE_BIG_ENDIAN = 'G'
+      DIRECTIVE_DOUBLES_BIG_ENDIAN = 'G*'
+      DIRECTIVE_UNSIGNED_CHARS = 'C*'
+      DIRECTIVE_CHARS = 'c*'
+
+      # Packing
 
       def pack_int(data)
-        pack([data], :int)
+        [data].pack(DIRECTIVE_INTEGER_BIG_ENDIAN)
       end
 
       def pack_long(data)
-        pack([data], :long)
+        [data].pack(DIRECTIVE_LONG_BIG_ENDIAN)
       end
 
+      def pack_double(data)
+        [data].pack(DIRECTIVE_DOUBLE_BIG_ENDIAN)
+      end
+
+      def pack_unsigned_chars(data)
+        data.pack(DIRECTIVE_UNSIGNED_CHARS)
+      end
+
+      def pack_ints(data)
+        __check_array(data)
+        data.pack(DIRECTIVE_INTEGERS_BIG_ENDIAN)
+      end
+
+      def pack_longs(data)
+        __check_array(data)
+        data.pack(DIRECTIVE_LONGS_BIG_ENDIAN)
+      end
+
+      def pack_doubles(data)
+        __check_array(data)
+        data.pack(DIRECTIVE_DOUBLES_BIG_ENDIAN)
+      end
+
+      # Unpacking
+
       def unpack_int(data)
-        unpack(data, :int)
+        data.unpack(DIRECTIVE_INTEGER_BIG_ENDIAN)[0]
       end
 
       def unpack_long(data)
-        unpack(data, :long)
+        data.unpack(DIRECTIVE_LONG_BIG_ENDIAN)[0]
       end
 
       def unpack_chars(data)
-        unpack(data, :chars)
+        data.unpack(DIRECTIVE_CHARS)
       end
 
-      def pack(data, type)
-        case type.to_sym
-        when :unsigned_chars
-          data.pack("C*")
-        when :int
-          data.pack("l>")
-        when :long
-          data.pack("q>")
-        else
-          raise "Unknow type: #{type}."
-        end
-      end
+      private
 
-      def unpack(data, type)
-        case type.to_sym
-        when :chars
-          data.unpack("c*")
-        when :int
-          data.unpack("l>")[0]
-        when :long
-          data.unpack("q>")[0]
-        else
-          raise "Unknow type: #{type}."
+        def __check_array(data)
+          unless data.is_a?(Array)
+            raise ArgumentError, 'Data must be an Array.'
+          end
         end
-      end
 
     end
   end
