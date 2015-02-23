@@ -13,14 +13,16 @@ platform :mri do
   gem 'rjb'
   gem 'msgpack'
   gem 'oj'
+  gem 'narray'
 end
 
 platform :jruby do
   gem 'msgpack-jruby', require: 'msgpack'
+  gem 'mdarray'
 end
 
 group :stats do
-  gem 'nmatrix'
+  # gem 'nmatrix'
   # gem 'statsample'
   # gem 'statsample-glm'
   # gem 'statsample-timeseries'

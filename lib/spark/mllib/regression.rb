@@ -18,7 +18,7 @@ module Spark
 
       def initialize(label, features)
         @label = label
-        @features = Spark::Mllib::Vector.init_from(features)
+        @features = Spark::Mllib::Vector.to_vector(features)
       end
 
       def _dump(depth)
