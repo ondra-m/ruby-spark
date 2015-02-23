@@ -18,7 +18,9 @@ end
 
 platform :jruby do
   gem 'msgpack-jruby', require: 'msgpack'
-  gem 'mdarray'
+
+  # NameError: no constructorfor arguments (org.jruby.RubyFixnum,org.jruby.RubyFixnum,org.jruby.RubyFixnum,org.jruby.RubyFixnum,org.jruby.RubyFixnum,org.jruby.RubyFixnum,org.joda.time.chrono.GJChronology) on Java::OrgJodaTime::DateTime
+  # gem 'mdarray'
 end
 
 group :stats do

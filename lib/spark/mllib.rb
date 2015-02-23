@@ -15,6 +15,8 @@ module Spark
         require 'spark/mllib/narray/vector'
       elsif mdarray?
         require 'spark/mllib/mdarray/vector'
+      else
+        require 'spark/mllib/matrix/vector'
       end
 
       Object.const_set(:DenseVector, DenseVector)
