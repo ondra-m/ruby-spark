@@ -133,14 +133,12 @@ module Spark
     @worker_dir ||= File.join(root, 'lib', 'spark', 'worker')
   end
 
-  # Full path of ruby spark extension
-  # used for build and load
   def self.ruby_spark_jar
-    @ruby_spark_jar ||= File.join(target_dir, 'ruby-spark.jar')
+    @ruby_spark_jar ||= 'ruby-spark.jar'
   end
 
-  def self.ivy_xml
-    @ivy_xml ||= File.join(root, 'ivy', 'ivy.xml')
+  def self.spark_ext_dir
+    @spark_ext_dir ||= File.join(root, 'ext', 'spark')
   end
 
 

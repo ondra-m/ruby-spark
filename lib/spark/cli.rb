@@ -25,43 +25,31 @@ module Spark
       default_command :help
 
 
-      # Install ---------------------------------------------------------------
-      command :install do |c|
-        c.syntax = 'install [options]'
+      # Build ---------------------------------------------------------------
+      command :build do |c|
+        c.syntax = 'build [options]'
         c.description = 'Build spark and gem extensions'
-        c.option '--ivy-version STRING', String, 'Version of ivy build tool'
         c.option '--hadoop-version STRING', String, 'Version of hadoop which will stored with the SPARK'
         c.option '--spark-home STRING', String, 'Directory where SPARK will be stored'
         c.option '--spark-core STRING', String, 'Version of SPARK core'
         c.option '--spark-version STRING', String, 'Version of SPARK'
+        c.option '--scala-version STRING', String, 'Version of Scala'
+        c.option '--only-ext', 'Start SPARK immediately'
 
         c.action do |args, options|
-          options.default ivy_version: Spark::Build::DEFAULT_IVY_VERSION,
-                          hadoop_version: Spark::Build::DEFAULT_HADOOP_VERSION,
+          options.default hadoop_version: Spark::Build::DEFAULT_HADOOP_VERSION,
                           spark_home: Spark.target_dir,
                           spark_core: Spark::Build::DEFAULT_CORE_VERSION,
-                          spark_version: Spark::Build::DEFAULT_SPARK_VERSION
+                          spark_version: Spark::Build::DEFAULT_SPARK_VERSION,
+                          scala_version: Spark::Build::DEFAULT_SCALA_VERSION,
+                          only_ext: false
 
-          Spark::Build.spark(options)
-          Spark::Build.ext(options.spark_home)
+          Spark::Build.build(options)
           puts
           puts 'Everything is OK'
         end
       end
-
-
-      # Rebuild ---------------------------------------------------------------
-      command :build_ext do |c|
-        c.syntax = 'build_ext [options]'
-        c.description = 'Build only ruby extensions'
-        c.option '--spark-home STRING', String, 'Directory where SPARK will be stored'
-
-        c.action do |args, options|
-          options.default spark_home: Spark.target_dir
-          Spark::Build.ext(options.spark_home)
-        end
-      end
-      alias_command :rebuild, :build_ext
+      alias_command :install, :build
 
 
       # Pry -------------------------------------------------------------------
