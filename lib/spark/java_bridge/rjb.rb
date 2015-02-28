@@ -1,8 +1,8 @@
-if !ENV.has_key?("JAVA_HOME")
-  raise Spark::ConfigurationError, "Environment variable JAVA_HOME is not set" 
+if !ENV.has_key?('JAVA_HOME')
+  raise Spark::ConfigurationError, 'Environment variable JAVA_HOME is not set'
 end
 
-require "rjb"
+require 'rjb'
 
 module Spark
   module JavaBridge
@@ -28,6 +28,11 @@ module Spark
         yield
       ensure
         $VERBOSE = old_verbose
+      end
+
+      def java_object?(object)
+        # object.respond_to?(:_classname)
+        object.is_a?(Rjb::Rjb_JavaProxy)
       end
 
     end

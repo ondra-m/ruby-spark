@@ -12,16 +12,19 @@ module Spark
         'org.apache.spark.api.ruby.RubyWorker',
         'org.apache.spark.api.ruby.PairwiseRDD',
         'org.apache.spark.api.ruby.RubyAccumulatorParam',
-        'org.apache.spark.ui.ruby.RubyTab',
+        'org.apache.spark.api.ruby.RubySerializer',
         'org.apache.spark.api.python.PythonRDD',
         'org.apache.spark.api.python.PythonPartitioner',
+        'org.apache.spark.ui.ruby.RubyTab',
+        'org.apache.spark.mllib.api.ruby.RubyMLLibAPI',
         'scala.collection.mutable.HashMap',
         :JInteger  => 'java.lang.Integer',
         :JLogger   => 'org.apache.log4j.Logger',
         :JLevel    => 'org.apache.log4j.Level',
         :JPriority => 'org.apache.log4j.Priority',
         :JUtils    => 'org.apache.spark.util.Utils',
-        :JStorageLevel => 'org.apache.spark.storage.StorageLevel'
+        :JStorageLevel => 'org.apache.spark.storage.StorageLevel',
+        :JDenseVector => 'org.apache.spark.mllib.linalg.DenseVector'
       ]
 
       def initialize(spark_home)
@@ -35,7 +38,6 @@ module Spark
         else
           result << Dir.glob(File.join(@spark_home, '*.jar'))
         end
-        result << Spark.ruby_spark_jar
         result.flatten
       end
 
@@ -50,6 +52,56 @@ module Spark
           end
         end
         hash
+      end
+
+      # Call java object
+      def call(klass, method, *args)
+        # To java
+        args.map!{|item| ruby_to_java(item)}
+
+        # Call java
+        result = klass.__send__(method, *args)
+
+        # To ruby
+        java_to_ruby(result)
+      end
+
+      def to_java_array_list(array)
+        array_list = ArrayList.new
+        array.each do |item|
+          array_list.add(ruby_to_java(item))
+        end
+        array_list
+      end
+
+      def ruby_to_java(object)
+        if object.respond_to?(:to_java)
+          object.to_java
+        elsif object.is_a?(Array)
+          to_java_array_list(object)
+        else
+          object
+        end
+      end
+
+      def java_to_ruby(result)
+        # binding.pry unless $__binding
+
+        if java_object?(result)
+
+          case result.getClass.name
+          when 'scala.collection.convert.Wrappers$SeqWrapper'
+            result.toArray.map!{|item| java_to_ruby(item)}
+          when 'org.apache.spark.mllib.linalg.DenseVector'
+            # Values are double
+            # and will be automatically converted to floats
+            Spark::Mllib::DenseVector.new(result.values)
+          end
+
+        else
+          # Already transfered
+          result
+        end
       end
 
     end

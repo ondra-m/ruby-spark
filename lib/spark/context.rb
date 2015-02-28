@@ -26,7 +26,7 @@ module Spark
       # ui.attachTab(RubyTab.new(ui, to_java_hash(RbConfig::CONFIG)))
 
       spark_local_dir = JUtils.getLocalDir(sc.conf)
-      @temp_dir = JUtils.createTempDir(spark_local_dir).getAbsolutePath
+      @temp_dir = JUtils.createTempDir(spark_local_dir, 'ruby').getAbsolutePath
 
       accum_server = Spark::Accumulator::Server
       accum_server.start
