@@ -13,6 +13,11 @@ module Spark
         end
       end
 
+      def java_object?(object)
+        # object.respond_to?(:_classname)
+        object.is_a?(JavaProxy)
+      end
+
     end
   end
 end
