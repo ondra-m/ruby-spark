@@ -36,8 +36,14 @@ end
 module Spark
   module Mllib
     class LinearRegressionModel
-      def initialize(*)
+
+      attr_reader :weights, :intercept
+
+      def initialize(weights, intercept)
+        @weights = weights
+        @intercept = intercept.to_f
       end
+
     end
   end
 end
@@ -51,14 +57,13 @@ module Spark
                           initial_weights: nil, reg_param: 0.0, reg_type: nil,
                           intercept: false)
 
+        initial_weights = Vector.to_vector(initial_weights || [0.0] * first.features.size)
 
-        initial_weights = Vector.init_from(initial_weights || [0.0] * first.features.size)
-
-        weights, intercept = Spark.jb.call(RubyMLLibAPI, 'trainLinearRegressionModelWithSGD', false,
+        weights, intercept = Spark.jb.call(RubyMLLibAPI.new, 'trainLinearRegressionModelWithSGD',
                                            rdd, iterations.to_i, step.to_f, mini_batch_fraction.to_f,
                                            initial_weights, reg_param.to_f, reg_type, intercept)
 
-        # LinearRegressionModel.new(weights, intercept)
+        LinearRegressionModel.new(weights, intercept)
       end
 
     end

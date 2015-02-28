@@ -46,6 +46,10 @@ module Spark
         result.encode(Encoding::ASCII_8BIT)
       end
 
+      def to_java
+        JDenseVector.new(values)
+      end
+
     end
   end
 end
