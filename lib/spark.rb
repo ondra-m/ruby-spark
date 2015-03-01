@@ -156,8 +156,10 @@ module Spark
 
     spark_home ||= Spark.target_dir
 
-    @java_bridge = JavaBridge.get.new(spark_home)
-    @java_bridge.import
+    bridge = JavaBridge.get
+    @java_bridge = bridge.new(spark_home)
+    @java_bridge.load
+    nil
   end
 
   def self.java_bridge

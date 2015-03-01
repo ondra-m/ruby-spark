@@ -8,32 +8,33 @@ module Spark
   module JavaBridge
     class RJB < Base
 
-      def jars
-        separator = windows? ? ';' : ':'
-        super.join(separator)
+      def initialize(*args)
+        super
+        Rjb.load(jars)
+        Rjb.primitive_conversion = true
       end
 
-      def import
-        Rjb::load(jars)
-        Rjb::primitive_conversion = true
-
-        java_objects.each do |key, value|
-          # Avoid 'already initialized constant'
-          Object.const_set(key, silence_warnings { Rjb::import(value) })
-        end
-      end
-
-      def silence_warnings
-        old_verbose, $VERBOSE = $VERBOSE, nil
-        yield
-      ensure
-        $VERBOSE = old_verbose
+      def import(name, klass)
+        Object.const_set(name, silence_warnings { Rjb.import(klass) })
       end
 
       def java_object?(object)
-        # object.respond_to?(:_classname)
         object.is_a?(Rjb::Rjb_JavaProxy)
       end
+
+      private
+
+        def jars
+          separator = windows? ? ';' : ':'
+          super.join(separator)
+        end
+
+        def silence_warnings
+          old_verbose, $VERBOSE = $VERBOSE, nil
+          yield
+        ensure
+          $VERBOSE = old_verbose
+        end
 
     end
   end

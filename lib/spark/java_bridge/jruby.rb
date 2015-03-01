@@ -1,20 +1,20 @@
-require "java"
+require 'java'
 
 module Spark
   module JavaBridge
     class JRuby < Base
 
-      def import
+      def initialize(*args)
+        super
         jars.each {|jar| require jar}
+      end
 
-        java_objects.each do |key, value|
-          value = "Java::#{value}"
-          Object.const_set(key, eval(value)) rescue nil
-        end
+      def import(name, klass)
+        klass = "Java::#{klass}"
+        Object.const_set(name, eval(klass)) rescue nil
       end
 
       def java_object?(object)
-        # object.respond_to?(:_classname)
         object.is_a?(JavaProxy)
       end
 

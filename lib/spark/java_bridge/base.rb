@@ -27,33 +27,37 @@ module Spark
         :JDenseVector => 'org.apache.spark.mllib.linalg.DenseVector'
       ]
 
-      RUBY_TO_JAVA_SKIP = ['Fixnum', 'Integer']
+      JAVA_TEST_OBJECTS = [
+      ]
+
+      RUBY_TO_JAVA_SKIP = [Fixnum, Integer]
 
       def initialize(spark_home)
         @spark_home = spark_home
       end
 
-      def jars
-        result = []
-        if File.file?(@spark_home)
-          result << @spark_home
-        else
-          result << Dir.glob(File.join(@spark_home, '*.jar'))
+      # Import all important classes into Objects
+      def load
+        return if @loaded
+
+        java_objects.each do |name, klass|
+          import(name, klass)
         end
-        result.flatten
+
+        @loaded = true
+        nil
       end
 
-      def java_objects
-        hash = {}
-        JAVA_OBJECTS.each do |object|
-          if object.is_a?(Hash)
-            hash.merge!(object)
-          else
-            key = object.split('.').last.to_sym
-            hash[key] = object
-          end
+      # Import classes for testing
+      def load_test
+        return if @loaded_test
+
+        java_test_objects.each do |name, klass|
+          import(name, klass)
         end
-        hash
+
+        @loaded_test = true
+        nil
       end
 
       # Call java object
@@ -77,7 +81,7 @@ module Spark
       end
 
       def ruby_to_java(object)
-        if RUBY_TO_JAVA_SKIP.include?(object.class.name)
+        if RUBY_TO_JAVA_SKIP.include?(object.class)
           # Some object are convert automatically
           # This is for preventing errors
           # For example: jruby store integer as long so 1.to_java is Long
@@ -110,6 +114,39 @@ module Spark
           result
         end
       end
+
+      private
+
+        def jars
+          result = []
+          if File.file?(@spark_home)
+            result << @spark_home
+          else
+            result << Dir.glob(File.join(@spark_home, '*.jar'))
+          end
+          result.flatten
+        end
+
+        def objects_with_names(objects)
+          hash = {}
+          objects.each do |object|
+            if object.is_a?(Hash)
+              hash.merge!(object)
+            else
+              key = object.split('.').last.to_sym
+              hash[key] = object
+            end
+          end
+          hash
+        end
+
+        def java_objects
+          objects_with_names(JAVA_OBJECTS)
+        end
+
+        def java_test_objects
+          objects_with_names(JAVA_TEST_OBJECTS)
+        end
 
     end
   end
