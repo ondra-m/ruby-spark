@@ -45,7 +45,7 @@ module Spark
       end
 
       def marshal_load(array)
-        raise NotImplementedError, 'marshal_load'
+        initialize(array)
       end
 
     end
@@ -98,7 +98,7 @@ module Spark
       end
 
       def marshal_load(array)
-        raise NotImplementedError, 'marshal_load'
+        initialize(array[0], [array[1], array[2]])
       end
 
     end

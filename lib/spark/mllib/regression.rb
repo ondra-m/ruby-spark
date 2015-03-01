@@ -26,7 +26,7 @@ module Spark
       end
 
       def marshal_load(array)
-        raise NotImplementedError, 'marshal_load'
+        initialize(array[0], array[1])
       end
 
     end
