@@ -43,4 +43,8 @@ module Spark
   # Wrong ID
   class AccumulatorError < StandardError
   end
+
+  # Wrong instances
+  class MllibError < StandardError
+  end
 end
