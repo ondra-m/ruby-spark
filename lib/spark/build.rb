@@ -6,8 +6,10 @@ module Spark
     DEFAULT_SPARK_VERSION  = '1.2.1'
     DEFAULT_HADOOP_VERSION = '2.4.0'
 
-    SBT_FULL     = 'sbt/sbt assemblyPackageDependency package clean'
-    SBT_ONLY_EXT = 'sbt/sbt package clean'
+    SBT       = 'sbt/sbt'
+    SBT_DEPS  = 'assemblyPackageDependency'
+    SBT_EXT   = 'package'
+    SBT_CLEAN = 'clean'
 
     def self.build(options)
       spark_home     = options.spark_home     || Spark.target_dir
@@ -25,14 +27,13 @@ module Spark
         "SPARK_HOME" => spark_home
       }
 
-      if only_ext
-        cmd = SBT_ONLY_EXT
-      else
-        cmd = SBT_FULL
-      end
+      cmd = [SBT]
+      cmd << SBT_EXT
+      cmd << SBT_DEPS unless only_ext
+      cmd << SBT_CLEAN unless $debug
 
       Dir.chdir(Spark.spark_ext_dir) do
-        unless Kernel.system(env, cmd)
+        unless Kernel.system(env, cmd.join(' '))
           raise Spark::BuildError, 'Spark cannot be assembled.'
         end
       end
