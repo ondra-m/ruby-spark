@@ -6,6 +6,7 @@ module Spark
 
     # Regression
     autoload :LabeledPoint,            'spark/mllib/regression'
+    autoload :LinearModel,             'spark/mllib/regression'
     autoload :LinearRegressionWithSGD, 'spark/mllib/regression'
 
     def self.load
@@ -22,6 +23,7 @@ module Spark
       Object.const_set(:DenseVector, DenseVector)
       Object.const_set(:SparseVector, SparseVector)
       Object.const_set(:LabeledPoint, LabeledPoint)
+      Object.const_set(:LinearModel, LinearModel)
       Object.const_set(:LinearRegressionWithSGD, LinearRegressionWithSGD)
 
       @loaded = true
