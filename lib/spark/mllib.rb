@@ -9,8 +9,8 @@ module Spark
     autoload :LinearModel,             'spark/mllib/regression'
     autoload :LinearRegressionWithSGD, 'spark/mllib/regression'
 
-    def self.load
-      return if @loaded
+    def self.prepare
+      return if @prepared
 
       if narray?
         require 'spark/mllib/narray/vector'
@@ -19,6 +19,15 @@ module Spark
       else
         require 'spark/mllib/matrix/vector'
       end
+
+      @prepared = true
+      nil
+    end
+
+    def self.load
+      return if @loaded
+
+      prepare
 
       Object.const_set(:DenseVector, DenseVector)
       Object.const_set(:SparseVector, SparseVector)
@@ -39,3 +48,5 @@ module Spark
     end
   end
 end
+
+Spark::Mllib.prepare
