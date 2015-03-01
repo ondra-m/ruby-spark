@@ -7,7 +7,10 @@ module Spark
     # Regression
     autoload :LabeledPoint,            'spark/mllib/regression'
     autoload :LinearModel,             'spark/mllib/regression'
+    autoload :LinearRegressionModel,   'spark/mllib/regression'
     autoload :LinearRegressionWithSGD, 'spark/mllib/regression'
+    autoload :LassoModel,              'spark/mllib/regression'
+    autoload :LassoWithSGD,            'spark/mllib/regression'
 
     def self.prepare
       return if @prepared
@@ -33,7 +36,10 @@ module Spark
       Object.const_set(:SparseVector, SparseVector)
       Object.const_set(:LabeledPoint, LabeledPoint)
       Object.const_set(:LinearModel, LinearModel)
+      Object.const_set(:LinearRegressionModel, LinearRegressionModel)
       Object.const_set(:LinearRegressionWithSGD, LinearRegressionWithSGD)
+      Object.const_set(:LassoModel, LassoModel)
+      Object.const_set(:LassoWithSGD, LassoWithSGD)
 
       @loaded = true
       nil
