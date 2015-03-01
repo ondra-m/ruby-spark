@@ -4,6 +4,8 @@ module Spark
   module Mllib
     class BaseVector
 
+      attr_reader :__vector__
+
       def initialize(stype, *args)
         case stype.to_s.downcase
         when 'dense'
@@ -17,17 +19,22 @@ module Spark
 
       def init_as_dense(*args)
         values = args.shift
-        dtype = args.shift
-        @__vector__ = NArray.new(dtype, values.size)
+        @__vector__ = NVector.new('float', values.size)
         self[] = values
       end
 
       def init_as_sparse(*args)
         size = args.shift
-        values = args.shift
-        dtype = args.shift
-        @__vector__ = NArray.new(dtype, size)
+        @__vector__ = NVector.new('float', size)
         fill!(0)
+      end
+
+      def dot(vector)
+        if vector.is_a?(BaseVector)
+          self * vector.__vector__
+        else
+          self * vector
+        end
       end
 
       def values

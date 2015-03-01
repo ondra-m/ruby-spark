@@ -23,7 +23,6 @@ object RubySerializer {
   def rubyToJava(rbRDD: JavaRDD[Array[Byte]], batched: Boolean): JavaRDD[Any] = {
     rbRDD.rdd.mapPartitions { iter =>
       iter.flatMap { item =>
-
         val obj = Marshal.load(item)
         if(batched){
           obj.asInstanceOf[Array[_]]
@@ -31,7 +30,6 @@ object RubySerializer {
         else{
           Seq(item)
         }
-
       }
     }.toJavaRDD()
   }
@@ -172,6 +170,7 @@ class Marshal(is: DataInputStream) {
     val result = klass match {
       case "Spark::Mllib::LabeledPoint" => createLabeledPoint(data)
       case "Spark::Mllib::DenseVector" => createDenseVector(data)
+      case "Spark::Mllib::SparseVector" => createSparseVector(data)
       case other =>
         throw new IllegalArgumentException(s"Object $other is not supported.")
     }
@@ -207,6 +206,15 @@ class Marshal(is: DataInputStream) {
 
   def createDenseVector(data: Any): DenseVector = {
     new DenseVector(data.asInstanceOf[Array[_]].map(_.asInstanceOf[Double]))
+  }
+
+  def createSparseVector(data: Any): SparseVector = {
+    val array = data.asInstanceOf[Array[_]]
+    val size = array(0).asInstanceOf[Int]
+    val indices = array(1).asInstanceOf[Array[_]].map(_.asInstanceOf[Int])
+    val values = array(2).asInstanceOf[Array[_]].map(_.asInstanceOf[Double])
+
+    new SparseVector(size, indices, values)
   }
 
 

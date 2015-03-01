@@ -32,19 +32,9 @@ module Spark
   module Mllib
     class DenseVector < Vector
 
-      def initialize(values, dtype: 'float')
-        super('dense', values.to_a, dtype)
+      def initialize(values)
+        super('dense', values.to_a)
       end
-
-      # TODO: move method to C/Java
-      #       send smaller string
-      #       use compress
-      # def _dump
-      #   result = 'd'
-      #   result << pack_int(size)
-      #   result << pack_doubles(values)
-      #   result.encode(Encoding::ASCII_8BIT)
-      # end
 
       def to_java
         JDenseVector.new(values)
@@ -55,7 +45,7 @@ module Spark
       end
 
       def marshal_load(array)
-        # @values = array
+        raise NotImplementedError, 'marshal_load'
       end
 
     end
@@ -79,35 +69,36 @@ module Spark
     class SparseVector < Vector
 
       attr_reader :indices
-      attr_reader :values
 
-      def initialize(size, values, dtype: 'float')
-        super('sparse', size, values, dtype)
+      def initialize(size, indices_and_values)
+        super('sparse', size)
 
-        if values.is_a?(Hash)
-          @indices = values.keys
-          @values = values.values
+        if indices_and_values.is_a?(Hash)
+          @indices = indices_and_values.keys
+          @_values = indices_and_values.values
         else
-          @indices = values[0]
-          @values = values[1]
+          @indices = indices_and_values[0]
+          @_values = indices_and_values[1]
         end
 
-        @indices.zip(@values).each do |(index, value)|
+        @_values.map!(&:to_f)
+
+        @indices.zip(@_values).each do |(index, value)|
           self[index] = value
         end
       end
 
-      # TODO: move method to C/Java
-      #       send smaller string
-      #       use compress
-      def _dump
-        result = 's'
-        result << pack_int(size)
-        result << pack_int(indices.size)
-        result << pack_ints(indices)
-        result << pack_int(values.size)
-        result << pack_doubles(values)
-        result.encode(Encoding::ASCII_8BIT)
+      # Vectors can have own values
+      def values
+        @_values
+      end
+
+      def marshal_dump
+        [size, indices, values]
+      end
+
+      def marshal_load(array)
+        raise NotImplementedError, 'marshal_load'
       end
 
     end

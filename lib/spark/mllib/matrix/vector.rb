@@ -38,6 +38,10 @@ module Spark
         to_a.first
       end
 
+      def dot(vector)
+        raise NotImplementedError, 'dot'
+      end
+
       # NArray is initialized on `self.new` instead of `initialize`
       def method_missing(method, *args, &block)
         @__vector__.__send__(method, *args, &block)
