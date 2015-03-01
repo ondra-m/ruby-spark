@@ -11,6 +11,8 @@ module Spark
     autoload :LinearRegressionWithSGD, 'spark/mllib/regression'
     autoload :LassoModel,              'spark/mllib/regression'
     autoload :LassoWithSGD,            'spark/mllib/regression'
+    autoload :RidgeRegressionModel,    'spark/mllib/regression'
+    autoload :RidgeRegressionWithSGD,  'spark/mllib/regression'
 
     def self.prepare
       return if @prepared
@@ -40,6 +42,8 @@ module Spark
       Object.const_set(:LinearRegressionWithSGD, LinearRegressionWithSGD)
       Object.const_set(:LassoModel, LassoModel)
       Object.const_set(:LassoWithSGD, LassoWithSGD)
+      Object.const_set(:RidgeRegressionModel, RidgeRegressionModel)
+      Object.const_set(:RidgeRegressionWithSGD, RidgeRegressionWithSGD)
 
       @loaded = true
       nil
