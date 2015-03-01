@@ -37,12 +37,28 @@ module Spark
         end
       end
 
+      def squared_distance(vector)
+        unless vector.is_a?(BaseVector)
+          raise Spark::MllibError, 'Vector must be instance of Vector'
+        end
+
+        (self - vector) ** 2
+      end
+
       def values
         to_a
       end
 
       # NArray is initialized on `self.new` instead of `initialize`
       def method_missing(method, *args, &block)
+        args.map! do |arg|
+          if arg.is_a?(BaseVector)
+            arg.__vector__
+          else
+            arg
+          end
+        end
+
         @__vector__.__send__(method, *args, &block)
       end
 
