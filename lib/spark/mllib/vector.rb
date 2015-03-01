@@ -39,15 +39,23 @@ module Spark
       # TODO: move method to C/Java
       #       send smaller string
       #       use compress
-      def _dump
-        result = 'd'
-        result << pack_int(size)
-        result << pack_doubles(values)
-        result.encode(Encoding::ASCII_8BIT)
-      end
+      # def _dump
+      #   result = 'd'
+      #   result << pack_int(size)
+      #   result << pack_doubles(values)
+      #   result.encode(Encoding::ASCII_8BIT)
+      # end
 
       def to_java
         JDenseVector.new(values)
+      end
+
+      def marshal_dump
+        values
+      end
+
+      def marshal_load(array)
+        # @values = array
       end
 
     end

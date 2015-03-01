@@ -8,7 +8,7 @@ import scala.reflect.{ClassTag, classTag}
 
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.mllib.regression.LabeledPoint
-import org.apache.spark.mllib.linalg.{DenseVector, SparseVector}
+import org.apache.spark.mllib.linalg.{Vector, DenseVector, SparseVector}
 
 
 /* =================================================================================================
@@ -23,11 +23,9 @@ object RubySerializer {
   def rubyToJava(rbRDD: JavaRDD[Array[Byte]], batched: Boolean): JavaRDD[Any] = {
     rbRDD.rdd.mapPartitions { iter =>
       iter.flatMap { item =>
-        println(item.map(_.toInt).mkString(" "))
 
         val obj = Marshal.load(item)
         if(batched){
-          println(obj.asInstanceOf[Array[_]].mkString(" "))
           obj.asInstanceOf[Array[_]]
         }
         else{
@@ -47,14 +45,11 @@ object RubySerializer {
  */
 class Marshal(is: DataInputStream) {
 
-  val ENCODING_SYMBOL_SPECIAL = "E"
-  val ENCODING_SYMBOL = "encoding"
+  case class WaitForObject()
 
-  // Registered classes
-  // used for ';'
-  val symbols = ArrayBuffer[String]()
+  val registeredSymbols = ArrayBuffer[String]()
+  val registeredLinks = ArrayBuffer[Any]()
 
-  // Convert Array[Byte] into Java objects
   def load: Any = {
     load(is.readUnsignedByte.toChar)
   }
@@ -65,27 +60,15 @@ class Marshal(is: DataInputStream) {
       case 'T' => true
       case 'F' => false
       case 'i' => loadInt
-      case 'f' => loadFloat
-      case '"' => loadString
-      case 'u' => loadUserObject
-      case 'I' => loadInstanceVar
-      case '[' => loadArray
+      case 'f' => loadAndRegisterFloat
+      case ':' => loadAndRegisterSymbol
+      case '[' => loadAndRegisterArray
+      case 'U' => loadAndRegisterUserObject
       case _ =>
-        // 'o': object
-        // '/': regexp
-        // ':': symbol
-        // '{': hash
-        // '}': hash with a default value
-        // 'c': class
-        // 'm': module
-        // 'e': extended
-        // 'l': bignum
-        // 'S': struct
-        // 'U': user new unmarshal
-        // 'C': u class unmarshal
         throw new IllegalArgumentException(s"Format is not supported: $dataType.")
     }
   }
+
 
   // ----------------------------------------------------------------------------------------------
   // Load by type
@@ -120,6 +103,12 @@ class Marshal(is: DataInputStream) {
     result.toInt
   }
 
+  def loadAndRegisterFloat: Double = {
+    val result = loadFloat
+    registeredLinks += result
+    result
+  }
+
   def loadFloat: Double = {
     val string = loadString
     string match {
@@ -134,8 +123,6 @@ class Marshal(is: DataInputStream) {
     new String(loadStringBytes)
   }
 
-  // Load String as Array[Byte]
-  // Is used by other methods
   def loadStringBytes: Array[Byte] = {
     val size = loadInt
     val buffer = new Array[Byte](size)
@@ -154,82 +141,55 @@ class Marshal(is: DataInputStream) {
     buffer
   }
 
-  // Load object with custom _dump
-  def loadUserObject: Object = {
-    var klass: String = ""
-
-    is.readByte match {
-      case ':' =>
-        klass = loadString
-        symbols += klass
-      case ';' =>
-        val index = loadInt
-        klass = symbols(index)
-    }
-
-    klass match {
-      case "Spark::Mllib::LabeledPoint" => loadLabeledPoint
-      case other =>
-        throw new IllegalArgumentException(s"Object $other is not supported.")
-    }
+  def loadAndRegisterSymbol: String = {
+    val result = loadString
+    registeredSymbols += result
+    result
   }
 
-  def loadArray: Array[Any] = {
+  def loadAndRegisterArray: Array[Any] = {
     val size = loadInt
     val array = new Array[Any](size)
 
+    registeredLinks += array
+
     for( i <- 0 until size ) {
-      array(i) = load
+      array(i) = loadNextObject
     }
 
     array
   }
 
+  def loadAndRegisterUserObject: Any = {
+    val klass = loadNextObject.asInstanceOf[String]
 
-  // ----------------------------------------------------------------------------------------------
-  // Load others
+    // Register future class before load the next object
+    registeredLinks += WaitForObject()
+    val index = registeredLinks.size - 1
 
-  // Supported is only String
-  def loadInstanceVar: String = {
-    val dataType = is.readUnsignedByte.toChar
+    val data = loadNextObject
 
-    if(dataType != '"'){
-      throw new IllegalArgumentException("Instance variable can have only String.")
+    val result = klass match {
+      case "Spark::Mllib::LabeledPoint" => createLabeledPoint(data)
+      case "Spark::Mllib::DenseVector" => createDenseVector(data)
+      case other =>
+        throw new IllegalArgumentException(s"Object $other is not supported.")
     }
 
-    var bytes = loadStringBytes
-    var obj = new String(bytes)
+    registeredLinks(index) = result
 
-    // Set variables
-    val count = loadInt
-
-    for( i <- 0 until count ) {
-      val key = unmarshalObject
-
-      key.toString match {
-        case ENCODING_SYMBOL_SPECIAL =>
-          if(unmarshalObject == true){
-            obj = new String(bytes, "UTF-8")
-          }
-          else{
-            obj = new String(bytes, "US-ASCII")
-          }
-        case ENCODING_SYMBOL =>
-          throw new IllegalArgumentException("Supported is UTF-8 or US-ASCII.")
-        case _ =>
-          // obj.getClass.getMethod(key).invoke(obj)
-          throw new IllegalArgumentException("Supported is only encoding.")
-      }
-    }
-
-    obj
+    result
   }
 
-  def unmarshalObject = {
+
+  // ----------------------------------------------------------------------------------------------
+  // Other loads
+
+  def loadNextObject: Any = {
     val dataType = is.readUnsignedByte.toChar
 
     if(isLinkType(dataType)){
-      throw new IllegalArgumentException("Link type is not supported.")
+      readLink(dataType)
     }
     else{
       load(dataType)
@@ -238,45 +198,34 @@ class Marshal(is: DataInputStream) {
 
 
   // ----------------------------------------------------------------------------------------------
-  // Load user defined
+  // To java objects
 
-  def loadLabeledPoint: LabeledPoint = {
-    val dataSize = loadInt
+  def createLabeledPoint(data: Any): LabeledPoint = {
+    val array = data.asInstanceOf[Array[_]]
+    new LabeledPoint(array(0).asInstanceOf[Double], array(1).asInstanceOf[Vector])
+  }
 
-    val label = is.readLong
-    is.readByte.toChar match {
-      case 'd' =>
-        val features = new DenseVector(readArray[Double])
-        new LabeledPoint(label, features)
-      case 's' =>
-        val size = is.readInt
-        val indices = readArray[Int]
-        val values = readArray[Double]
-
-        val features = new SparseVector(size, indices, values)
-        new LabeledPoint(label, features)
-    }
+  def createDenseVector(data: Any): DenseVector = {
+    new DenseVector(data.asInstanceOf[Array[_]].map(_.asInstanceOf[Double]))
   }
 
 
   // ----------------------------------------------------------------------------------------------
-  // Helpers
+  // Cache
+
+  def readLink(dataType: Char): Any = {
+    val index = loadInt
+
+    dataType match {
+      case '@' => registeredLinks(index)
+      case ';' => registeredSymbols(index)
+    }
+  }
 
   def isLinkType(dataType: Char): Boolean = {
     dataType == ';' || dataType == '@'
   }
 
-  def readArray[T: ClassTag]: Array[T] = {
-    val size = is.readInt
-    val values = new Array[T](size)
-
-    classTag[T].toString match {
-      case "Int" =>    for( i <- 0 until size ) values(i) = is.readInt.asInstanceOf[T]
-      case "Double" => for( i <- 0 until size ) values(i) = is.readDouble.asInstanceOf[T]
-    }
-
-    values
-  }
 }
 
 

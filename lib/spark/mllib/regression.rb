@@ -21,12 +21,20 @@ module Spark
         @features = Spark::Mllib::Vector.to_vector(features)
       end
 
-      def _dump(depth)
-        pack_long(@label) + @features._dump
+      # def _dump(depth)
+      #   pack_long(@label) + @features._dump
+      # end
+
+      # def self._load(data)
+      #   puts data
+      # end
+
+      def marshal_dump
+        [@label, @features]
       end
 
-      def self._load(data)
-        puts data
+      def marshal_load(array)
+        @label, @features = array
       end
 
     end

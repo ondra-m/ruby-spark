@@ -27,6 +27,8 @@ module Spark
         :JDenseVector => 'org.apache.spark.mllib.linalg.DenseVector'
       ]
 
+      RUBY_TO_JAVA_SKIP = ['Fixnum', 'Integer']
+
       def initialize(spark_home)
         @spark_home = spark_home
       end
@@ -75,7 +77,12 @@ module Spark
       end
 
       def ruby_to_java(object)
-        if object.respond_to?(:to_java)
+        if RUBY_TO_JAVA_SKIP.include?(object.class.name)
+          # Some object are convert automatically
+          # This is for preventing errors
+          # For example: jruby store integer as long so 1.to_java is Long
+          object
+        elsif object.respond_to?(:to_java)
           object.to_java
         elsif object.is_a?(Array)
           to_java_array_list(object)
@@ -85,13 +92,13 @@ module Spark
       end
 
       def java_to_ruby(result)
-        # binding.pry unless $__binding
-
         if java_object?(result)
 
           case result.getClass.name
           when 'scala.collection.convert.Wrappers$SeqWrapper'
-            result.toArray.map!{|item| java_to_ruby(item)}
+            # Rjb:   result.toArray -> Array
+            # Jruby: result.toArray -> java.lang.Object
+            result.toArray.to_a.map!{|item| java_to_ruby(item)}
           when 'org.apache.spark.mllib.linalg.DenseVector'
             # Values are double
             # and will be automatically converted to floats
