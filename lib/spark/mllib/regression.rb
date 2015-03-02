@@ -19,8 +19,15 @@ module Spark
       attr_reader :label, :features
 
       def initialize(label, features)
-        @label = label
+        @label = label.to_f
         @features = Spark::Mllib::Vector.to_vector(features)
+      end
+
+      def self.from_java(object)
+        LabeledPoint.new(
+          object.label,
+          Spark.jb.java_to_ruby(object.features)
+        )
       end
 
       def marshal_dump

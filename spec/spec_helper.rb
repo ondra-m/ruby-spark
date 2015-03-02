@@ -6,6 +6,8 @@ require 'ruby-spark'
 require 'generator'
 
 # Loading
+Spark.load_lib
+Spark.jb.load_test
 Spark::Mllib.load
 
 # Keep it on method because its called from config test

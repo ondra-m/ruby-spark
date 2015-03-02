@@ -28,6 +28,7 @@ module Spark
       ]
 
       JAVA_TEST_OBJECTS = [
+        'org.apache.spark.mllib.api.ruby.RubyMLLibUtilAPI'
       ]
 
       RUBY_TO_JAVA_SKIP = [Fixnum, Integer]
@@ -95,23 +96,30 @@ module Spark
         end
       end
 
-      def java_to_ruby(result)
-        if java_object?(result)
+      def java_to_ruby(object)
+        if java_object?(object)
 
-          case result.getClass.name
+          case object.getClass.name
           when 'scala.collection.convert.Wrappers$SeqWrapper'
-            # Rjb:   result.toArray -> Array
-            # Jruby: result.toArray -> java.lang.Object
-            result.toArray.to_a.map!{|item| java_to_ruby(item)}
+            # Rjb:   object.toArray -> Array
+            # Jruby: object.toArray -> java.lang.Object
+            object.toArray.to_a.map!{|item| java_to_ruby(item)}
+          when 'org.apache.spark.mllib.regression.LabeledPoint'
+            Spark::Mllib::LabeledPoint.from_java(object)
           when 'org.apache.spark.mllib.linalg.DenseVector'
-            # Values are double
-            # and will be automatically converted to floats
-            Spark::Mllib::DenseVector.new(result.values)
+            Spark::Mllib::DenseVector.from_java(object)
+          when 'scala.collection.mutable.ArraySeq'
+            result = []
+            iterator = object.iterator
+            while iterator.hasNext
+              result << java_to_ruby(iterator.next)
+            end
+            result
           end
 
         else
           # Already transfered
-          result
+          object
         end
       end
 

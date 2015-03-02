@@ -40,6 +40,10 @@ module Spark
         JDenseVector.new(values)
       end
 
+      def self.from_java(object)
+        DenseVector.new(object.values)
+      end
+
       def marshal_dump
         values
       end
