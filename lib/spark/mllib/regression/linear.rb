@@ -1,4 +1,4 @@
-class Spark::Mllib::LinearRegressionModel < Spark::Mllib::LinearModel
+class Spark::Mllib::LinearRegressionModel < Spark::Mllib::RegressionModel
 end
 
 ##

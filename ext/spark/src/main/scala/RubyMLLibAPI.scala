@@ -4,4 +4,6 @@ import org.apache.spark.mllib.api.python.PythonMLLibAPI
 
 class RubyMLLibAPI extends PythonMLLibAPI {
   // trainLinearRegressionModelWithSGD
+  // trainLassoModelWithSGD
+  // trainRidgeModelWithSGD
 }

@@ -1,11 +1,11 @@
 ##
-# LinearModel
+# RegressionModel
 #
 # A linear model that has a vector of coefficients and an intercept.
 #
 module Spark
   module Mllib
-    class LinearModel
+    class RegressionModel
 
       attr_reader :weights, :intercept
 
@@ -19,7 +19,7 @@ module Spark
       #
       # == Examples:
       #
-      # lm = LinearModel.new([1.0, 2.0], 0.1)
+      # lm = RegressionModel.new([1.0, 2.0], 0.1)
       #
       # lm.predict([-1.03, 7.777]) - 14.624 < 1e-6
       # => true

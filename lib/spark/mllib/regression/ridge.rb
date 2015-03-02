@@ -1,4 +1,4 @@
-class Spark::Mllib::RidgeRegressionModel < Spark::Mllib::LinearModel
+class Spark::Mllib::RidgeRegressionModel < Spark::Mllib::RegressionModel
 end
 
 ##

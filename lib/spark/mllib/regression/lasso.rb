@@ -1,4 +1,4 @@
-class Spark::Mllib::LassoModel < Spark::Mllib::LinearModel
+class Spark::Mllib::LassoModel < Spark::Mllib::RegressionModel
 end
 
 ##

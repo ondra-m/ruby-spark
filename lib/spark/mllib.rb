@@ -6,7 +6,7 @@ module Spark
 
     # Regression
     autoload :LabeledPoint,            'spark/mllib/regression/labeled_point'
-    autoload :LinearModel,             'spark/mllib/regression/common'
+    autoload :RegressionModel,         'spark/mllib/regression/common'
     autoload :RegressionMethodBase,    'spark/mllib/regression/common'
     autoload :LinearRegressionModel,   'spark/mllib/regression/linear'
     autoload :LinearRegressionWithSGD, 'spark/mllib/regression/linear'
@@ -38,7 +38,7 @@ module Spark
       Object.const_set(:DenseVector, DenseVector)
       Object.const_set(:SparseVector, SparseVector)
       Object.const_set(:LabeledPoint, LabeledPoint)
-      Object.const_set(:LinearModel, LinearModel)
+      Object.const_set(:RegressionModel, RegressionModel)
       Object.const_set(:LinearRegressionModel, LinearRegressionModel)
       Object.const_set(:LinearRegressionWithSGD, LinearRegressionWithSGD)
       Object.const_set(:LassoModel, LassoModel)
