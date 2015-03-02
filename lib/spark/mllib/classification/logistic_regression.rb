@@ -103,7 +103,7 @@ module Spark
       # Train a logistic regression model on the given data.
       #
       # == Arguments:
-      # data::
+      # rdd::
       #   The training data, an RDD of LabeledPoint.
       #
       # iterations::
@@ -171,7 +171,7 @@ module Spark
       # Train a logistic regression model on the given data.
       #
       # == Arguments:
-      # data::
+      # rdd::
       #   The training data, an RDD of LabeledPoint.
       #
       # iterations::

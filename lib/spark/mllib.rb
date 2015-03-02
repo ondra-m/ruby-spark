@@ -20,6 +20,9 @@ module Spark
     autoload :ClassificationMethodBase,    'spark/mllib/classification/common'
     autoload :LogisticRegressionWithSGD,   'spark/mllib/classification/logistic_regression'
     autoload :LogisticRegressionWithLBFGS, 'spark/mllib/classification/logistic_regression'
+    autoload :SVMModel,                    'spark/mllib/classification/svm'
+    autoload :SVMWithSGD,                  'spark/mllib/classification/svm'
+
 
     def self.prepare
       return if @prepared
@@ -55,6 +58,8 @@ module Spark
       Object.const_set(:ClassificationMethodBase, ClassificationMethodBase)
       Object.const_set(:LogisticRegressionWithSGD, LogisticRegressionWithSGD)
       Object.const_set(:LogisticRegressionWithLBFGS, LogisticRegressionWithLBFGS)
+      Object.const_set(:SVMModel, SVMModel)
+      Object.const_set(:SVMWithSGD, SVMWithSGD)
 
       @loaded = true
       nil
