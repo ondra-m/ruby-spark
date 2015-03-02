@@ -15,6 +15,12 @@ module Spark
     autoload :RidgeRegressionModel,    'spark/mllib/regression/ridge'
     autoload :RidgeRegressionWithSGD,  'spark/mllib/regression/ridge'
 
+    # Classification
+    autoload :ClassificationModel,         'spark/mllib/classification/common'
+    autoload :ClassificationMethodBase,    'spark/mllib/classification/common'
+    autoload :LogisticRegressionWithSGD,   'spark/mllib/classification/logistic_regression'
+    autoload :LogisticRegressionWithLBFGS, 'spark/mllib/classification/logistic_regression'
+
     def self.prepare
       return if @prepared
 
@@ -45,6 +51,10 @@ module Spark
       Object.const_set(:LassoWithSGD, LassoWithSGD)
       Object.const_set(:RidgeRegressionModel, RidgeRegressionModel)
       Object.const_set(:RidgeRegressionWithSGD, RidgeRegressionWithSGD)
+      Object.const_set(:ClassificationModel, ClassificationModel)
+      Object.const_set(:ClassificationMethodBase, ClassificationMethodBase)
+      Object.const_set(:LogisticRegressionWithSGD, LogisticRegressionWithSGD)
+      Object.const_set(:LogisticRegressionWithLBFGS, LogisticRegressionWithLBFGS)
 
       @loaded = true
       nil

@@ -6,4 +6,6 @@ class RubyMLLibAPI extends PythonMLLibAPI {
   // trainLinearRegressionModelWithSGD
   // trainLassoModelWithSGD
   // trainRidgeModelWithSGD
+  // trainLogisticRegressionModelWithSGD
+  // trainLogisticRegressionModelWithLBFGS
 }
