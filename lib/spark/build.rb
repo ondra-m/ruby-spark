@@ -4,7 +4,7 @@ module Spark
     DEFAULT_SCALA_VERSION  = '2.10.4'
     DEFAULT_CORE_VERSION   = '2.10'
     DEFAULT_SPARK_VERSION  = '1.2.1'
-    DEFAULT_HADOOP_VERSION = '2.4.0'
+    DEFAULT_HADOOP_VERSION = '1.0.4'
 
     SBT       = 'sbt/sbt'
     SBT_DEPS  = 'assemblyPackageDependency'

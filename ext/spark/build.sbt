@@ -7,7 +7,7 @@ val defaultScalaVersion     = "2.10.4"
 val defaultSparkVersion     = "1.2.0"
 val defaultSparkCoreVersion = "2.10"
 val defaultSparkHome        = "target"
-val defaultHadoopVersion    = "2.4.0"
+val defaultHadoopVersion    = "1.0.4"
 
 // Values
 val _scalaVersion     = scala.util.Properties.envOrElse("SCALA_VERSION", defaultScalaVersion)
@@ -34,7 +34,7 @@ seq(sbtprotobuf.ProtobufPlugin.protobufSettings: _*)
 
 // Additional libraries
 libraryDependencies ++= Seq(
-  "org.apache.spark"  %% "spark-core"    % _sparkVersion,
+  "org.apache.spark"  %% "spark-core"    % _sparkVersion excludeAll(ExclusionRule(organization = "org.apache.hadoop")),
   "org.apache.spark"  %% "spark-graphx"  % _sparkVersion,
   "org.apache.spark"  %% "spark-mllib"   % _sparkVersion,
   "org.apache.hadoop" %  "hadoop-client" % _hadoopVersion,
