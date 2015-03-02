@@ -5,14 +5,15 @@ module Spark
     autoload :SparseVector, 'spark/mllib/vector'
 
     # Regression
-    autoload :LabeledPoint,            'spark/mllib/regression'
-    autoload :LinearModel,             'spark/mllib/regression'
-    autoload :LinearRegressionModel,   'spark/mllib/regression'
-    autoload :LinearRegressionWithSGD, 'spark/mllib/regression'
-    autoload :LassoModel,              'spark/mllib/regression'
-    autoload :LassoWithSGD,            'spark/mllib/regression'
-    autoload :RidgeRegressionModel,    'spark/mllib/regression'
-    autoload :RidgeRegressionWithSGD,  'spark/mllib/regression'
+    autoload :LabeledPoint,            'spark/mllib/regression/labeled_point'
+    autoload :LinearModel,             'spark/mllib/regression/common'
+    autoload :RegressionMethodBase,    'spark/mllib/regression/common'
+    autoload :LinearRegressionModel,   'spark/mllib/regression/linear'
+    autoload :LinearRegressionWithSGD, 'spark/mllib/regression/linear'
+    autoload :LassoModel,              'spark/mllib/regression/lasso'
+    autoload :LassoWithSGD,            'spark/mllib/regression/lasso'
+    autoload :RidgeRegressionModel,    'spark/mllib/regression/ridge'
+    autoload :RidgeRegressionWithSGD,  'spark/mllib/regression/ridge'
 
     def self.prepare
       return if @prepared
