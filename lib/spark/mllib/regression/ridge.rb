@@ -86,8 +86,8 @@ module Spark
                                            options[:iterations].to_i,
                                            options[:step].to_f,
                                            options[:reg_param].to_f,
-                                           options[:mini_batch_fraction],
-                                           options[:initial_weights].to_f)
+                                           options[:mini_batch_fraction].to_f,
+                                           options[:initial_weights])
 
         RidgeRegressionModel.new(weights, intercept)
       end
