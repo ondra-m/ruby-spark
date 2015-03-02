@@ -37,7 +37,8 @@ libraryDependencies ++= Seq(
   "org.apache.spark"  %% "spark-core"    % _sparkVersion,
   "org.apache.spark"  %% "spark-graphx"  % _sparkVersion,
   "org.apache.spark"  %% "spark-mllib"   % _sparkVersion,
-  "org.apache.hadoop" %  "hadoop-client" % _hadoopVersion
+  "org.apache.hadoop" %  "hadoop-client" % _hadoopVersion,
+  "com.github.fommil.netlib" % "all" % "1.1.2"
 )
 
 // Repositories
