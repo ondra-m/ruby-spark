@@ -1,6 +1,7 @@
 module Spark
   module Mllib
     # Linear algebra
+    autoload :Vector,       'spark/mllib/vector'
     autoload :DenseVector,  'spark/mllib/vector'
     autoload :SparseVector, 'spark/mllib/vector'
 
@@ -44,6 +45,7 @@ module Spark
 
       prepare
 
+      Object.const_set(:Vector, Vector)
       Object.const_set(:DenseVector, DenseVector)
       Object.const_set(:SparseVector, SparseVector)
       Object.const_set(:LabeledPoint, LabeledPoint)

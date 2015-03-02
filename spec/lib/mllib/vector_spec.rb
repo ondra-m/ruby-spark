@@ -1,6 +1,33 @@
 require 'spec_helper'
 
 RSpec.describe Spark::Mllib::Vector do
+
+  context 'parsing' do
+    it 'dense vector' do
+      dv  = DenseVector.new([1.0, 2.0, 3.0, 4.0, 5.0])
+      dv2 = DenseVector.parse(dv.to_s)
+      dv3 = Vector.parse(dv.to_s)
+
+      expect(dv.to_s).to eq("[1.0,2.0,3.0,4.0,5.0]")
+      expect(dv2.values).to eql(dv.values)
+      expect(dv3.values).to eql(dv.values)
+    end
+
+    it 'sparse vector' do
+      sv  = SparseVector.new(5, {1 => 3, 4 => 5})
+      sv2 = SparseVector.parse(sv.to_s)
+      sv3 = Vector.parse(sv.to_s)
+
+      expect(sv.to_s).to eq("(5,[1,4],[3.0,5.0])")
+      expect(sv2.size).to eq(sv.size)
+      expect(sv2.indices).to eq(sv.indices)
+      expect(sv2.values).to eq(sv.values)
+      expect(sv3.size).to eq(sv.size)
+      expect(sv3.indices).to eq(sv.indices)
+      expect(sv3.values).to eq(sv.values)
+    end
+  end
+
   it 'dot' do
     sv = SparseVector.new(4, {1 => 1, 3 => 2})
     dv = DenseVector.new([1.0, 2.0, 3.0, 4.0])
