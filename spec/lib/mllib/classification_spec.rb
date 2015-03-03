@@ -41,4 +41,14 @@ RSpec.describe 'Spark::Mllib classification' do
     end
   end
 
+  context 'naive bayes' do
+    it 'test' do
+      lrm = NaiveBayes.train(rdd1)
+
+      expect(lrm.predict(values1[0])).to be <= 0
+      expect(lrm.predict(values1[1])).to be >  0
+      expect(lrm.predict(values1[2])).to be <= 0
+      expect(lrm.predict(values1[3])).to be >  0
+    end
+  end
 end

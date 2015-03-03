@@ -26,7 +26,8 @@ module Spark
     autoload :LogisticRegressionWithLBFGS, 'spark/mllib/classification/logistic_regression'
     autoload :SVMModel,                    'spark/mllib/classification/svm'
     autoload :SVMWithSGD,                  'spark/mllib/classification/svm'
-
+    autoload :NaiveBayesModel,             'spark/mllib/classification/naive_bayes'
+    autoload :NaiveBayes,                  'spark/mllib/classification/naive_bayes'
 
     def self.prepare
       return if @prepared
@@ -71,6 +72,8 @@ module Spark
       Object.const_set(:LogisticRegressionWithLBFGS, LogisticRegressionWithLBFGS)
       Object.const_set(:SVMModel, SVMModel)
       Object.const_set(:SVMWithSGD, SVMWithSGD)
+      Object.const_set(:NaiveBayesModel, NaiveBayesModel)
+      Object.const_set(:NaiveBayes, NaiveBayes)
 
       @loaded = true
       nil

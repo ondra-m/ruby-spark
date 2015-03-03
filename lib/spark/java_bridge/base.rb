@@ -96,14 +96,18 @@ module Spark
         end
       end
 
+      # Array problem:
+      #   Rjb:   object.toArray -> Array
+      #   Jruby: object.toArray -> java.lang.Object
+      #
       def java_to_ruby(object)
         if java_object?(object)
 
           case object.getClass.name
           when 'scala.collection.convert.Wrappers$SeqWrapper'
-            # Rjb:   object.toArray -> Array
-            # Jruby: object.toArray -> java.lang.Object
             object.toArray.to_a.map!{|item| java_to_ruby(item)}
+          when 'scala.collection.mutable.WrappedArray$ofRef'
+            object.array.to_a.map!{|item| java_to_ruby(item)}
           when 'org.apache.spark.mllib.regression.LabeledPoint'
             Spark::Mllib::LabeledPoint.from_java(object)
           when 'org.apache.spark.mllib.linalg.DenseVector'
