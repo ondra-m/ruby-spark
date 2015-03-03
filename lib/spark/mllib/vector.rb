@@ -2,8 +2,6 @@ module Spark
   module Mllib
     class Vector < BaseVector
 
-      include Spark::Helper::Serialize
-
       def self.dense(*args)
         DenseVector.new(*args)
       end
@@ -40,10 +38,10 @@ end
 # Dense vector is a vector in which most of the elements are non-zero.
 #
 # == Example:
-#   DenseVector.new([1,2,3,4,5])
+#   DenseVector.new([1,2,3,4,5]).values
 #   # => [1, 2, 3, 4, 5]
 #
-#   DenseVector.new(1..5)
+#   DenseVector.new(1..5).values
 #   # => [1, 2, 3, 4, 5]
 #
 module Spark
@@ -105,10 +103,10 @@ end
 # Sparse vector is a vector in which most of the elements are zero.
 #
 # == Example:
-#   SparseVector.new(4, {1 => 1.0, 3 => 5.5})
+#   SparseVector.new(4, {1 => 1.0, 3 => 5.5}).values
 #   # => [0, 1.0, 0, 5.5]
 #
-#   SparseVector.new(4, [[1, 3], [1.0, 5.5]])
+#   SparseVector.new(4, [[1, 3], [1.0, 5.5]]).values
 #   # => [0, 1.0, 0, 5.5]
 #
 module Spark

@@ -4,7 +4,7 @@ module Spark
   module Mllib
     class BaseVector
 
-      attr_reader :__vector__
+      attr_reader :vector
 
       def initialize(stype, *args)
         case stype.to_s.downcase
@@ -19,21 +19,23 @@ module Spark
 
       def init_as_dense(*args)
         values = args.shift
-        @__vector__ = NVector.new('float', values.size)
-        self[] = values
+        @vector = NVector.float(values.size)
+        @vector[] = values
       end
 
       def init_as_sparse(*args)
         size = args.shift
-        @__vector__ = NVector.new('float', size)
-        fill!(0)
+        @vector = NVector.float(size)
+        @vector.fill!(0)
       end
 
       def dot(vector)
         if vector.is_a?(BaseVector)
-          self * vector.__vector__
+          @vector * vector.vector
+        elsif vector.is_a?(NVector)
+          @vector * vector
         else
-          self * vector
+          @vector * NVector[*vector]
         end
       end
 
@@ -49,17 +51,17 @@ module Spark
         to_a
       end
 
-      # NArray is initialized on `self.new` instead of `initialize`
+      # NVector is initialized on `self.new` instead of `initialize`
       def method_missing(method, *args, &block)
         args.map! do |arg|
           if arg.is_a?(BaseVector)
-            arg.__vector__
+            arg.vector
           else
             arg
           end
         end
 
-        @__vector__.__send__(method, *args, &block)
+        @vector.__send__(method, *args, &block)
       end
 
     end
