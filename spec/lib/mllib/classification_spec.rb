@@ -29,4 +29,16 @@ RSpec.describe 'Spark::Mllib classification' do
       expect(lrm.predict(values1[3])).to be >  0
     end
   end
+
+  context 'svm' do
+    it 'test' do
+      lrm = SVMWithSGD.train(rdd1)
+
+      expect(lrm.predict(values1[0])).to be <= 0
+      expect(lrm.predict(values1[1])).to be >  0
+      expect(lrm.predict(values1[2])).to be <= 0
+      expect(lrm.predict(values1[3])).to be >  0
+    end
+  end
+
 end
