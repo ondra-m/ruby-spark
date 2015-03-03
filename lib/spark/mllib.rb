@@ -4,6 +4,9 @@ module Spark
     autoload :Vector,       'spark/mllib/vector'
     autoload :DenseVector,  'spark/mllib/vector'
     autoload :SparseVector, 'spark/mllib/vector'
+    autoload :Matrix,       'spark/mllib/matrix'
+    autoload :DenseMatrix,  'spark/mllib/matrix'
+    autoload :SparseMatrix, 'spark/mllib/matrix'
 
     # Regression
     autoload :LabeledPoint,            'spark/mllib/regression/labeled_point'
@@ -30,10 +33,13 @@ module Spark
 
       if narray?
         require 'spark/mllib/narray/vector'
+        require 'spark/mllib/narray/matrix'
       elsif mdarray?
         require 'spark/mllib/mdarray/vector'
+        require 'spark/mllib/mdarray/matrix'
       else
         require 'spark/mllib/matrix/vector'
+        require 'spark/mllib/matrix/matrix'
       end
 
       @prepared = true
@@ -48,6 +54,9 @@ module Spark
       Object.const_set(:Vector, Vector)
       Object.const_set(:DenseVector, DenseVector)
       Object.const_set(:SparseVector, SparseVector)
+      Object.const_set(:Matrix, Matrix)
+      Object.const_set(:DenseMatrix, DenseMatrix)
+      Object.const_set(:SparseMatrix, SparseMatrix)
       Object.const_set(:LabeledPoint, LabeledPoint)
       Object.const_set(:RegressionModel, RegressionModel)
       Object.const_set(:LinearRegressionModel, LinearRegressionModel)
