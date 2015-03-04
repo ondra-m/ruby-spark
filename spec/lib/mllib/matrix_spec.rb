@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-RSpec.describe Spark::Mllib::Matrix do
+RSpec.describe 'Spark::Mllib::Matrix' do
   context 'dense' do
     it 'construct' do
       values = [[1.0, 0.0, 4.0], [0.0, 3.0, 5.0], [2.0, 0.0, 6.0]]
@@ -20,7 +20,7 @@ RSpec.describe Spark::Mllib::Matrix do
       matrix = SparseMatrix.new(3, 4, column_pointers, row_indices, values)
 
       expect(matrix.shape).to eq([3, 4])
-      expect(matrix.values).to eq(
+      expect(matrix.to_a).to eq(
         [
           [0.0, 0.0, 0.0, 0.0],
           [1.0, 0.0, 4.0, 0.0],

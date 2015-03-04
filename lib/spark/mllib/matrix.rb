@@ -1,6 +1,6 @@
 module Spark
   module Mllib
-    class Matrix < BaseMatrix
+    module Matrices
 
       def self.dense(*args)
         DenseMatrix.new(*args)
@@ -22,18 +22,26 @@ module Spark
   end
 end
 
+module Spark
+  module Mllib
+    class MatrixBase < MatrixAdapter
+
+    end
+  end
+end
+
 ##
 # DenseMatrix
 #
-#   DenseMatrix.new(2, 3, [[1,2,3], [4,5,6]).values
+#   DenseMatrix.new(2, 3, [[1,2,3], [4,5,6]]).values
 #   # => [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
 #
 module Spark
   module Mllib
-    class DenseMatrix < Matrix
+    class DenseMatrix < MatrixBase
 
       def initialize(rows, cols, values)
-        super('dense', rows, cols, values.to_a)
+        super(:dense, rows, cols, values.to_a)
       end
 
     end
@@ -72,16 +80,16 @@ end
 #
 module Spark
   module Mllib
-    class SparseMatrix < Matrix
+    class SparseMatrix < MatrixBase
 
       attr_reader :col_pointers, :row_indices
 
       def initialize(rows, cols, col_pointers, row_indices, values)
-        super('sparse', rows, cols)
+        super(:sparse, rows, cols)
 
         @col_pointers = col_pointers
         @row_indices = row_indices
-        @_values = values
+        @values = values
 
         j = 0
         while j < cols

@@ -4,7 +4,7 @@ module Spark
     autoload :Vectors,      'spark/mllib/vector'
     autoload :DenseVector,  'spark/mllib/vector'
     autoload :SparseVector, 'spark/mllib/vector'
-    autoload :Matrix,       'spark/mllib/matrix'
+    autoload :Matrices,     'spark/mllib/matrix'
     autoload :DenseMatrix,  'spark/mllib/matrix'
     autoload :SparseMatrix, 'spark/mllib/matrix'
 
@@ -32,16 +32,19 @@ module Spark
     def self.prepare
       return if @prepared
 
-      if narray?
-        require 'spark/mllib/narray/vector'
-        require 'spark/mllib/narray/matrix'
-      elsif mdarray?
-        require 'spark/mllib/mdarray/vector'
-        require 'spark/mllib/mdarray/matrix'
-      else
-        require 'spark/mllib/matrix/vector'
-        require 'spark/mllib/matrix/matrix'
-      end
+      # if narray?
+      #   require 'spark/mllib/narray/vector'
+      #   require 'spark/mllib/narray/matrix'
+      # elsif mdarray?
+      #   require 'spark/mllib/mdarray/vector'
+      #   require 'spark/mllib/mdarray/matrix'
+      # else
+      #   require 'spark/mllib/matrix/vector'
+      #   require 'spark/mllib/matrix/matrix'
+      # end
+
+      require 'spark/mllib/ruby_matrix/vector_adapter'
+      require 'spark/mllib/ruby_matrix/matrix_adapter'
 
       @prepared = true
       nil
@@ -55,7 +58,7 @@ module Spark
       Object.const_set(:Vectors, Vectors)
       Object.const_set(:DenseVector, DenseVector)
       Object.const_set(:SparseVector, SparseVector)
-      Object.const_set(:Matrix, Matrix)
+      Object.const_set(:Matrices, Matrices)
       Object.const_set(:DenseMatrix, DenseMatrix)
       Object.const_set(:SparseMatrix, SparseMatrix)
       Object.const_set(:LabeledPoint, LabeledPoint)
