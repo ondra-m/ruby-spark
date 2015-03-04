@@ -87,10 +87,7 @@ module Spark
         end
 
         labels, pi, theta = Spark.jb.call(RubyMLLibAPI.new, 'trainNaiveBayes', rdd, lambda)
-
-        labels = labels.values
-        pi = pi.values
-        theta = Spark::Mllib::Matrix.dense(theta.size, theta.first.size, theta)
+        theta = Spark::Mllib::Matrices.dense(theta.size, theta.first.size, theta)
 
         NaiveBayesModel.new(labels, pi, theta)
       end

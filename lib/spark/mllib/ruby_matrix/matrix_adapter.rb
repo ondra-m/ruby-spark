@@ -6,19 +6,25 @@ module Spark
 
       def self.new(*args)
         object = self.allocate
-        object.__send__(:initialize, *args)
+
+        if args.size == 2
+          # Matrix is initialized from Matrix
+          # Arguments: rows, column count
+          object.__send__(:original_initialize, *args)
+        else
+          object.__send__(:initialize, *args)
+        end
+
         object
       end
 
-      def initialize(*args)
-        case args.shift
+      alias_method :original_initialize, :initialize
+
+      def initialize(type, rows, cols, values=nil)
+        case type
         when :dense
-          rows = args.shift
-          cols = args.shift
-          values = args.shift.dup
+          values = values.dup
         when :sparse
-          rows = args.shift
-          cols = args.shift
           values = Array.new(rows) { Array.new(cols) { 0.0 } }
         else
           raise Spark::MllibError, 'Unknow vector type.'

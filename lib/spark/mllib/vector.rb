@@ -127,7 +127,6 @@ module Spark
       attr_reader :indices
 
       def initialize(arg1, arg2=nil, arg3=nil)
-        if arg1.is_a?(Numeric)
           super(:sparse, arg1)
 
           if arg2.is_a?(Hash)
@@ -141,9 +140,6 @@ module Spark
           @indices.zip(@values).each do |(index, value)|
             self[index] = value
           end
-        else
-          super(:dense, arg1.to_a)
-        end
       end
 
       # Covert string to vector

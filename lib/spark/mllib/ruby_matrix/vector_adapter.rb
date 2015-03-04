@@ -2,6 +2,12 @@ require 'matrix'
 
 # Based on ruby 2.1
 
+class Vector
+  def self.elements(array, copy=true)
+    DenseVector.new(convert_to_array(array, copy))
+  end
+end
+
 module Spark
   module Mllib
     class VectorAdapter < ::Vector
@@ -29,6 +35,14 @@ module Spark
         @elements[index] = value
       end
 
+      def dot(other)
+        if other.is_a?(MatrixBase)
+          other * self
+        else
+          inner_product(other)
+        end
+      end
+
       def squared_distance(other)
         diff = self - other
         diff.dot(diff)
@@ -37,8 +51,6 @@ module Spark
       def values
         @values || to_a
       end
-
-      alias_method :dot, :inner_product
 
     end
   end
