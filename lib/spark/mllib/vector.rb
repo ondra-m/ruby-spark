@@ -1,6 +1,6 @@
 module Spark
   module Mllib
-    class Vector < BaseVector
+    module Vectors
 
       def self.dense(*args)
         DenseVector.new(*args)
@@ -32,6 +32,14 @@ module Spark
   end
 end
 
+module Spark
+  module Mllib
+    class VectorBase < VectorAdapter
+
+    end
+  end
+end
+
 ##
 # A dense vector represented by a value array.
 #
@@ -46,10 +54,10 @@ end
 #
 module Spark
   module Mllib
-    class DenseVector < Vector
+    class DenseVector < VectorBase
 
       def initialize(values)
-        super('dense', values.to_a)
+        super(:dense, values.to_a)
       end
 
       # Covert string to vector
@@ -109,33 +117,33 @@ end
 #   SparseVector.new(4, [[1, 3], [1.0, 5.5]]).values
 #   # => [0, 1.0, 0, 5.5]
 #
+#   SparseVector.new(4, [1, 3], [1.0, 5.5]).values
+#   # => [0, 1.0, 0, 5.5]
+#
 module Spark
   module Mllib
-    class SparseVector < Vector
+    class SparseVector < VectorBase
 
       attr_reader :indices
 
-      def initialize(size, indices_and_values)
-        super('sparse', size)
+      def initialize(arg1, arg2=nil, arg3=nil)
+        if arg1.is_a?(Numeric)
+          super(:sparse, arg1)
 
-        if indices_and_values.is_a?(Hash)
-          @indices = indices_and_values.keys
-          @_values = indices_and_values.values
+          if arg2.is_a?(Hash)
+            @indices = arg2.keys
+            @values = arg2.values
+          else
+            @indices = arg2
+            @values = arg3
+          end
+
+          @indices.zip(@values).each do |(index, value)|
+            self[index] = value
+          end
         else
-          @indices = indices_and_values[0]
-          @_values = indices_and_values[1]
+          super(:dense, arg1.to_a)
         end
-
-        @_values.map!(&:to_f)
-
-        @indices.zip(@_values).each do |(index, value)|
-          self[index] = value
-        end
-      end
-
-      # Vectors can have own values
-      def values
-        @_values
       end
 
       # Covert string to vector
@@ -150,7 +158,7 @@ module Spark
           values = data[3].split(',')
           values.map!(&:to_f)
 
-          SparseVector.new(size, [indices, values])
+          SparseVector.new(size, indices, values)
         else
           raise ArgumentError, 'Unknow format for SparseVector.'
         end
@@ -169,7 +177,7 @@ module Spark
       end
 
       def marshal_load(array)
-        initialize(array[0], [array[1], array[2]])
+        initialize(array[0], array[1], array[2])
       end
 
     end
