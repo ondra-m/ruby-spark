@@ -53,7 +53,7 @@ module Spark
       # Predict values for a single data point or an RDD of points using
       # the model trained.
       def predict(vector)
-        vector = Spark::Mllib::Vector.to_vector(vector)
+        vector = Spark::Mllib::Vectors.to_vector(vector)
         array = (vector.dot(theta) + pi).to_a
         index = array.index(array.max)
         labels[index]

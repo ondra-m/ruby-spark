@@ -49,7 +49,7 @@ module Spark
       # Predict values for a single data point or an RDD of points using
       # the model trained.
       def predict(vector)
-        vector = Spark::Mllib::Vector.to_vector(vector)
+        vector = Spark::Mllib::Vectors.to_vector(vector)
         margin = weights.dot(vector) + intercept
 
         if threshold.nil?

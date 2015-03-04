@@ -28,7 +28,7 @@ end
 #   lrm.intercept # => 0.0
 #   lrm.weights   # => [0.9285714285714286]
 #
-#   lrm.predict([0.0]) - 0 < 0.5
+#   lrm.predict([0.0]) < 0.5
 #   # => true
 #
 #   lrm.predict([1.0]) - 1 < 0.5
@@ -49,7 +49,7 @@ end
 #   lrm.intercept # => 0.0
 #   lrm.weights   # => [0.9285714285714286]
 #
-#   lrm.predict([0.0]) - 0 < 0.5
+#   lrm.predict([0.0]) < 0.5
 #   # => true
 #
 #   lrm.predict(SparseVector.new(1, {0 => 1.0})) - 1 < 0.5

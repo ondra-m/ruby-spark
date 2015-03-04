@@ -20,7 +20,7 @@ module Spark
 
       def initialize(label, features)
         @label = label.to_f
-        @features = Spark::Mllib::Vector.to_vector(features)
+        @features = Spark::Mllib::Vectors.to_vector(features)
       end
 
       def self.from_java(object)

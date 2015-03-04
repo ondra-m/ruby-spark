@@ -10,7 +10,7 @@ module Spark
       attr_reader :weights, :intercept
 
       def initialize(weights, intercept)
-        @weights = Spark::Mllib::Vector.to_vector(weights)
+        @weights = Spark::Mllib::Vectors.to_vector(weights)
         @intercept = intercept.to_f
       end
 
@@ -28,7 +28,7 @@ module Spark
       # => true
       #
       def predict(data)
-        data = Spark::Mllib::Vector.to_vector(data)
+        data = Spark::Mllib::Vectors.to_vector(data)
         @weights.dot(data) + @intercept
       end
 
@@ -66,7 +66,7 @@ module Spark
         end
 
         # Initial weights is optional for user (not for Spark)
-        options[:initial_weights] = Vector.to_vector(options[:initial_weights] || [0.0] * first.features.size)
+        options[:initial_weights] = Vectors.to_vector(options[:initial_weights] || [0.0] * first.features.size)
       end
 
     end

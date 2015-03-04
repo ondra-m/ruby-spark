@@ -5,7 +5,7 @@ module Spark
       attr_reader :weights, :intercept, :threshold
 
       def initialize(weights, intercept)
-        @weights = Spark::Mllib::Vector.to_vector(weights)
+        @weights = Spark::Mllib::Vectors.to_vector(weights)
         @intercept = intercept.to_f
         @threshold = nil
       end

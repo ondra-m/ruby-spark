@@ -15,12 +15,14 @@ module Spark
       def initialize(*args)
         case args.shift
         when :dense
-          super(args.shift.dup)
+          values = args.shift.dup
         when :sparse
-          super([0.0] * args.shift.to_i)
+          values = [0.0] * args.shift.to_i
         else
           raise Spark::MllibError, 'Unknow vector type.'
         end
+
+        super(values)
       end
 
       def []=(index, value)
