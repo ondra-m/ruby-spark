@@ -205,16 +205,26 @@ class Marshal(is: DataInputStream) {
   }
 
   def createDenseVector(data: Any): DenseVector = {
-    new DenseVector(data.asInstanceOf[Array[_]].map(_.asInstanceOf[Double]))
+    new DenseVector(data.asInstanceOf[Array[_]].map(toDouble(_)))
   }
 
   def createSparseVector(data: Any): SparseVector = {
     val array = data.asInstanceOf[Array[_]]
     val size = array(0).asInstanceOf[Int]
     val indices = array(1).asInstanceOf[Array[_]].map(_.asInstanceOf[Int])
-    val values = array(2).asInstanceOf[Array[_]].map(_.asInstanceOf[Double])
+    val values = array(2).asInstanceOf[Array[_]].map(toDouble(_))
 
     new SparseVector(size, indices, values)
+  }
+
+
+  // ----------------------------------------------------------------------------------------------
+  // Helpers
+
+  def toDouble(data: Any): Double = data match {
+    case x: Int => x.toDouble
+    case x: Double => x
+    case _ => 0.0
   }
 
 
