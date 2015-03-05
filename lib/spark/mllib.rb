@@ -2,9 +2,11 @@ module Spark
   module Mllib
     # Linear algebra
     autoload :Vectors,      'spark/mllib/vector'
+    autoload :VectorBase,   'spark/mllib/vector'
     autoload :DenseVector,  'spark/mllib/vector'
     autoload :SparseVector, 'spark/mllib/vector'
     autoload :Matrices,     'spark/mllib/matrix'
+    autoload :MatrixBase,   'spark/mllib/matrix'
     autoload :DenseMatrix,  'spark/mllib/matrix'
     autoload :SparseMatrix, 'spark/mllib/matrix'
 

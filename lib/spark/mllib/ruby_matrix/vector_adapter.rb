@@ -36,7 +36,7 @@ module Spark
       end
 
       def dot(other)
-        if other.is_a?(MatrixBase)
+        if other.is_a?(Spark::Mllib::MatrixBase)
           other * self
         else
           inner_product(other)
