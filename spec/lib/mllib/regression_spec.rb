@@ -39,13 +39,28 @@ RSpec.describe 'Spark::Mllib regression' do
   end
 
   context 'linear regression' do
-    it 'test' do
-      lrm = LinearRegressionWithSGD.train(rdd1)
+    context 'test' do
+      let(:lrm) { LinearRegressionWithSGD.train(rdd1) }
 
-      expect(lrm.predict(values1[0])).to be <= 0
-      expect(lrm.predict(values1[1])).to be >  0
-      expect(lrm.predict(values1[2])).to be <= 0
-      expect(lrm.predict(values1[3])).to be >  0
+      it 'test' do
+        expect(lrm.predict(values1[0])).to be <= 0
+        expect(lrm.predict(values1[1])).to be >  0
+        expect(lrm.predict(values1[2])).to be <= 0
+        expect(lrm.predict(values1[3])).to be >  0
+      end
+
+      it 'test via rdd' do
+        rdd = $sc.parallelize(values1, 1)
+        rdd = rdd.map(lambda{|value| model.predict(value)})
+        rdd = rdd.bind(model: lrm)
+
+        result = rdd.collect
+
+        expect(result[0]).to be <= 0
+        expect(result[1]).to be >  0
+        expect(result[2]).to be <= 0
+        expect(result[3]).to be >  0
+      end
     end
 
     # Y = 3 + 10*X1 + 10*X2
