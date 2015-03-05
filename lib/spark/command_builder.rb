@@ -11,20 +11,30 @@ module Spark
 
     attr_reader :command
 
-    def_delegators :@command, :serializer, :serializer=, :deserializer, :deserializer=, :libraries,
-                   :accumulators, :accumulators=
+    def_delegators :@command, :serializer, :serializer=, :deserializer, :deserializer=, :commands,
+                              :commands=, :libraries, :libraries=, :accumulators, :accumulators=,
+                              :bound_objects, :bound_objects=
 
     def initialize(serializer, deserializer=nil)
-      @command = Spark::Command.new
+      create_command
       self.serializer   = serializer
       self.deserializer = deserializer || serializer.dup
     end
 
-    # Deep copy without accumulators
-    # => prevent recreating Accumulator class
+    def create_command
+      @command = Spark::Command.new
+    end
+
     def deep_copy
-      copy = Marshal.load(Marshal.dump(self))
-      copy.accumulators = self.accumulators.dup
+      # copy = Marshal.load(Marshal.dump(self))
+      copy = self.dup
+      copy.create_command
+      copy.serializer    = self.serializer.dup
+      copy.deserializer  = self.deserializer.dup
+      copy.commands      = self.commands.dup
+      copy.libraries     = self.libraries.dup
+      copy.accumulators  = self.accumulators.dup
+      copy.bound_objects = self.bound_objects.dup
       copy
     end
 
@@ -49,7 +59,7 @@ module Spark
       end
 
       comm = klass.new(*built_args)
-      @command.add_command(comm)
+      @command.commands << comm
       self
     end
 
