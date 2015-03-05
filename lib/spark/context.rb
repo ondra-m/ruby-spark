@@ -11,6 +11,7 @@ module Spark
 
     include Spark::Helper::System
     include Spark::Helper::Parser
+    include Spark::Helper::Logger
 
     attr_reader :jcontext, :jaccumulator, :temp_dir
 
@@ -32,11 +33,14 @@ module Spark
       accum_server.start
       @jaccumulator = @jcontext.accumulator(ArrayList.new, RubyAccumulatorParam.new(accum_server.host, accum_server.port))
 
+      log_info("Ruby accumulator server is running on port #{accum_server.port}")
+
       set_call_site('Ruby') # description of stage
     end
 
     def stop
       Spark::Accumulator::Server.stop
+      log_info('Ruby accumulator server was stopped')
       @jcontext.stop
     end
 

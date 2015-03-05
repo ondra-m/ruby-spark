@@ -6,26 +6,26 @@ module Spark
         base.send :extend,  Methods
         base.send :include, Methods
       end
-     
+
       module Methods
         def log_info(message)
-          Spark::Logger.info(message)
+          Spark.logger.info(message)
         end
 
         def log_debug(message)
-          Spark::Logger.debug(message)
+          Spark.logger.debug(message)
         end
 
         def log_trace(message)
-          Spark::Logger.trace(message)
+          Spark.logger.trace(message)
         end
 
         def log_warning(message)
-          Spark::Logger.warning(message)
+          Spark.logger.warning(message)
         end
 
         def log_error(message)
-          Spark::Logger.error(message)
+          Spark.logger.error(message)
         end
 
         alias_method :logInfo,    :log_info

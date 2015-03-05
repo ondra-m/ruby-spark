@@ -4,68 +4,70 @@ Spark.load_lib
 module Spark
   class Logger
 
-    def self.logger
-      JLogger.getLogger("Ruby")
+    attr_reader :jlogger
+
+    def initialize
+      @jlogger = JLogger.getLogger('Ruby')
     end
 
-    def self.level_off
-      JLevel.toLevel("OFF")
+    def level_off
+      JLevel.toLevel('OFF')
     end
 
     # Disable all Spark log
-    def self.disable
-      logger.setLevel(level_off)
-      JLogger.getLogger("org").setLevel(level_off)
-      JLogger.getLogger("akka").setLevel(level_off)
+    def disable
+      jlogger.setLevel(level_off)
+      JLogger.getLogger('org').setLevel(level_off)
+      JLogger.getLogger('akka').setLevel(level_off)
       JLogger.getRootLogger.setLevel(level_off)
     end
 
-    def self.enabled?
+    def enabled?
       !disabled?
     end
 
-    def self.info(message)
-      logger.info(message) if info?
+    def info(message)
+      jlogger.info(message) if info?
     end
 
-    def self.debug(message)
-      logger.debug(message) if debug?
+    def debug(message)
+      jlogger.debug(message) if debug?
     end
 
-    def self.trace(message)
-      logger.trace(message) if trace?
+    def trace(message)
+      jlogger.trace(message) if trace?
     end
 
-    def self.warning(message)
-      logger.warn(message) if warning?
+    def warning(message)
+      jlogger.warn(message) if warning?
     end
 
-    def self.error(message)
-      logger.error(message) if error?
+    def error(message)
+      jlogger.error(message) if error?
     end
 
-    def self.info?
-      level_enabled?("info")
+    def info?
+      level_enabled?('info')
     end
 
-    def self.debug?
-      level_enabled?("debug")
+    def debug?
+      level_enabled?('debug')
     end
 
-    def self.trace?
-      level_enabled?("trace")
+    def trace?
+      level_enabled?('trace')
     end
 
-    def self.warning?
-      level_enabled?("warn")
+    def warning?
+      level_enabled?('warn')
     end
 
-    def self.error?
-      level_enabled?("error")
+    def error?
+      level_enabled?('error')
     end
 
-    def self.level_enabled?(type)
-      logger.isEnabledFor(JPriority.toPriority(type.upcase))
+    def level_enabled?(type)
+      jlogger.isEnabledFor(JPriority.toPriority(type.upcase))
     end
 
   end

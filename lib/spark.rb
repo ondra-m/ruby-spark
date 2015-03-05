@@ -37,7 +37,6 @@ module Spark
   autoload :Mllib,          'spark/mllib'
 
   include Helper::System
-  include Helper::Logger
 
   def self.print_logo(message=nil)
     puts <<-STRING
@@ -105,7 +104,7 @@ module Spark
   def self.stop
     @context.stop
     RubyWorker.stopServer
-    log_info('Workers were stopped')
+    logger.info('Workers were stopped')
   rescue
     nil
   ensure
@@ -116,6 +115,10 @@ module Spark
   def self.started?
     # !!(@config && @context)
     !!@context
+  end
+
+  def self.logger
+    @logger ||= Spark::Logger.new
   end
 
   # Root of the gem
