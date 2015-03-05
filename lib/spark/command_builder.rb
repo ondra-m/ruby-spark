@@ -20,14 +20,6 @@ module Spark
       self.deserializer = deserializer || serializer.dup
     end
 
-    # def self.error(message)
-    #   raise Spark::CommandError, message
-    # end
-
-    # def error(message)
-    #   self.class.error(message)
-    # end
-
     # Deep copy without accumulators
     # => prevent recreating Accumulator class
     def deep_copy
@@ -69,6 +61,11 @@ module Spark
       @command.accumulators += accumulators
     end
 
+    def bind(objects)
+      objects.symbolize_keys!
+      @command.bound_objects.merge!(objects)
+    end
+
     private
 
         # Serialized can be Proc and Method
@@ -80,14 +77,14 @@ module Spark
         # * *method:* Method class
         #
         def serialize_function(func)
-          case func.class.name
-          when 'String'
+          case func
+          when String
             serialize_function_from_string(func)
-          when 'Symbol'
+          when Symbol
             serialize_function_from_symbol(func)
-          when 'Proc'
+          when Proc
             serialize_function_from_proc(func)
-          when 'Method'
+          when Method
             serialize_function_from_method(func)
           else
             raise Spark::CommandError, 'You must enter String, Symbol, Proc or Method.'

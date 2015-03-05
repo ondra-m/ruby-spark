@@ -2,7 +2,7 @@ module Spark
   class Command
 
     attr_accessor :serializer, :deserializer
-    attr_accessor :libraries, :accumulators
+    attr_accessor :libraries, :accumulators, :bound_objects
 
     def initialize
       @serializer = nil
@@ -10,6 +10,7 @@ module Spark
       @commands = []
       @libraries = []
       @accumulators = []
+      @bound_objects = {}
     end
 
     def build
@@ -25,6 +26,11 @@ module Spark
     def execute(iterator, split_index)
       # Require necessary libraries
       libraries.each{|lib| require lib}
+
+      # Prepare bound objects
+      @commands.each do |command|
+        command.__objects__ = @bound_objects
+      end
 
       # Prepare for running
       @commands.each(&:prepare)

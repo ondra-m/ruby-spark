@@ -80,7 +80,7 @@ class Spark::Command::Base
   # some command contains error (e.g. badly serialized lambda).
   #
   # == What is doing?
-  # * evaluting function (now it is just a string)
+  # * evaluting function
   #
   def prepare
     return if prepared?
@@ -110,6 +110,20 @@ class Spark::Command::Base
 
   # This method is called before every execution.
   def before_run
+  end
+
+
+  # ===============================================================================================
+  # Bound objects
+
+  attr_accessor :__objects__
+
+  def method_missing(method, *args, &block)
+    if __objects__ && __objects__.has_key?(method)
+      return __objects__[method]
+    end
+
+    super
   end
 
 end

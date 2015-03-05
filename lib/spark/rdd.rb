@@ -61,6 +61,26 @@ module Spark
       self
     end
 
+    # Bind object to RDD
+    #
+    #   text = "test"
+    #
+    #   rdd = $sc.parallelize(0..5)
+    #   rdd = rdd.map(lambda{|x| x.to_s + " " + text})
+    #   rdd = rdd.bind(text: text)
+    #
+    #   rdd.collect
+    #   # => ["0 test", "1 test", "2 test", "3 test", "4 test", "5 test"]
+    #
+    def bind(objects)
+      unless objects.is_a?(Hash)
+        raise ArgumentError, 'Argument must be a Hash.'
+      end
+
+      @command.bind(objects)
+      self
+    end
+
     def new_rdd_from_command(klass, *args)
       comm = add_command(klass, *args)
       PipelinedRDD.new(self, comm)
