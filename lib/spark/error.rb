@@ -4,6 +4,7 @@ module Spark
   end
 
   # Proc.to_source
+  # Java object cannot be converted
   class SerializeError < StandardError
   end
 

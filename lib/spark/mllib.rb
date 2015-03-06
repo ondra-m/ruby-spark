@@ -31,6 +31,11 @@ module Spark
     autoload :NaiveBayesModel,             'spark/mllib/classification/naive_bayes'
     autoload :NaiveBayes,                  'spark/mllib/classification/naive_bayes'
 
+    # Clustering
+    # autoload :ClusteringMethodBase, 'spark/mllib/clustering/common'
+    autoload :KMeans,               'spark/mllib/clustering/kmeans'
+    autoload :KMeansModel,          'spark/mllib/clustering/kmeans'
+
     def self.prepare
       return if @prepared
 
@@ -79,6 +84,8 @@ module Spark
       Object.const_set(:SVMWithSGD, SVMWithSGD)
       Object.const_set(:NaiveBayesModel, NaiveBayesModel)
       Object.const_set(:NaiveBayes, NaiveBayes)
+      Object.const_set(:KMeans, KMeans)
+      Object.const_set(:KMeansModel, KMeansModel)
 
       @loaded = true
       nil

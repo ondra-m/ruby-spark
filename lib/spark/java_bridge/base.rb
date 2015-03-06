@@ -119,6 +119,11 @@ module Spark
               result << java_to_ruby(iterator.next)
             end
             result
+          when 'org.apache.spark.mllib.clustering.KMeansModel'
+            Spark::Mllib::KMeansModel.from_java(object)
+          else
+            Spark.logger.warn("Java object '#{object.getClass.name}' was not converted.")
+            object
           end
 
         else
