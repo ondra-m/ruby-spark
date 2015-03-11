@@ -1,6 +1,9 @@
 require 'spark/command_validator'
 
 module Spark
+  ##
+  # Builder for building correct {Spark::Command}
+  #
   class CommandBuilder
 
     extend Forwardable
@@ -25,8 +28,9 @@ module Spark
       @command = Spark::Command.new
     end
 
+    # Do not user Marshal.dump(Marshal.load(self)) because some variables
+    # have marshal_dump prepared for worker.
     def deep_copy
-      # copy = Marshal.load(Marshal.dump(self))
       copy = self.dup
       copy.create_command
       copy.serializer    = self.serializer.dup

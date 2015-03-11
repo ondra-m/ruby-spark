@@ -1,4 +1,4 @@
-require "distribution"
+require 'distribution'
 
 # Random Generators
 module Spark
@@ -55,7 +55,7 @@ module Spark
       end
 
       def lazy_sample(iterator)
-        Enumerator::Lazy.new(iterator) do |yielder, value| 
+        Enumerator::Lazy.new(iterator) do |yielder, value|
           count = rng.rand
           count.times { yielder << value }
         end

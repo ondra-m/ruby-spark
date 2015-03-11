@@ -1,10 +1,10 @@
-##
-# RegressionModel
-#
-# A linear model that has a vector of coefficients and an intercept.
-#
 module Spark
   module Mllib
+    ##
+    # RegressionModel
+    #
+    # A linear model that has a vector of coefficients and an intercept.
+    #
     class RegressionModel
 
       attr_reader :weights, :intercept
@@ -18,14 +18,13 @@ module Spark
       # containing values for the independent variables.
       #
       # == Examples:
+      #   lm = RegressionModel.new([1.0, 2.0], 0.1)
       #
-      # lm = RegressionModel.new([1.0, 2.0], 0.1)
+      #   lm.predict([-1.03, 7.777]) - 14.624 < 1e-6
+      #   # => true
       #
-      # lm.predict([-1.03, 7.777]) - 14.624 < 1e-6
-      # => true
-      #
-      # lm.predict(SparseVector.new(2, {0 => -1.03, 1 => 7.777})) - 14.624 < 1e-6
-      # => true
+      #   lm.predict(SparseVector.new(2, {0 => -1.03, 1 => 7.777})) - 14.624 < 1e-6
+      #   # => true
       #
       def predict(data)
         data = Spark::Mllib::Vectors.to_vector(data)
@@ -37,13 +36,13 @@ module Spark
 end
 
 
-##
-# RegressionMethodBase
-#
-# Parent for regression methods
-#
 module Spark
   module Mllib
+    ##
+    # RegressionMethodBase
+    #
+    # Parent for regression methods
+    #
     class RegressionMethodBase
 
       def self.train(rdd, options)

@@ -1,12 +1,9 @@
-class Spark::Mllib::LassoModel < Spark::Mllib::RegressionModel
-end
-
 ##
-# LassoWithSGD
+# LassoModel
 #
 # Train a regression model with L1-regularization using Stochastic Gradient Descent.
 # This solves the l1-regularized least squares regression formulation
-#          f(weights) = 1/2n ||A weights-y||^2^  + regParam ||weights||_1
+#   f(weights) = 1/2n ||A weights-y||^2^  + regParam ||weights||_1
 # Here the data matrix has n rows, and the input RDD holds the set of rows of A, each with
 # its corresponding right hand side label y.
 # See also the documentation for the precise formulation.
@@ -49,6 +46,9 @@ end
 #   lrm.predict(SparseVector.new(1, {0 => 1.0})) - 1 < 0.5
 #   # => true
 #
+class Spark::Mllib::LassoModel < Spark::Mllib::RegressionModel
+end
+
 module Spark
   module Mllib
     class LassoWithSGD < RegressionMethodBase

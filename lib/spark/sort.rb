@@ -1,7 +1,3 @@
-# require "algorithms"
-require "tmpdir"
-require "tempfile"
-
 module Spark
   module InternalSorter
     class Base

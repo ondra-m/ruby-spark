@@ -1,4 +1,8 @@
 module Spark
+  ##
+  # Container which includes all commands and other things for worker
+  # Every RDD have own copy of Command
+  #
   class Command
 
     attr_accessor :serializer, :deserializer, :commands, :libraries, :accumulators, :bound_objects
@@ -11,10 +15,6 @@ module Spark
       @accumulators = []
       @bound_objects = {}
     end
-
-    # def build
-    #   @commands.each(&:build)
-    # end
 
     def execute(iterator, split_index)
       # Require necessary libraries

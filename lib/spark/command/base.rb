@@ -1,3 +1,8 @@
+##
+# Spark::Command::Base
+#
+# Parent for all commands (Map, FlatMap, Sort, ...)
+#
 class Spark::Command::Base
 
   DEFAULT_VARIABLE_OPTIONS = {
@@ -26,14 +31,20 @@ class Spark::Command::Base
 
 
   # ===============================================================================================
-  # Methods called after during class loading
+  # Methods called during class loading
   # This is not nicer way but these methods set/get classes variables for child
 
+  # Settings for command (variables)
   def self.settings
     init_settings
     class_variable_get(:@@settings)
   end
 
+  def settings
+    self.class.settings
+  end
+
+  # Init empty settings
   def self.init_settings
     if !class_variable_defined?(:@@settings)
       struct = Struct.new(:variables)
@@ -43,10 +54,21 @@ class Spark::Command::Base
     end
   end
 
-  def settings
-    self.class.settings
-  end
-
+  # New variable for command
+  #
+  # == Example:
+  #
+  #   class Map < Spark::Command::Base
+  #     variable :map_function
+  #   end
+  #
+  #   command = Map.new(1)
+  #
+  #   command.instance_variables
+  #   # => [:@map_function]
+  #   command.instance_variable_get(:@map_function)
+  #   # => 1
+  #
   def self.variable(name, options={})
     if settings.variables.has_key?(name)
       error "Function #{name} already exist."
@@ -59,6 +81,7 @@ class Spark::Command::Base
   # ===============================================================================================
   # Executing methods
 
+  # Execute command for data and split index
   def execute(iterator, split_index)
     # Implemented on Base but can be override
     before_run
@@ -80,7 +103,9 @@ class Spark::Command::Base
   # some command contains error (e.g. badly serialized lambda).
   #
   # == What is doing?
-  # * evaluting function
+  # * evaluate lambda
+  # * evaluate method
+  # * make new lambda
   #
   def prepare
     return if prepared?

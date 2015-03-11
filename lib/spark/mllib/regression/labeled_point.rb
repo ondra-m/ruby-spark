@@ -1,20 +1,18 @@
-##
-# LabeledPoint
-#
-# The features and labels of a data point.
-#
-# == Parameters:
-# label::
-#   Label for this data point.
-#
-# features::
-#   Vector of features for this point
-#
 module Spark
   module Mllib
+    ##
+    # LabeledPoint
+    #
+    # The features and labels of a data point.
+    #
+    # == Parameters:
+    # label::
+    #   Label for this data point.
+    #
+    # features::
+    #   Vector of features for this point
+    #
     class LabeledPoint
-
-      include Spark::Helper::Serialize
 
       attr_reader :label, :features
 

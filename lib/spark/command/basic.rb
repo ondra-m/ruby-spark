@@ -285,19 +285,6 @@ class Spark::Command::Take < _Base
 
     iterator
   end
-
-  # def run_with_enum(iterator, index)
-  #   if index == @last_part
-  #     return to_enum(:run_with_enum, iterator, index) unless block_given?
-
-  #     begin
-  #       @total.times { yield iterator.next }
-  #     rescue StopIteration
-  #     end
-  #   else
-  #     iterator
-  #   end
-  # end
 end
 
 # -------------------------------------------------------------------------------------------------

@@ -1,61 +1,61 @@
-##
-# A shared variable that can be accumulated, i.e., has a commutative and associative "add"
-# operation. Worker tasks on a Spark cluster can add values to an Accumulator with the `+=`
-# operator, but only the driver program is allowed to access its value, using value.
-# Updates from the workers get propagated automatically to the driver program.
-#
-# == Arguments:
-# id::
-#   Accumulator is accessible throught this ID.
-#   ID is same on driver process and on worker
-#
-# value::
-#   Initial value for accumulator. This values is stored only on driver process
-#
-# accum_param::
-#   How merge 2 value on worker or driver process.
-#   Symbol or Proc (or String)
-#
-# zero_value::
-#   Initial value for worker process
-#
-#
-# == Examples:
-#
-#   accum1 = $sc.accumulator(0, 1)
-#   accum2 = $sc.accumulator(1, 2, :*, 1)
-#   accum3 = $sc.accumulator(0, 3, lambda{|max, val| val > max ? val : max})
-#
-#   accum1 += 1
-#
-#   accum2.add(2)
-#   accum2.add(2)
-#   accum2.add(2)
-#
-#   accum3.add(9)
-#   accum3.add(6)
-#   accum3.add(7)
-#
-#   accum1.value # => 1
-#   accum2.value # => 8
-#   accum3.value # => 9
-#
-#   func = Proc.new do |_, index|
-#     Accumulator[1].add(1)
-#     Accumulator[2].add(2)
-#     Accumulator[3].add(index * 10)
-#   end
-#
-#   rdd = $sc.parallelize(0..4, 4)
-#   rdd = rdd.accumulator(accum1, accum2).accumulator(accum3)
-#   rdd = rdd.map_partitions_with_index(func)
-#   rdd.collect
-#
-#   accum1.value # => 5
-#   accum2.value # => 128
-#   accum3.value # => 30
-#
 module Spark
+  ##
+  # A shared variable that can be accumulated, i.e., has a commutative and associative "add"
+  # operation. Worker tasks on a Spark cluster can add values to an Accumulator with the `+=`
+  # operator, but only the driver program is allowed to access its value, using value.
+  # Updates from the workers get propagated automatically to the driver program.
+  #
+  # == Arguments:
+  # id::
+  #   Accumulator is accessible throught this ID.
+  #   ID is same on driver process and on worker
+  #
+  # value::
+  #   Initial value for accumulator. This values is stored only on driver process
+  #
+  # accum_param::
+  #   How merge 2 value on worker or driver process.
+  #   Symbol or Proc (or String)
+  #
+  # zero_value::
+  #   Initial value for worker process
+  #
+  #
+  # == Examples:
+  #
+  #   accum1 = $sc.accumulator(0, 1)
+  #   accum2 = $sc.accumulator(1, 2, :*, 1)
+  #   accum3 = $sc.accumulator(0, 3, lambda{|max, val| val > max ? val : max})
+  #
+  #   accum1 += 1
+  #
+  #   accum2.add(2)
+  #   accum2.add(2)
+  #   accum2.add(2)
+  #
+  #   accum3.add(9)
+  #   accum3.add(6)
+  #   accum3.add(7)
+  #
+  #   accum1.value # => 1
+  #   accum2.value # => 8
+  #   accum3.value # => 9
+  #
+  #   func = Proc.new do |_, index|
+  #     Accumulator[1].add(1)
+  #     Accumulator[2].add(2)
+  #     Accumulator[3].add(index * 10)
+  #   end
+  #
+  #   rdd = $sc.parallelize(0..4, 4)
+  #   rdd = rdd.accumulator(accum1, accum2).accumulator(accum3)
+  #   rdd = rdd.map_partitions_with_index(func)
+  #   rdd.collect
+  #
+  #   accum1.value # => 5
+  #   accum2.value # => 128
+  #   accum3.value # => 30
+  #
   class Accumulator
 
     attr_reader :id, :value, :accum_param, :zero_value
@@ -288,6 +288,7 @@ module Spark
               Spark::Accumulator.get(data[0]).add(data[1])
             end
 
+            # http://stackoverflow.com/questions/28560133/ruby-server-java-scala-client-deadlock
             # socket.write_int(Spark::Constant::ACCUMULATOR_ACK)
           end
 

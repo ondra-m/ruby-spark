@@ -1,19 +1,10 @@
+# Gems and libraries
 require 'method_source'
 require 'forwardable'
 require 'sourcify'
 require 'socket'
-
-require 'ruby_spark_ext'
-
-require 'spark/ext/module'
-require 'spark/ext/object'
-require 'spark/ext/hash'
-require 'spark/ext/string'
-require 'spark/ext/integer'
-require 'spark/ext/ip_socket'
-require 'spark/ext/io'
-require 'spark/version'
-require 'spark/error'
+require 'tempfile'
+require 'tmpdir'
 
 module Spark
   autoload :Context,        'spark/context'
@@ -56,7 +47,7 @@ module Spark
   # Returns current configuration. Configurations can be changed until
   # context is initialized. In this case config is locked only for reading.
   #
-  # Configuration can be changed:
+  # == Configuration can be changed:
   #
   #   Spark.config.set('spark.app.name', 'RubySpark')
   #
@@ -113,7 +104,6 @@ module Spark
   end
 
   def self.started?
-    # !!(@config && @context)
     !!@context
   end
 
@@ -151,8 +141,9 @@ module Spark
   # Load dependent libraries, can be use once
   # Cannot load before CLI::install
   #
-  #   spark_home: path to directory where are located sparks .jar files
-  #               or single Spark jar
+  # == Parameters:
+  # spark_home::
+  #   path to directory where are located sparks .jar files or single Spark jar
   #
   def self.load_lib(spark_home=nil)
     return if @java_bridge
@@ -178,19 +169,26 @@ module Spark
 
 end
 
+# C/Java extensions
+require 'ruby_spark_ext'
+
+# Ruby core extensions
+require 'spark/ext/module'
+require 'spark/ext/object'
+require 'spark/ext/hash'
+require 'spark/ext/string'
+require 'spark/ext/integer'
+require 'spark/ext/ip_socket'
+require 'spark/ext/io'
+
+# Other requirments
+require 'spark/version'
+require 'spark/error'
+
+# Make sure that Spark be always stopped
 Kernel::at_exit do
   begin
     Spark.stop
   rescue
   end
-
-  # Error log
-  # error = $!
-  # if error
-  #   File.open("ruby-spark.log", "a") do |log|
-  #     log.puts %{[#{Time.now}] #{error.message}}
-  #     log.puts error.backtrace
-  #     log.puts "---"
-  #   end
-  # end
 end

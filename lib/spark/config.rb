@@ -1,16 +1,15 @@
 # Necessary libraries
 Spark.load_lib
 
-# Common configuration for RubySpark and Spark
-#
 module Spark
+  # Common configuration for RubySpark and Spark
   class Config
 
     include Spark::Helper::System
 
     PROPERTIES = {
-      "spark.shuffle.spill" => :boolean,
-      "spark.ruby.batch_size" => :integer
+      'spark.shuffle.spill' => :boolean,
+      'spark.ruby.batch_size' => :integer
     }
 
     # Initialize java SparkConf and load default configuration.
@@ -36,16 +35,16 @@ module Spark
     end
 
     def valid!
-      if !contains("spark.app.name")
-        raise Spark::ConfigurationError, "An application name must be set in your configuration"
+      if !contains('spark.app.name')
+        raise Spark::ConfigurationError, 'An application name must be set in your configuration'
       end
 
-      if !contains("spark.master")
-        raise Spark::ConfigurationError, "A master URL must be set in your configuration"
+      if !contains('spark.master')
+        raise Spark::ConfigurationError, 'A master URL must be set in your configuration'
       end
 
-      if Spark::Serializer.get(get("spark.ruby.serializer")).nil?
-        raise Spark::ConfigurationError, "Default serializer must be set in your configuration"
+      if Spark::Serializer.get(get('spark.ruby.serializer')).nil?
+        raise Spark::ConfigurationError, 'Default serializer must be set in your configuration'
       end
     end
 
@@ -79,25 +78,25 @@ module Spark
 
     def set(key, value)
       if read_only?
-        raise Spark::ConfigurationError, "Configuration is ready only"
+        raise Spark::ConfigurationError, 'Configuration is ready only'
       else
         spark_conf.set(key.to_s, value.to_s)
       end
     end
 
     def set_app_name(name)
-      set("spark.app.name", name)
+      set('spark.app.name', name)
     end
 
     def set_master(master)
-      set("spark.master", master)
+      set('spark.master', master)
     end
 
     def parse_boolean(value)
       case value
-      when "true"
+      when 'true'
         true
-      when "false"
+      when 'false'
         false
       end
     end
@@ -112,51 +111,51 @@ module Spark
     def set_default
       set_app_name(default_app_name)
       set_master(default_master)
-      set("spark.ruby.worker.type", default_worker_type)
-      set("spark.ruby.worker.arguments", default_worker_arguments)
-      set("spark.ruby.worker.memory", default_worker_memory)
-      set("spark.ruby.parallelize_strategy", default_parallelize_strategy)
-      set("spark.ruby.serializer", default_serializer)
-      set("spark.ruby.batch_size", default_batch_size)
+      set('spark.ruby.worker.type', default_worker_type)
+      set('spark.ruby.worker.arguments', default_worker_arguments)
+      set('spark.ruby.worker.memory', default_worker_memory)
+      set('spark.ruby.parallelize_strategy', default_parallelize_strategy)
+      set('spark.ruby.serializer', default_serializer)
+      set('spark.ruby.batch_size', default_batch_size)
     end
 
     def default_app_name
-      "RubySpark"
+      'RubySpark'
     end
 
     def default_master
-      "local[*]"
+      'local[*]'
     end
 
     def default_serializer
-      ENV["SPARK_RUBY_SERIALIZER"] || Spark::Serializer::DEFAULT_SERIALIZER_NAME
+      ENV['SPARK_RUBY_SERIALIZER'] || Spark::Serializer::DEFAULT_SERIALIZER_NAME
     end
 
     def default_batch_size
-      ENV["SPARK_RUBY_BATCH_SIZE"] || Spark::Serializer::DEFAULT_BATCH_SIZE.to_s
+      ENV['SPARK_RUBY_BATCH_SIZE'] || Spark::Serializer::DEFAULT_BATCH_SIZE.to_s
     end
 
     def default_worker_type
-      ENV["SPARK_RUBY_WORKER_TYPE"] || "process"
+      ENV['SPARK_RUBY_WORKER_TYPE'] || 'process'
     end
 
     def default_worker_arguments
-      ENV["SPARK_RUBY_WORKER_ARGUMENTS"] || ""
+      ENV['SPARK_RUBY_WORKER_ARGUMENTS'] || ''
     end
 
     def default_worker_memory
-      ENV["SPARK_RUBY_WORKER_MEMORY"] || ""
+      ENV['SPARK_RUBY_WORKER_MEMORY'] || ''
     end
 
     # How to handle with data in method parallelize.
     #
-    #   inplace: data are changed directly to save memory
-    #   deep_copy: data are cloned fist
+    # == Possible options:
+    # inplace:: data are changed directly to save memory
+    # deep_copy:: data are cloned fist
     #
     def default_parallelize_strategy
-      ENV["SPARK_RUBY_PARALLELIZE_STRATEGY"] || "inplace"
+      ENV['SPARK_RUBY_PARALLELIZE_STRATEGY'] || 'inplace'
     end
-
 
 
     # Aliases

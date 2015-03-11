@@ -1,62 +1,62 @@
-##
-# LogisticRegressionModel
-#
-# A linear binary classification model derived from logistic regression.
-#
-# == Examples:
-#
-#   Spark::Mllib.import
-#
-#   # Dense vectors
-#   data = [
-#     LabeledPoint.new(0.0, [0.0, 1.0]),
-#     LabeledPoint.new(1.0, [1.0, 0.0]),
-#   ]
-#   lrm = LogisticRegressionWithSGD.train($sc.parallelize(data))
-#
-#   lrm.predict([1.0, 0.0])
-#   # => 1
-#   lrm.predict([0.0, 1.0])
-#   # => 0
-#
-#   lrm.clear_threshold
-#   lrm.predict([0.0, 1.0])
-#   # => 0.123...
-#
-#
-#   # Sparse vectors
-#   data = [
-#     LabeledPoint.new(0.0, SparseVector.new(2, {0 => 0.0})),
-#     LabeledPoint.new(1.0, SparseVector.new(2, {1 => 1.0})),
-#     LabeledPoint.new(0.0, SparseVector.new(2, {0 => 1.0})),
-#     LabeledPoint.new(1.0, SparseVector.new(2, {1 => 2.0}))
-#   ]
-#   lrm = LogisticRegressionWithSGD.train($sc.parallelize(data))
-#
-#   lrm.predict([0.0, 1.0])
-#   # => 1
-#   lrm.predict([1.0, 0.0])
-#   # => 0
-#   lrm.predict(SparseVector.new(2, {1 => 1.0}))
-#   # => 1
-#   lrm.predict(SparseVector.new(2, {0 => 1.0}))
-#   # => 0
-#
-#
-#   # LogisticRegressionWithLBFGS
-#   data = [
-#     LabeledPoint.new(0.0, [0.0, 1.0]),
-#     LabeledPoint.new(1.0, [1.0, 0.0]),
-#   ]
-#   lrm = LogisticRegressionWithLBFGS.train($sc.parallelize(data))
-#
-#   lrm.predict([1.0, 0.0])
-#   # => 1
-#   lrm.predict([0.0, 1.0])
-#   # => 0
-#
 module Spark
   module Mllib
+    ##
+    # LogisticRegressionModel
+    #
+    # A linear binary classification model derived from logistic regression.
+    #
+    # == Examples:
+    #
+    #   Spark::Mllib.import
+    #
+    #   # Dense vectors
+    #   data = [
+    #     LabeledPoint.new(0.0, [0.0, 1.0]),
+    #     LabeledPoint.new(1.0, [1.0, 0.0]),
+    #   ]
+    #   lrm = LogisticRegressionWithSGD.train($sc.parallelize(data))
+    #
+    #   lrm.predict([1.0, 0.0])
+    #   # => 1
+    #   lrm.predict([0.0, 1.0])
+    #   # => 0
+    #
+    #   lrm.clear_threshold
+    #   lrm.predict([0.0, 1.0])
+    #   # => 0.123...
+    #
+    #
+    #   # Sparse vectors
+    #   data = [
+    #     LabeledPoint.new(0.0, SparseVector.new(2, {0 => 0.0})),
+    #     LabeledPoint.new(1.0, SparseVector.new(2, {1 => 1.0})),
+    #     LabeledPoint.new(0.0, SparseVector.new(2, {0 => 1.0})),
+    #     LabeledPoint.new(1.0, SparseVector.new(2, {1 => 2.0}))
+    #   ]
+    #   lrm = LogisticRegressionWithSGD.train($sc.parallelize(data))
+    #
+    #   lrm.predict([0.0, 1.0])
+    #   # => 1
+    #   lrm.predict([1.0, 0.0])
+    #   # => 0
+    #   lrm.predict(SparseVector.new(2, {1 => 1.0}))
+    #   # => 1
+    #   lrm.predict(SparseVector.new(2, {0 => 1.0}))
+    #   # => 0
+    #
+    #
+    #   # LogisticRegressionWithLBFGS
+    #   data = [
+    #     LabeledPoint.new(0.0, [0.0, 1.0]),
+    #     LabeledPoint.new(1.0, [1.0, 0.0]),
+    #   ]
+    #   lrm = LogisticRegressionWithLBFGS.train($sc.parallelize(data))
+    #
+    #   lrm.predict([1.0, 0.0])
+    #   # => 1
+    #   lrm.predict([0.0, 1.0])
+    #   # => 0
+    #
     class LogisticRegressionModel < ClassificationModel
 
       def initialize(*args)
@@ -125,9 +125,9 @@ module Spark
       #   The type of regularizer used for training our model (default: "l2").
       #
       #   Allowed values:
-      #     - "l1" for using L1 regularization
-      #     - "l2" for using L2 regularization
-      #     - nil for no regularization
+      #   - "l1" for using L1 regularization
+      #   - "l2" for using L2 regularization
+      #   - nil for no regularization
       #
       # intercept::
       #   Boolean parameter which indicates the use
@@ -187,9 +187,9 @@ module Spark
       #   The type of regularizer used for training our model (default: "l2").
       #
       #   Allowed values:
-      #     - "l1" for using L1 regularization
-      #     - "l2" for using L2 regularization
-      #     - nil for no regularization
+      #   - "l1" for using L1 regularization
+      #   - "l2" for using L2 regularization
+      #   - nil for no regularization
       #
       # intercept::
       #   Boolean parameter which indicates the use

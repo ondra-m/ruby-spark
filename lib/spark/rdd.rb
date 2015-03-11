@@ -1,9 +1,9 @@
-##
-# A Resilient Distributed Dataset (RDD), the basic abstraction in Spark. Represents an immutable,
-# partitioned collection of elements that can be operated on in parallel. This class contains the
-# basic operations available on all RDDs, such as `map`, `filter`, and `persist`.
-#
 module Spark
+  ##
+  # A Resilient Distributed Dataset (RDD), the basic abstraction in Spark. Represents an immutable,
+  # partitioned collection of elements that can be operated on in parallel. This class contains the
+  # basic operations available on all RDDs, such as `map`, `filter`, and `persist`.
+  #
   class RDD
 
     extend Forwardable
@@ -13,16 +13,16 @@ module Spark
     include Spark::Helper::Logger
     include Spark::Helper::Parser
     include Spark::Helper::Statistic
-    include Spark::Helper::Partition
 
     def_delegators :@command, :serializer, :deserializer, :libraries, :files
 
     # Initializing RDD, this method is root of all Pipelined RDD - its unique
     # If you call some operations on this class it will be computed in Java
     #
-    #   jrdd: org.apache.spark.api.java.JavaRDD
-    #   context: Spark::Context
-    #   serializer: Spark::Serializer
+    # == Parameters:
+    # jrdd:: org.apache.spark.api.java.JavaRDD
+    # context:: {Spark::Context}
+    # serializer:: {Spark::Serializer}
     #
     def initialize(jrdd, context, serializer, deserializer=nil)
       @jrdd = jrdd
@@ -54,7 +54,8 @@ module Spark
     # Add ruby library
     # Libraries will be included before computing
     #
-    # rdd.add_library('pry').add_library('nio4r', 'distribution')
+    # == Example:
+    #   rdd.add_library('pry').add_library('nio4r', 'distribution')
     #
     def add_library(*libraries)
       @command.add_library(*libraries)
@@ -63,6 +64,7 @@ module Spark
 
     # Bind object to RDD
     #
+    # == Example:
     #   text = "test"
     #
     #   rdd = $sc.parallelize(0..5)
@@ -127,7 +129,8 @@ module Spark
 
     # Mark the RDD as non-persistent, and remove all blocks for it from memory and disk.
     #
-    #   blocking: whether to block until all blocks are deleted.
+    # == Parameters:
+    # blocking:: whether to block until all blocks are deleted.
     #
     def unpersist(blocking=true)
       @cached = false
@@ -185,10 +188,6 @@ module Spark
 
     # Return an array that contains all of the elements in this RDD.
     # RJB raise an error if stage is killed.
-    #
-    # toArray: mri => Array
-    #          jruby => ArrayList
-    #
     def collect
       collect_from_iterator(jrdd.collect.iterator)
     rescue => e
@@ -217,9 +216,10 @@ module Spark
     # that partition to estimate the number of additional partitions needed
     # to satisfy the limit.
     #
-    # rdd = $sc.parallelize(0..100, 20, batch_size: 1)
-    # rdd.take(5)
-    # => [0, 1, 2, 3, 4]
+    # == Example:
+    #   rdd = $sc.parallelize(0..100, 20, batch_size: 1)
+    #   rdd.take(5)
+    #   # => [0, 1, 2, 3, 4]
     #
     def take(count)
       buffer = []
@@ -259,9 +259,10 @@ module Spark
 
     # Return the first element in this RDD.
     #
-    # rdd = $sc.parallelize(0..100)
-    # rdd.first
-    # => 0
+    # == Example:
+    #   rdd = $sc.parallelize(0..100)
+    #   rdd.first
+    #   # => 0
     #
     def first
       self.take(1)[0]
@@ -269,9 +270,10 @@ module Spark
 
     # Reduces the elements of this RDD using the specified lambda or method.
     #
-    # rdd = $sc.parallelize(0..10)
-    # rdd.reduce(lambda{|sum, x| sum+x})
-    # => 55
+    # == Example:
+    #   rdd = $sc.parallelize(0..10)
+    #   rdd.reduce(lambda{|sum, x| sum+x})
+    #   # => 55
     #
     def reduce(f)
       _reduce(Spark::Command::Reduce, f, f)
@@ -285,9 +287,10 @@ module Spark
     #
     # Be careful, zero_values is applied to all stages. See example.
     #
-    # rdd = $sc.parallelize(0..10, 2)
-    # rdd.fold(1, lambda{|sum, x| sum+x})
-    # => 58
+    # == Example:
+    #   rdd = $sc.parallelize(0..10, 2)
+    #   rdd.fold(1, lambda{|sum, x| sum+x})
+    #   # => 58
     #
     def fold(zero_value, f)
       self.aggregate(zero_value, f, f)
@@ -301,16 +304,17 @@ module Spark
     # Result must be an Array otherwise Serializer Array's zero value will be send
     # as multiple values and not just one.
     #
-    # 1 2 3 4 5  => 15 + 1 = 16
-    # 6 7 8 9 10 => 40 + 1 = 41
-    # 16 * 41 = 656
+    # == Example:
+    #   # 1 2 3 4 5  => 15 + 1 = 16
+    #   # 6 7 8 9 10 => 40 + 1 = 41
+    #   # 16 * 41 = 656
     #
-    # seq = lambda{|x,y| x+y}
-    # com = lambda{|x,y| x*y}
-
-    # rdd = $sc.parallelize(1..10, 2, batch_size: 1)
-    # rdd.aggregate(1, seq, com)
-    # => 656
+    #   seq = lambda{|x,y| x+y}
+    #   com = lambda{|x,y| x*y}
+    #
+    #   rdd = $sc.parallelize(1..10, 2, batch_size: 1)
+    #   rdd.aggregate(1, seq, com)
+    #   # => 656
     #
     def aggregate(zero_value, seq_op, comb_op)
       _reduce(Spark::Command::Aggregate, seq_op, comb_op, zero_value)
@@ -318,9 +322,10 @@ module Spark
 
     # Return the max of this RDD
     #
-    # rdd = $sc.parallelize(0..10)
-    # rdd.max
-    # => 10
+    # == Example:
+    #   rdd = $sc.parallelize(0..10)
+    #   rdd.max
+    #   # => 10
     #
     def max
       self.reduce('lambda{|memo, item| memo > item ? memo : item }')
@@ -328,9 +333,10 @@ module Spark
 
     # Return the min of this RDD
     #
-    # rdd = $sc.parallelize(0..10)
-    # rdd.min
-    # => 0
+    # == Example:
+    #   rdd = $sc.parallelize(0..10)
+    #   rdd.min
+    #   # => 0
     #
     def min
       self.reduce('lambda{|memo, item| memo < item ? memo : item }')
@@ -338,9 +344,10 @@ module Spark
 
     # Return the sum of this RDD
     #
-    # rdd = $sc.parallelize(0..10)
-    # rdd.sum
-    # => 55
+    # == Example:
+    #   rdd = $sc.parallelize(0..10)
+    #   rdd.sum
+    #   # => 55
     #
     def sum
       self.reduce('lambda{|sum, item| sum + item}')
@@ -348,9 +355,10 @@ module Spark
 
     # Return the number of values in this RDD
     #
-    # rdd = $sc.parallelize(0..10)
-    # rdd.count
-    # => 11
+    # == Example:
+    #   rdd = $sc.parallelize(0..10)
+    #   rdd.count
+    #   # => 11
     #
     def count
       # nil is for seq_op => it means the all result go directly to one worker for combine
@@ -358,7 +366,7 @@ module Spark
                      .aggregate(0, nil, 'lambda{|sum, item| sum + item }')
     end
 
-    # Return a `StatCounter` object that captures the mean, variance
+    # Return a {Spark::StatCounter} object that captures the mean, variance
     # and count of the RDD's elements in one operation.
     def stats
       @stats ||= new_rdd_from_command(Spark::Command::Stats).reduce('lambda{|memo, item| memo.merge(item)}')
@@ -366,8 +374,9 @@ module Spark
 
     # Compute the mean of this RDD's elements.
     #
-    # $sc.parallelize([1, 2, 3]).mean
-    # => 2.0
+    # == Example:
+    #   $sc.parallelize([1, 2, 3]).mean
+    #   # => 2.0
     #
     def mean
       stats.mean
@@ -375,8 +384,9 @@ module Spark
 
     # Compute the variance of this RDD's elements.
     #
-    # $sc.parallelize([1, 2, 3]).variance
-    # => 0.666...
+    # == Example:
+    #   $sc.parallelize([1, 2, 3]).variance
+    #   # => 0.666...
     #
     def variance
       stats.variance
@@ -384,8 +394,9 @@ module Spark
 
     # Compute the standard deviation of this RDD's elements.
     #
-    # $sc.parallelize([1, 2, 3]).stdev
-    # => 0.816...
+    # == Example:
+    #   $sc.parallelize([1, 2, 3]).stdev
+    #   # => 0.816...
     #
     def stdev
       stats.stdev
@@ -395,8 +406,9 @@ module Spark
     # corrects for bias in estimating the standard deviation by dividing by
     # N-1 instead of N).
     #
-    # $sc.parallelize([1, 2, 3]).sample_stdev
-    # => 1.0
+    # == Example:
+    #   $sc.parallelize([1, 2, 3]).sample_stdev
+    #   # => 1.0
     #
     def sample_stdev
       stats.sample_stdev
@@ -405,8 +417,9 @@ module Spark
     # Compute the sample variance of this RDD's elements (which corrects
     # for bias in estimating the variance by dividing by N-1 instead of N).
     #
-    # $sc.parallelize([1, 2, 3]).sample_variance
-    # => 1.0
+    # == Example:
+    #   $sc.parallelize([1, 2, 3]).sample_variance
+    #   # => 1.0
     #
     def sample_variance
       stats.sample_variance
@@ -429,13 +442,13 @@ module Spark
     #   rdd = $sc.parallelize(0..50)
     #
     #   rdd.histogram(2)
-    #   => [[0.0, 25.0, 50], [25, 26]]
+    #   # => [[0.0, 25.0, 50], [25, 26]]
     #
     #   rdd.histogram([0, 5, 25, 50])
-    #   => [[0, 5, 25, 50], [5, 20, 26]]
+    #   # => [[0, 5, 25, 50], [5, 20, 26]]
     #
     #   rdd.histogram([0, 15, 30, 45, 60])
-    #   => [[0, 15, 30, 45, 60], [15, 15, 15, 6]]
+    #   # => [[0, 15, 30, 45, 60], [15, 15, 15, 6]]
     #
     def histogram(buckets)
 
@@ -532,9 +545,10 @@ module Spark
 
     # Applies a function f to all elements of this RDD.
     #
-    # rdd = $sc.parallelize(0..5)
-    # rdd.foreach(lambda{|x| puts x})
-    # => nil
+    # == Example:
+    #   rdd = $sc.parallelize(0..5)
+    #   rdd.foreach(lambda{|x| puts x})
+    #   # => nil
     #
     def foreach(f, options={})
       new_rdd_from_command(Spark::Command::Foreach, f).collect
@@ -543,9 +557,10 @@ module Spark
 
     # Applies a function f to each partition of this RDD.
     #
-    # rdd = $sc.parallelize(0..5)
-    # rdd.foreachPartition(lambda{|x| puts x.to_s})
-    # => nil
+    # == Example:
+    #   rdd = $sc.parallelize(0..5)
+    #   rdd.foreachPartition(lambda{|x| puts x.to_s})
+    #   # => nil
     #
     def foreach_partition(f, options={})
       new_rdd_from_command(Spark::Command::ForeachPartition, f).collect
@@ -558,9 +573,10 @@ module Spark
 
     # Return a new RDD by applying a function to all elements of this RDD.
     #
-    # rdd = $sc.parallelize(0..5)
-    # rdd.map(lambda {|x| x*2}).collect
-    # => [0, 2, 4, 6, 8, 10]
+    # == Example:
+    #   rdd = $sc.parallelize(0..5)
+    #   rdd.map(lambda {|x| x*2}).collect
+    #   # => [0, 2, 4, 6, 8, 10]
     #
     def map(f)
       new_rdd_from_command(Spark::Command::Map, f)
@@ -569,9 +585,10 @@ module Spark
     # Return a new RDD by first applying a function to all elements of this
     # RDD, and then flattening the results.
     #
-    # rdd = $sc.parallelize(0..5)
-    # rdd.flat_map(lambda {|x| [x, 1]}).collect
-    # => [0, 1, 1, 1, 2, 1, 3, 1, 4, 1, 5, 1]
+    # == Example:
+    #   rdd = $sc.parallelize(0..5)
+    #   rdd.flat_map(lambda {|x| [x, 1]}).collect
+    #   # => [0, 1, 1, 1, 2, 1, 3, 1, 4, 1, 5, 1]
     #
     def flat_map(f)
       new_rdd_from_command(Spark::Command::FlatMap, f)
@@ -579,9 +596,10 @@ module Spark
 
     # Return a new RDD by applying a function to each partition of this RDD.
     #
-    # rdd = $sc.parallelize(0..10, 2)
-    # rdd.map_partitions(lambda{|part| part.reduce(:+)}).collect
-    # => [15, 40]
+    # == Example:
+    #   rdd = $sc.parallelize(0..10, 2)
+    #   rdd.map_partitions(lambda{|part| part.reduce(:+)}).collect
+    #   # => [15, 40]
     #
     def map_partitions(f)
       new_rdd_from_command(Spark::Command::MapPartitions, f)
@@ -590,9 +608,10 @@ module Spark
     # Return a new RDD by applying a function to each partition of this RDD, while tracking the index
     # of the original partition.
     #
-    # rdd = $sc.parallelize(0...4, 4, batch_size: 1)
-    # rdd.map_partitions_with_index(lambda{|part, index| part.first * index}).collect
-    # => [0, 1, 4, 9]
+    # == Example:
+    #   rdd = $sc.parallelize(0...4, 4, batch_size: 1)
+    #   rdd.map_partitions_with_index(lambda{|part, index| part.first * index}).collect
+    #   # => [0, 1, 4, 9]
     #
     def map_partitions_with_index(f, options={})
       new_rdd_from_command(Spark::Command::MapPartitionsWithIndex, f)
@@ -600,9 +619,10 @@ module Spark
 
     # Return a new RDD containing only the elements that satisfy a predicate.
     #
-    # rdd = $sc.parallelize(0..10)
-    # rdd.filter(lambda{|x| x.even?}).collect
-    # => [0, 2, 4, 6, 8, 10]
+    # == Example:
+    #   rdd = $sc.parallelize(0..10)
+    #   rdd.filter(lambda{|x| x.even?}).collect
+    #   # => [0, 2, 4, 6, 8, 10]
     #
     def filter(f)
       new_rdd_from_command(Spark::Command::Filter, f)
@@ -610,9 +630,10 @@ module Spark
 
     # Return a new RDD containing non-nil elements.
     #
-    # rdd = $sc.parallelize([1, nil, 2, nil, 3])
-    # rdd.compact.collect
-    # => [1, 2, 3]
+    # == Example:
+    #   rdd = $sc.parallelize([1, nil, 2, nil, 3])
+    #   rdd.compact.collect
+    #   # => [1, 2, 3]
     #
     def compact
       new_rdd_from_command(Spark::Command::Compact)
@@ -620,9 +641,10 @@ module Spark
 
     # Return an RDD created by coalescing all elements within each partition into an array.
     #
-    # rdd = $sc.parallelize(0..10, 3, batch_size: 1)
-    # rdd.glom.collect
-    # => [[0, 1, 2], [3, 4, 5, 6], [7, 8, 9, 10]]
+    # == Example:
+    #   rdd = $sc.parallelize(0..10, 3, batch_size: 1)
+    #   rdd.glom.collect
+    #   # => [[0, 1, 2], [3, 4, 5, 6], [7, 8, 9, 10]]
     #
     def glom
       new_rdd_from_command(Spark::Command::Glom)
@@ -630,9 +652,10 @@ module Spark
 
     # Return a new RDD that is reduced into num_partitions partitions.
     #
-    # rdd = $sc.parallelize(0..10, 3)
-    # rdd.coalesce(2).glom.collect
-    # => [[0, 1, 2], [3, 4, 5, 6, 7, 8, 9, 10]]
+    # == Example:
+    #   rdd = $sc.parallelize(0..10, 3)
+    #   rdd.coalesce(2).glom.collect
+    #   # => [[0, 1, 2], [3, 4, 5, 6, 7, 8, 9, 10]]
     #
     def coalesce(num_partitions)
       new_jrdd = jrdd.coalesce(num_partitions)
@@ -643,11 +666,12 @@ module Spark
     # RDD of all pairs of elements `(a, b)` where `a` is in `self` and
     # `b` is in `other`.
     #
-    # rdd1 = $sc.parallelize([1,2,3])
-    # rdd2 = $sc.parallelize([4,5,6])
+    # == Example:
+    #   rdd1 = $sc.parallelize([1,2,3])
+    #   rdd2 = $sc.parallelize([4,5,6])
     #
-    # rdd1.cartesian(rdd2).collect
-    # => [[1, 4], [1, 5], [1, 6], [2, 4], [2, 5], [2, 6], [3, 4], [3, 5], [3, 6]]
+    #   rdd1.cartesian(rdd2).collect
+    #   # => [[1, 4], [1, 5], [1, 6], [2, 4], [2, 5], [2, 6], [3, 4], [3, 5], [3, 6]]
     #
     def cartesian(other)
       _deserializer = Spark::Serializer::Cartesian.new.set(self.deserializer, other.deserializer)
@@ -658,9 +682,10 @@ module Spark
     # Return a new RDD containing the distinct elements in this RDD.
     # Ordering is not preserved because of reducing
     #
-    # rdd = $sc.parallelize([1,1,1,2,3])
-    # rdd.distinct.collect
-    # => [1, 2, 3]
+    # == Example:
+    #   rdd = $sc.parallelize([1,1,1,2,3])
+    #   rdd.distinct.collect
+    #   # => [1, 2, 3]
     #
     def distinct
       self.map('lambda{|x| [x, nil]}')
@@ -670,9 +695,10 @@ module Spark
 
     # Return a shuffled RDD.
     #
-    # rdd = $sc.parallelize(0..10)
-    # rdd.shuffle.collect
-    # => [3, 10, 6, 7, 8, 0, 4, 2, 9, 1, 5]
+    # == Example:
+    #   rdd = $sc.parallelize(0..10)
+    #   rdd.shuffle.collect
+    #   # => [3, 10, 6, 7, 8, 0, 4, 2, 9, 1, 5]
     #
     def shuffle(seed=nil)
       seed ||= Random.new_seed
@@ -683,9 +709,10 @@ module Spark
     # Return the union of this RDD and another one. Any identical elements will appear multiple
     # times (use .distinct to eliminate them).
     #
-    # rdd = $sc.parallelize([1, 2, 3])
-    # rdd.union(rdd).collect
-    # => [1, 2, 3, 1, 2, 3]
+    # == Example:
+    #   rdd = $sc.parallelize([1, 2, 3])
+    #   rdd.union(rdd).collect
+    #   # => [1, 2, 3, 1, 2, 3]
     #
     def union(other)
       if self.serializer != other.serializer
@@ -699,10 +726,11 @@ module Spark
     # Return a new RDD with different serializer. This method is useful during union
     # and join operations.
     #
-    # rdd = $sc.parallelize([1, 2, 3], nil, serializer: "marshal")
-    # rdd = rdd.map(lambda{|x| x.to_s})
-    # rdd.reserialize("oj").collect
-    # => ["1", "2", "3"]
+    # == Example:
+    #   rdd = $sc.parallelize([1, 2, 3], nil, serializer: "marshal")
+    #   rdd = rdd.map(lambda{|x| x.to_s})
+    #   rdd.reserialize("oj").collect
+    #   # => ["1", "2", "3"]
     #
     def reserialize(new_serializer, new_batch_size=nil)
       new_batch_size ||= deserializer.batch_size
@@ -721,10 +749,11 @@ module Spark
     # Return the intersection of this RDD and another one. The output will not contain
     # any duplicate elements, even if the input RDDs did.
     #
-    # rdd1 = $sc.parallelize([1,2,3,4,5])
-    # rdd2 = $sc.parallelize([1,4,5,6,7])
-    # rdd1.intersection(rdd2).collect
-    # => [1, 4, 5]
+    # == Example:
+    #   rdd1 = $sc.parallelize([1,2,3,4,5])
+    #   rdd2 = $sc.parallelize([1,4,5,6,7])
+    #   rdd1.intersection(rdd2).collect
+    #   # => [1, 4, 5]
     #
     def intersection(other)
       mapping_function = 'lambda{|item| [item, nil]}'
@@ -738,9 +767,10 @@ module Spark
 
     # Return a copy of the RDD partitioned using the specified partitioner.
     #
-    # rdd = $sc.parallelize(["1","2","3","4","5"]).map(lambda {|x| [x, 1]})
-    # rdd.partitionBy(2).glom.collect
-    # => [[["3", 1], ["4", 1]], [["1", 1], ["2", 1], ["5", 1]]]
+    # == Example:
+    #   rdd = $sc.parallelize(["1","2","3","4","5"]).map(lambda {|x| [x, 1]})
+    #   rdd.partitionBy(2).glom.collect
+    #   # => [[["3", 1], ["4", 1]], [["1", 1], ["2", 1], ["5", 1]]]
     #
     def partition_by(num_partitions, partition_func=nil)
       num_partitions ||= default_reduce_partitions
@@ -753,13 +783,14 @@ module Spark
     # distributions.
     # TODO: Replace Unfirom for Bernoulli
     #
-    # rdd = $sc.parallelize(0..100)
+    # == Examples:
+    #   rdd = $sc.parallelize(0..100)
     #
-    # rdd.sample(true, 10).collect
-    # => [17, 17, 22, 23, 51, 52, 62, 64, 69, 70, 96]
+    #   rdd.sample(true, 10).collect
+    #   # => [17, 17, 22, 23, 51, 52, 62, 64, 69, 70, 96]
     #
-    # rdd.sample(false, 0.1).collect
-    # => [3, 5, 9, 32, 44, 55, 66, 68, 75, 80, 86, 91, 98]
+    #   rdd.sample(false, 0.1).collect
+    #   # => [3, 5, 9, 32, 44, 55, 66, 68, 75, 80, 86, 91, 98]
     #
     def sample(with_replacement, fraction, seed=nil)
       new_rdd_from_command(Spark::Command::Sample, with_replacement, fraction, seed)
@@ -767,13 +798,14 @@ module Spark
 
     # Return a fixed-size sampled subset of this RDD in an array
     #
-    # rdd = $sc.parallelize(0..100)
+    # == Examples:
+    #   rdd = $sc.parallelize(0..100)
     #
-    # rdd.take_sample(true, 10)
-    # => [90, 84, 74, 44, 27, 22, 72, 96, 80, 54]
+    #   rdd.take_sample(true, 10)
+    #   # => [90, 84, 74, 44, 27, 22, 72, 96, 80, 54]
     #
-    # rdd.take_sample(false, 10)
-    # => [5, 35, 30, 48, 22, 33, 40, 75, 42, 32]
+    #   rdd.take_sample(false, 10)
+    #   # => [5, 35, 30, 48, 22, 33, 40, 75, 42, 32]
     #
     def take_sample(with_replacement, num, seed=nil)
 
@@ -843,13 +875,13 @@ module Spark
     #
     # == Examples:
     #   $sc.parallelize(0..5).pipe('cat').collect
-    #   => ["0", "1", "2", "3", "4", "5"]
+    #   # => ["0", "1", "2", "3", "4", "5"]
     #
     #   rdd = $sc.parallelize(0..5)
     #   rdd = rdd.pipe('cat', "awk '{print $1*10}'")
     #   rdd = rdd.map(lambda{|x| x.to_i + 1})
     #   rdd.collect
-    #   => [1, 11, 21, 31, 41, 51]
+    #   # => [1, 11, 21, 31, 41, 51]
     #
     def pipe(*cmds)
       new_rdd_from_command(Spark::Command::Pipe, cmds)
@@ -864,10 +896,10 @@ module Spark
     # "combiner" in MapReduce. Output will be hash-partitioned with the existing partitioner/
     # parallelism level.
     #
-    # rdd = $sc.parallelize(["a","b","c","a","b","c","a","c"]).map(lambda{|x| [x, 1]})
-    # rdd.reduce_by_key(lambda{|x,y| x+y}).collect_as_hash
-    #
-    # => {"a"=>3, "b"=>2, "c"=>3}
+    # == Example:
+    #   rdd = $sc.parallelize(["a","b","c","a","b","c","a","c"]).map(lambda{|x| [x, 1]})
+    #   rdd.reduce_by_key(lambda{|x,y| x+y}).collect_as_hash
+    #   # => {"a"=>3, "b"=>2, "c"=>3}
     #
     def reduce_by_key(f, num_partitions=nil)
       combine_by_key('lambda {|x| x}', f, f, num_partitions)
@@ -879,20 +911,23 @@ module Spark
     # RDD of type (Int, Int) into an RDD of type (Int, List[Int]). Users provide three
     # functions:
     #
-    #   createCombiner: which turns a V into a C (e.g., creates a one-element list)
-    #   mergeValue: to merge a V into a C (e.g., adds it to the end of a list)
-    #   mergeCombiners: to combine two C's into a single one.
+    # == Parameters:
+    # create_combiner:: which turns a V into a C (e.g., creates a one-element list)
+    # merge_value:: to merge a V into a C (e.g., adds it to the end of a list)
+    # merge_combiners:: to combine two C's into a single one.
     #
-    # def combiner(x)
-    #   x
-    # end
-    # def merge(x,y)
-    #   x+y
-    # end
-    # rdd = $sc.parallelize(["a","b","c","a","b","c","a","c"], 2, batch_size: 1).map(lambda{|x| [x, 1]})
-    # rdd.combine_by_key(method(:combiner), method(:merge), method(:merge)).collect_as_hash
+    # == Example:
+    #   def combiner(x)
+    #     x
+    #   end
     #
-    # => {"a"=>3, "b"=>2, "c"=>3}
+    #   def merge(x,y)
+    #     x+y
+    #   end
+    #
+    #   rdd = $sc.parallelize(["a","b","c","a","b","c","a","c"], 2, batch_size: 1).map(lambda{|x| [x, 1]})
+    #   rdd.combine_by_key(method(:combiner), method(:merge), method(:merge)).collect_as_hash
+    #   # => {"a"=>3, "b"=>2, "c"=>3}
     #
     def combine_by_key(create_combiner, merge_value, merge_combiners, num_partitions=nil)
       _combine_by_key(
@@ -904,9 +939,10 @@ module Spark
 
     # Return an RDD of grouped items.
     #
-    # rdd = $sc.parallelize(0..5)
-    # rdd.group_by(lambda{|x| x%2}).collect
-    # => [[0, [0, 2, 4]], [1, [1, 3, 5]]]
+    # == Example:
+    #   rdd = $sc.parallelize(0..5)
+    #   rdd.group_by(lambda{|x| x%2}).collect
+    #   # => [[0, [0, 2, 4]], [1, [1, 3, 5]]]
     #
     def group_by(f, num_partitions=nil)
       self.key_by(f).group_by_key(num_partitions)
@@ -918,9 +954,10 @@ module Spark
     # Note: If you are grouping in order to perform an aggregation (such as a sum or average)
     # over each key, using reduce_by_key or combine_by_key will provide much better performance.
     #
-    # rdd = $sc.parallelize([["a", 1], ["a", 2], ["b", 3]])
-    # rdd.group_by_key.collect
-    # => [["a", [1, 2]], ["b", [3]]]
+    # == Example:
+    #   rdd = $sc.parallelize([["a", 1], ["a", 2], ["b", 3]])
+    #   rdd.group_by_key.collect
+    #   # => [["a", [1, 2]], ["b", [3]]]
     #
     def group_by_key(num_partitions=nil)
       create_combiner = 'lambda{|item| [item]}'
@@ -935,28 +972,29 @@ module Spark
     # arbitrary number of times, and must not change the result
     # (e.g., 0 for addition, or 1 for multiplication.).
     #
-    # rdd = $sc.parallelize([["a", 1], ["b", 2], ["a", 3], ["a", 4], ["c", 5]])
-    # rdd.fold_by_key(1, lambda{|x,y| x+y})
-    # => [["a", 9], ["c", 6], ["b", 3]]
+    # == Example:
+    #   rdd = $sc.parallelize([["a", 1], ["b", 2], ["a", 3], ["a", 4], ["c", 5]])
+    #   rdd.fold_by_key(1, lambda{|x,y| x+y})
+    #   # => [["a", 9], ["c", 6], ["b", 3]]
     #
     def fold_by_key(zero_value, f, num_partitions=nil)
       self.aggregate_by_key(zero_value, f, f, num_partitions)
     end
 
-    # Aggregate the values of each key, using given combine functions and a neutral
-    # `zero value`.
+    # Aggregate the values of each key, using given combine functions and a neutral zero value.
     #
-    # def combine(x,y)
-    #   x+y
-    # end
+    # == Example:
+    #   def combine(x,y)
+    #     x+y
+    #   end
     #
-    # def merge(x,y)
-    #   x*y
-    # end
+    #   def merge(x,y)
+    #     x*y
+    #   end
     #
-    # rdd = $sc.parallelize([["a", 1], ["b", 2], ["a", 3], ["a", 4], ["c", 5]], 2, batch_size: 1)
-    # rdd.aggregate_by_key(1, method(:combine), method(:merge))
-    # => [["b", 3], ["a", 16], ["c", 6]]
+    #   rdd = $sc.parallelize([["a", 1], ["b", 2], ["a", 3], ["a", 4], ["c", 5]], 2, batch_size: 1)
+    #   rdd.aggregate_by_key(1, method(:combine), method(:merge))
+    #   # => [["b", 3], ["a", 16], ["c", 6]]
     #
     def aggregate_by_key(zero_value, seq_func, comb_func, num_partitions=nil)
       _combine_by_key(
@@ -969,10 +1007,11 @@ module Spark
     # The same functionality as cogroup but this can grouped only 2 rdd's and you
     # can change num_partitions.
     #
-    # rdd1 = $sc.parallelize([["a", 1], ["a", 2], ["b", 3]])
-    # rdd2 = $sc.parallelize([["a", 4], ["a", 5], ["b", 6]])
-    # rdd1.group_with(rdd2).collect
-    # => [["a", [1, 2, 4, 5]], ["b", [3, 6]]]
+    # == Example:
+    #   rdd1 = $sc.parallelize([["a", 1], ["a", 2], ["b", 3]])
+    #   rdd2 = $sc.parallelize([["a", 4], ["a", 5], ["b", 6]])
+    #   rdd1.group_with(rdd2).collect
+    #   # => [["a", [1, 2, 4, 5]], ["b", [3, 6]]]
     #
     def group_with(other, num_partitions=nil)
       self.union(other).group_by_key(num_partitions)
@@ -981,11 +1020,12 @@ module Spark
     # For each key k in `this` or `other`, return a resulting RDD that contains a tuple with the
     # list of values for that key in `this` as well as `other`.
     #
-    # rdd1 = $sc.parallelize([["a", 1], ["a", 2], ["b", 3]])
-    # rdd2 = $sc.parallelize([["a", 4], ["a", 5], ["b", 6]])
-    # rdd3 = $sc.parallelize([["a", 7], ["a", 8], ["b", 9]])
-    # rdd1.cogroup(rdd2, rdd3).collect
-    # => [["a", [1, 2, 4, 5, 7, 8]], ["b", [3, 6, 9]]]
+    # == Example:
+    #   rdd1 = $sc.parallelize([["a", 1], ["a", 2], ["b", 3]])
+    #   rdd2 = $sc.parallelize([["a", 4], ["a", 5], ["b", 6]])
+    #   rdd3 = $sc.parallelize([["a", 7], ["a", 8], ["b", 9]])
+    #   rdd1.cogroup(rdd2, rdd3).collect
+    #   # => [["a", [1, 2, 4, 5, 7, 8]], ["b", [3, 6, 9]]]
     #
     def cogroup(*others)
       unioned = self
@@ -999,10 +1039,11 @@ module Spark
     # Return each (key, value) pair in self RDD that has no pair with matching
     # key in other RDD.
     #
-    # rdd1 = $sc.parallelize([["a", 1], ["a", 2], ["b", 3], ["c", 4]])
-    # rdd2 = $sc.parallelize([["b", 5], ["c", 6]])
-    # rdd1.subtract_by_key(rdd2).collect
-    # => [["a", 1], ["a", 2]]
+    # == Example:
+    #   rdd1 = $sc.parallelize([["a", 1], ["a", 2], ["b", 3], ["c", 4]])
+    #   rdd2 = $sc.parallelize([["b", 5], ["c", 6]])
+    #   rdd1.subtract_by_key(rdd2).collect
+    #   # => [["a", 1], ["a", 2]]
     #
     def subtract_by_key(other, num_partitions=nil)
       create_combiner = 'lambda{|item| [[item]]}'
@@ -1017,10 +1058,11 @@ module Spark
 
     # Return an RDD with the elements from self that are not in other.
     #
-    # rdd1 = $sc.parallelize([["a", 1], ["a", 2], ["b", 3], ["c", 4]])
-    # rdd2 = $sc.parallelize([["a", 2], ["c", 6]])
-    # rdd1.subtract(rdd2).collect
-    # => [["a", 1], ["b", 3], ["c", 4]]
+    # == Example:
+    #   rdd1 = $sc.parallelize([["a", 1], ["a", 2], ["b", 3], ["c", 4]])
+    #   rdd2 = $sc.parallelize([["a", 2], ["c", 6]])
+    #   rdd1.subtract(rdd2).collect
+    #   # => [["a", 1], ["b", 3], ["c", 4]]
     #
     def subtract(other, num_partitions=nil)
       mapping_function = 'lambda{|x| [x,nil]}'
@@ -1032,9 +1074,10 @@ module Spark
 
     # Sort the RDD by key
     #
-    # rdd = $sc.parallelize([["c", 1], ["b", 2], ["a", 3]])
-    # rdd.sort_by_key.collect
-    # => [["a", 3], ["b", 2], ["c", 1]]
+    # == Example:
+    #   rdd = $sc.parallelize([["c", 1], ["b", 2], ["a", 3]])
+    #   rdd.sort_by_key.collect
+    #   # => [["a", 3], ["b", 2], ["c", 1]]
     #
     def sort_by_key(ascending=true, num_partitions=nil)
       self.sort_by('lambda{|(key, _)| key}')
@@ -1046,13 +1089,14 @@ module Spark
     # key_by method first. It can be slower but take less memory and
     # you can always use map.sort_by_key
     #
-    # rdd = $sc.parallelize(["aaaaaaa", "cc", "b", "eeee", "ddd"])
+    # == Example:
+    #   rdd = $sc.parallelize(["aaaaaaa", "cc", "b", "eeee", "ddd"])
     #
-    # rdd.sort_by.collect
-    # => ["aaaaaaa", "b", "cc", "ddd", "eeee"]
+    #   rdd.sort_by.collect
+    #   # => ["aaaaaaa", "b", "cc", "ddd", "eeee"]
     #
-    # rdd.sort_by(lambda{|x| x.size}).collect
-    # => ["b", "cc", "ddd", "eeee", "aaaaaaa"]
+    #   rdd.sort_by(lambda{|x| x.size}).collect
+    #   # => ["b", "cc", "ddd", "eeee", "aaaaaaa"]
     #
     def sort_by(key_function=nil, ascending=true, num_partitions=nil)
       key_function   ||= 'lambda{|x| x}'
@@ -1100,9 +1144,10 @@ module Spark
 
     # Creates array of the elements in this RDD by applying function f.
     #
-    # rdd = $sc.parallelize(0..5)
-    # rdd.key_by(lambda{|x| x%2}).collect
-    # => [[0, 0], [1, 1], [0, 2], [1, 3], [0, 4], [1, 5]]
+    # == Example:
+    #   rdd = $sc.parallelize(0..5)
+    #   rdd.key_by(lambda{|x| x%2}).collect
+    #   # => [[0, 0], [1, 1], [0, 2], [1, 3], [0, 4], [1, 5]]
     #
     def key_by(f)
       new_rdd_from_command(Spark::Command::KeyBy, f)
@@ -1111,11 +1156,12 @@ module Spark
     # Pass each value in the key-value pair RDD through a map function without changing
     # the keys. This also retains the original RDD's partitioning.
     #
-    # rdd = $sc.parallelize(["ruby", "scala", "java"])
-    # rdd = rdd.map(lambda{|x| [x, x]})
-    # rdd = rdd.map_values(lambda{|x| x.upcase})
-    # rdd.collect
-    # => [["ruby", "RUBY"], ["scala", "SCALA"], ["java", "JAVA"]]
+    # == Example:
+    #   rdd = $sc.parallelize(["ruby", "scala", "java"])
+    #   rdd = rdd.map(lambda{|x| [x, x]})
+    #   rdd = rdd.map_values(lambda{|x| x.upcase})
+    #   rdd.collect
+    #   # => [["ruby", "RUBY"], ["scala", "SCALA"], ["java", "JAVA"]]
     #
     def map_values(f)
       new_rdd_from_command(Spark::Command::MapValues, f)
@@ -1125,10 +1171,11 @@ module Spark
     # without changing the keys; this also retains the original RDD's
     # partitioning.
     #
-    # rdd = $sc.parallelize([["a", [1,2]], ["b", [3]]])
-    # rdd = rdd.flat_map_values(lambda{|x| x*2})
-    # rdd.collect
-    # => [["a", 1], ["a", 2], ["a", 1], ["a", 2], ["b", 3], ["b", 3]]
+    # == Example:
+    #   rdd = $sc.parallelize([["a", [1,2]], ["b", [3]]])
+    #   rdd = rdd.flat_map_values(lambda{|x| x*2})
+    #   rdd.collect
+    #   # => [["a", 1], ["a", 2], ["a", 1], ["a", 2], ["b", 3], ["b", 3]]
     #
     def flat_map_values(f)
       new_rdd_from_command(Spark::Command::FlatMapValues, f)
@@ -1136,9 +1183,10 @@ module Spark
 
     # Return an RDD with the first element of PairRDD
     #
-    # rdd = $sc.parallelize([[1,2], [3,4], [5,6]])
-    # rdd.keys.collect
-    # => [1, 3, 5]
+    # == Example:
+    #   rdd = $sc.parallelize([[1,2], [3,4], [5,6]])
+    #   rdd.keys.collect
+    #   # => [1, 3, 5]
     #
     def keys
       self.map('lambda{|(key, _)| key}')
@@ -1146,9 +1194,10 @@ module Spark
 
     # Return an RDD with the second element of PairRDD
     #
-    # rdd = $sc.parallelize([[1,2], [3,4], [5,6]])
-    # rdd.keys.collect
-    # => [2, 4, 6]
+    # == Example:
+    #   rdd = $sc.parallelize([[1,2], [3,4], [5,6]])
+    #   rdd.keys.collect
+    #   # => [2, 4, 6]
     #
     def values
       self.map('lambda{|(_, value)| value}')
@@ -1245,10 +1294,10 @@ module Spark
 
   # Pipelined Resilient Distributed Dataset, operations are pipelined and sended to worker
   #
-  # RDD
-  # `-- map
-  #     `-- map
-  #         `-- map
+  #   RDD
+  #   `-- map
+  #       `-- map
+  #           `-- map
   #
   # Code is executed from top to bottom
   #

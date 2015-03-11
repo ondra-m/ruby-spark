@@ -1,12 +1,12 @@
 #!/usr/bin/env ruby
 
-$PROGRAM_NAME = "RubySparkMaster"
+$PROGRAM_NAME = 'RubySparkMaster'
 
-require "socket"
-require "io/wait"
-require "nio"
+require 'socket'
+require 'io/wait'
+require 'nio'
 
-require_relative "worker"
+require_relative 'worker'
 
 # New process group
 # Otherwise master can be killed from pry console
@@ -18,10 +18,10 @@ Process.setsid
 module Master
 
   def self.create
-    case ENV["WORKER_TYPE"]
-    when "process"
+    case ENV['WORKER_TYPE']
+    when 'process'
       Master::Process.new
-    when "thread"
+    when 'thread'
       Master::Thread.new
     end
   end
@@ -32,10 +32,10 @@ module Master
     include Spark::Constant
 
     def initialize
-      @worker_arguments = ENV["WORKER_ARGUMENTS"]
-      @port = ENV["SERVER_PORT"]
+      @worker_arguments = ENV['WORKER_ARGUMENTS']
+      @port = ENV['SERVER_PORT']
 
-      @socket = TCPSocket.open("localhost", @port)
+      @socket = TCPSocket.open('localhost', @port)
     end
 
     def run
@@ -100,7 +100,7 @@ module Master
 
     def kill_worker
       worker_id = unpack_long(read(8))
-      ::Process.kill("TERM", worker_id)
+      ::Process.kill('TERM', worker_id)
     rescue
       nil
     end

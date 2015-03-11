@@ -3,7 +3,7 @@ module Spark
     class Marshal < Base
 
       def name
-        "marshal"
+        'marshal'
       end
 
       def serialize(data)

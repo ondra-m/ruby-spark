@@ -1,12 +1,10 @@
-require 'tempfile'
-
 # Necessary libraries
 Spark.load_lib
 
-# Main entry point for Spark functionality. A SparkContext represents the connection to a Spark
-# cluster, and can be used to create RDDs, accumulators and broadcast variables on that cluster.
-#
 module Spark
+  # Main entry point for Spark functionality. A SparkContext represents the connection to a Spark
+  # cluster, and can be used to create RDDs, accumulators and broadcast variables on that cluster.
+  #
   class Context
 
     include Spark::Helper::System
@@ -109,11 +107,12 @@ module Spark
     # To access the file in Spark jobs, use `SparkFiles.get(file_name)` with the
     # filename to find its download location.
     #
-    # `echo 10 > test.txt`
+    # == Example:
+    #   `echo 10 > test.txt`
     #
-    # $sc.add_file('test.txt')
-    # $sc.parallelize(0..5).map(lambda{|x| x * SparkFiles.get_content('test.txt').to_i}).collect
-    # => [0, 10, 20, 30, 40, 50]
+    #   $sc.add_file('test.txt')
+    #   $sc.parallelize(0..5).map(lambda{|x| x * SparkFiles.get_content('test.txt').to_i}).collect
+    #   # => [0, 10, 20, 30, 40, 50]
     #
     def add_file(*files)
       files.each do |file|
@@ -125,14 +124,15 @@ module Spark
     # object for reading it in distributed functions. The variable will
     # be sent to each cluster only once.
     #
-    # broadcast1 = $sc.broadcast('a', 1)
-    # broadcast2 = $sc.broadcast('b', 2)
+    # == Example:
+    #   broadcast1 = $sc.broadcast('a', 1)
+    #   broadcast2 = $sc.broadcast('b', 2)
     #
-    # rdd = $sc.parallelize(0..5, 4)
-    # rdd = rdd.broadcast(broadcast1, broadcast2)
-    # rdd = rdd.map_partitions_with_index(lambda{|part, index| [Broadcast[1] * index, Broadcast[2] * index] })
-    # rdd.collect
-    # => ["", "", "a", "b", "aa", "bb", "aaa", "bbb"]
+    #   rdd = $sc.parallelize(0..5, 4)
+    #   rdd = rdd.broadcast(broadcast1, broadcast2)
+    #   rdd = rdd.map_partitions_with_index(lambda{|part, index| [Broadcast[1] * index, Broadcast[2] * index] })
+    #   rdd.collect
+    #   # => ["", "", "a", "b", "aa", "bb", "aaa", "bbb"]
     #
     def broadcast(value, id=nil)
       Spark::Broadcast.new(self, value, id)
@@ -142,15 +142,16 @@ module Spark
     # accum_param helper object to define how to add values of the
     # data type if provided.
     #
-    # accum = $sc.accumulator(7, 1)
+    # == Example:
+    #   accum = $sc.accumulator(7, 1)
     #
-    # rdd = $sc.parallelize(0..5, 4)
-    # rdd = rdd.accumulator(accum)
-    # rdd = rdd.map_partitions(lambda{|_| Accumulator[1].add(1) })
-    # rdd = rdd.collect
+    #   rdd = $sc.parallelize(0..5, 4)
+    #   rdd = rdd.accumulator(accum)
+    #   rdd = rdd.map_partitions(lambda{|_| Accumulator[1].add(1) })
+    #   rdd = rdd.collect
     #
-    # accum.value
-    # => 11
+    #   accum.value
+    #   # => 11
     #
     def accumulator(value, id=nil, accum_param=:+, zero_value=0)
       Spark::Accumulator.new(value, id, accum_param, zero_value)
@@ -159,14 +160,20 @@ module Spark
     # Distribute a local Ruby collection to form an RDD
     # Direct method can be slow so be careful, this method update data inplace
     #
-    #   data: Range or Array
-    #   num_slices: number of slice
-    #   options: use
-    #            serializer
-    #            batch_size
+    # == Parameters:
+    # data:: Range or Array
+    # num_slices:: number of slice
+    # options::
+    #   - use
+    #   - serializer
+    #   - batch_size
     #
-    # $sc.parallelize(["1", "2", "3"]).map(lambda{|x| x.to_i}).collect
-    # => [1, 2, 3]
+    # == Examples:
+    #   $sc.parallelize(["1", "2", "3"]).map(lambda{|x| x.to_i}).collect
+    #   #=> [1, 2, 3]
+    #
+    #   $sc.parallelize(1..3).map(:to_s).collect
+    #   #=> ["1", "2", "3"]
     #
     def parallelize(data, num_slices=nil, options={})
       num_slices ||= default_parallelism
@@ -200,13 +207,14 @@ module Spark
     # Read a text file from HDFS, a local file system (available on all nodes), or any
     # Hadoop-supported file system URI, and return it as an RDD of Strings.
     #
-    # f = Tempfile.new("test")
-    # f.puts("1")
-    # f.puts("2")
-    # f.close
+    # == Example:
+    #   f = Tempfile.new("test")
+    #   f.puts("1")
+    #   f.puts("2")
+    #   f.close
     #
-    # $sc.text_file(f.path).map(lambda{|x| x.to_i}).collect
-    # => [1, 2]
+    #   $sc.text_file(f.path).map(lambda{|x| x.to_i}).collect
+    #   # => [1, 2]
     #
     def text_file(path, min_partitions=nil, options={})
       min_partitions ||= default_parallelism
@@ -219,16 +227,17 @@ module Spark
     # Hadoop-supported file system URI. Each file is read as a single record and returned in a
     # key-value pair, where the key is the path of each file, the value is the content of each file.
     #
-    # dir = Dir.mktmpdir
-    # f1 = Tempfile.new("test1", dir)
-    # f2 = Tempfile.new("test2", dir)
-    # f1.puts("1"); f1.puts("2");
-    # f2.puts("3"); f2.puts("4");
-    # f1.close
-    # f2.close
+    # == Example:
+    #   dir = Dir.mktmpdir
+    #   f1 = Tempfile.new("test1", dir)
+    #   f2 = Tempfile.new("test2", dir)
+    #   f1.puts("1"); f1.puts("2");
+    #   f2.puts("3"); f2.puts("4");
+    #   f1.close
+    #   f2.close
     #
-    # $sc.whole_text_files(dir).flat_map(lambda{|key, value| value.split}).collect
-    # => ["1", "2", "3", "4"]
+    #   $sc.whole_text_files(dir).flat_map(lambda{|key, value| value.split}).collect
+    #   # => ["1", "2", "3", "4"]
     #
     def whole_text_files(path, min_partitions=nil, options={})
       min_partitions ||= default_parallelism
@@ -243,9 +252,10 @@ module Spark
     #
     # If partitions is not specified, this will run over all partitions.
     #
-    # rdd = $sc.parallelize(0..10, 5, batch_size: 1)
-    # $sc.run_job(rdd, lambda{|x| x.to_s}, [0,2])
-    # => ["[0, 1]", "[4, 5]"]
+    # == Example:
+    #   rdd = $sc.parallelize(0..10, 5, batch_size: 1)
+    #   $sc.run_job(rdd, lambda{|x| x.to_s}, [0,2])
+    #   # => ["[0, 1]", "[4, 5]"]
     #
     def run_job(rdd, f, partitions=nil, allow_local=false)
       run_job_with_command(rdd, partitions, allow_local, Spark::Command::MapPartitions, f)

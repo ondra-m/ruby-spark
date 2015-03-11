@@ -1,4 +1,5 @@
 module Spark
+  # Commond constant for Ruby and Spark
   module Constant
     DATA_EOF = -2
     WORKER_ERROR = -1

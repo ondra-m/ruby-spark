@@ -1,5 +1,6 @@
 module Spark
   module Serializer
+    # @abstract Parent for all type of serializers
     class Base
 
       include Spark::Helper::Serialize
@@ -22,16 +23,6 @@ module Spark
         self
       end
 
-      # def batch_size(size=-1)
-      #   if size == -1
-      #     return @batch_size
-      #   end
-
-      #   _new = self.dup
-      #   _new.batch_size = size
-      #   _new
-      # end
-
       def batch_size=(size)
         @batch_size = size.to_i
       end
@@ -49,9 +40,8 @@ module Spark
       # Load
 
       # Load and deserialize an Array from IO, Array of Java iterator
-      #
-      # mri:   respond_to?(:iterator) => false
-      # jruby: respond_to?(:iterator) => true
+      #   mri:   respond_to?(:iterator) => false
+      #   jruby: respond_to?(:iterator) => true
       #
       def load(source)
         # Tempfile is Delegator for File so it is not IO
@@ -66,26 +56,12 @@ module Spark
       end
 
       # Load data from IO. Data must have a format:
-      #  
-      # +------------+--------+
-      # | signed int |  data  |
-      # |     4B     |        |
-      # +------------+--------+
       #
-      # def load_from_io(io)
-      #   result = []
-      #   while true
-      #     begin
-      #       result << load_one_from_io(io)
-      #     rescue
-      #       break
-      #     end
-      #   end
-
-      #   result.flatten!(1) if batched?
-      #   result
-      # end
-
+      #   +------------+--------+
+      #   | signed int |  data  |
+      #   |     4B     |        |
+      #   +------------+--------+
+      #
       def load_from_io(io)
         return to_enum(__callee__, io) unless block_given?
 
@@ -149,7 +125,6 @@ module Spark
       # Dump
 
       # Serialize and send data into IO. Check 'load_from_io' for data format.
-      #
       def dump(data, io)
         if !data.is_a?(Array) && !data.is_a?(Enumerator)
           data = [data]
@@ -173,8 +148,8 @@ module Spark
 
       # Rescue cannot be defined
       #
-      # mri   => RuntimeError
-      # jruby => NoMethodError
+      #   mri   => RuntimeError
+      #   jruby => NoMethodError
       #
       def try(object, method)
         begin

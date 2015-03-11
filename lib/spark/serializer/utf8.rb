@@ -1,9 +1,10 @@
-# Used for file
-#
-# File is sended as String but worker use serialization
-#
 module Spark
   module Serializer
+    ##
+    # Used for file
+    #
+    # File is sended as String but worker use serialization
+    #
     class UTF8 < Base
 
       def set(*)

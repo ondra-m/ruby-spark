@@ -77,7 +77,7 @@ class Spark::Command::CombineByKey
     end
   end
 
-  
+
   # ---------------
 
 end
@@ -121,26 +121,4 @@ class Spark::Command::FlatMapValues < _Base
     iterator.flatten!(1)
     iterator
   end
-
-  # def run_with_enum(iterator, *)
-  #   return to_enum(:run_with_enum, iterator) unless block_given?
-
-  #   iterator.each do |(key, values)|
-  #     values = @map_function.call(values)
-  #     values.flatten!
-  #     values.each do |value|
-  #       yield [key, value]
-  #     end
-  #   end
-  # end
-
-  # def lazy_run(iterator, *)
-  #   iterator.flat_map do |(key, values)|
-  #     values = @map_function.call(values)
-  #     values.flatten!(1)
-  #     values.map! do |value|
-  #       [key, value]
-  #     end
-  #   end
-  # end
 end

@@ -1,3 +1,8 @@
+##
+# Spark::JavaBridge::Base
+#
+# Parent for all adapter (ruby - java)
+#
 module Spark
   module JavaBridge
     class Base

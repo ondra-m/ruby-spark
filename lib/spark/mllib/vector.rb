@@ -34,26 +34,26 @@ end
 
 module Spark
   module Mllib
+    # @abstract Parent for all type of vectors
     class VectorBase < VectorAdapter
-
     end
   end
 end
 
-##
-# A dense vector represented by a value array.
-#
-# Dense vector is a vector in which most of the elements are non-zero.
-#
-# == Example:
-#   DenseVector.new([1,2,3,4,5]).values
-#   # => [1, 2, 3, 4, 5]
-#
-#   DenseVector.new(1..5).values
-#   # => [1, 2, 3, 4, 5]
-#
 module Spark
   module Mllib
+    ##
+    # A dense vector represented by a value array.
+    #
+    # Dense vector is a vector in which most of the elements are non-zero.
+    #
+    # == Example:
+    #   DenseVector.new([1,2,3,4,5]).values
+    #   # => [1, 2, 3, 4, 5]
+    #
+    #   DenseVector.new(1..5).values
+    #   # => [1, 2, 3, 4, 5]
+    #
     class DenseVector < VectorBase
 
       def initialize(values)
@@ -63,6 +63,7 @@ module Spark
       # Covert string to vector
       #
       #   DenseVector.parse("[1.0,2.0,3.0,4.0,5.0]")
+      #
       def self.parse(data)
         unless data =~ /\[[0-9., ]+\]/
           raise ArgumentError, 'Unknow format for DenseVector.'
@@ -81,6 +82,7 @@ module Spark
       #
       #   DenseVector.new([1,2,3,4,5]).to_s
       #   # => "[1.0,2.0,3.0,4.0,5.0]"
+      #
       def to_s
         "[#{values.join(',')}]"
       end
@@ -105,23 +107,23 @@ module Spark
   end
 end
 
-##
-# A sparse vector represented by an index array and an value array.
-#
-# Sparse vector is a vector in which most of the elements are zero.
-#
-# == Example:
-#   SparseVector.new(4, {1 => 1.0, 3 => 5.5}).values
-#   # => [0, 1.0, 0, 5.5]
-#
-#   SparseVector.new(4, [[1, 3], [1.0, 5.5]]).values
-#   # => [0, 1.0, 0, 5.5]
-#
-#   SparseVector.new(4, [1, 3], [1.0, 5.5]).values
-#   # => [0, 1.0, 0, 5.5]
-#
 module Spark
   module Mllib
+    ##
+    # A sparse vector represented by an index array and an value array.
+    #
+    # Sparse vector is a vector in which most of the elements are zero.
+    #
+    # == Example:
+    #   SparseVector.new(4, {1 => 1.0, 3 => 5.5}).values
+    #   # => [0, 1.0, 0, 5.5]
+    #
+    #   SparseVector.new(4, [[1, 3], [1.0, 5.5]]).values
+    #   # => [0, 1.0, 0, 5.5]
+    #
+    #   SparseVector.new(4, [1, 3], [1.0, 5.5]).values
+    #   # => [0, 1.0, 0, 5.5]
+    #
     class SparseVector < VectorBase
 
       attr_reader :indices
@@ -145,6 +147,7 @@ module Spark
       # Covert string to vector
       #
       #   SparseVector.parse("(5,[1,4],[3.0,5.0])")
+      #
       def self.parse(data)
         data = data.match(/\(([0-9]+)[ ]*,[ ]*\[([0-9,. ]*)\][ ]*,[ ]*\[([0-9,. ]*)\]\)/)
         if data
@@ -164,6 +167,7 @@ module Spark
       #
       #   SparseVector.new(5, {1 => 3, 4 => 5}).to_s
       #   # => "(5,[1,4],[3.0,5.0])"
+      #
       def to_s
         "(#{size},[#{indices.join(',')}],[#{values.join(',')}])"
       end

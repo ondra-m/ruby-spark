@@ -1,12 +1,9 @@
-class Spark::Mllib::LinearRegressionModel < Spark::Mllib::RegressionModel
-end
-
 ##
-# LinearRegressionWithSGD
+# LinearRegressionModel
 #
 # Train a linear regression model with no regularization using Stochastic Gradient Descent.
 # This solves the least squares regression formulation
-#              f(weights) = 1/n ||A weights-y||^2^
+#   f(weights) = 1/n ||A weights-y||^2^
 # (which is the mean squared error).
 # Here the data matrix has n rows, and the input RDD holds the set of rows of A, each with
 # its corresponding right hand side label y.
@@ -55,6 +52,9 @@ end
 #   lrm.predict(SparseVector.new(1, {0 => 1.0})) - 1 < 0.5
 #   # => true
 #
+class Spark::Mllib::LinearRegressionModel < Spark::Mllib::RegressionModel
+end
+
 module Spark
   module Mllib
     class LinearRegressionWithSGD < RegressionMethodBase
@@ -94,9 +94,9 @@ module Spark
       #   The type of regularizer used for training our model (default: nil).
       #
       #   Allowed values:
-      #     - "l1" for using L1 regularization (lasso),
-      #     - "l2" for using L2 regularization (ridge),
-      #     - None for no regularization
+      #   - "l1" for using L1 regularization (lasso),
+      #   - "l2" for using L2 regularization (ridge),
+      #   - None for no regularization
       #
       # intercept::
       #   Boolean parameter which indicates the use

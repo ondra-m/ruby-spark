@@ -1,4 +1,7 @@
 module Spark
+  # MLlib is Spark’s scalable machine learning library consisting of common learning algorithms and utilities,
+  # including classification, regression, clustering, collaborative filtering, dimensionality reduction,
+  # as well as underlying optimization primitives.
   module Mllib
 
     def self.autoload(klass, location, import=true)

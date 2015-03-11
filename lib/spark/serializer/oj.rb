@@ -3,7 +3,7 @@ module Spark
     class Oj < Marshal
 
       def name
-        "oj"
+        'oj'
       end
 
       def serialize(data)
@@ -19,7 +19,7 @@ module Spark
 end
 
 begin
-  require "oj"
+  require 'oj'
 rescue LoadError
   Spark::Serializer::Oj = Spark::Serializer::Marshal
 end

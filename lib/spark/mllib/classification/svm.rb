@@ -1,44 +1,44 @@
-##
-# SVMModel
-#
-# A support vector machine.
-#
-# == Examples:
-#
-#   Spark::Mllib.import
-#
-#   # Dense vectors
-#   data = [
-#       LabeledPoint.new(0.0, [0.0]),
-#       LabeledPoint.new(1.0, [1.0]),
-#       LabeledPoint.new(1.0, [2.0]),
-#       LabeledPoint.new(1.0, [3.0])
-#   ]
-#   svm = SVMWithSGD.train($sc.parallelize(data))
-#
-#   svm.predict([1.0])
-#   # => 1
-#   svm.clear_threshold
-#   svm.predict([1.0])
-#   # => 1.25...
-#
-#
-#   # Sparse vectors
-#   data = [
-#       LabeledPoint.new(0.0, SparseVector.new(2, {0 => -1.0})),
-#       LabeledPoint.new(1.0, SparseVector.new(2, {1 => 1.0})),
-#       LabeledPoint.new(0.0, SparseVector.new(2, {0 => 0.0})),
-#       LabeledPoint.new(1.0, SparseVector.new(2, {1 => 2.0}))
-#   ]
-#   svm = SVMWithSGD.train($sc.parallelize(data))
-#
-#   svm.predict(SparseVector.new(2, {1 => 1.0}))
-#   # => 1
-#   svm.predict(SparseVector.new(2, {0 => -1.0}))
-#   # => 0
-#
 module Spark
   module Mllib
+    ##
+    # SVMModel
+    #
+    # A support vector machine.
+    #
+    # == Examples:
+    #
+    #   Spark::Mllib.import
+    #
+    #   # Dense vectors
+    #   data = [
+    #       LabeledPoint.new(0.0, [0.0]),
+    #       LabeledPoint.new(1.0, [1.0]),
+    #       LabeledPoint.new(1.0, [2.0]),
+    #       LabeledPoint.new(1.0, [3.0])
+    #   ]
+    #   svm = SVMWithSGD.train($sc.parallelize(data))
+    #
+    #   svm.predict([1.0])
+    #   # => 1
+    #   svm.clear_threshold
+    #   svm.predict([1.0])
+    #   # => 1.25...
+    #
+    #
+    #   # Sparse vectors
+    #   data = [
+    #       LabeledPoint.new(0.0, SparseVector.new(2, {0 => -1.0})),
+    #       LabeledPoint.new(1.0, SparseVector.new(2, {1 => 1.0})),
+    #       LabeledPoint.new(0.0, SparseVector.new(2, {0 => 0.0})),
+    #       LabeledPoint.new(1.0, SparseVector.new(2, {1 => 2.0}))
+    #   ]
+    #   svm = SVMWithSGD.train($sc.parallelize(data))
+    #
+    #   svm.predict(SparseVector.new(2, {1 => 1.0}))
+    #   # => 1
+    #   svm.predict(SparseVector.new(2, {0 => -1.0}))
+    #   # => 0
+    #
     class SVMModel < ClassificationModel
 
       def initialize(*args)
@@ -105,9 +105,9 @@ module Spark
       #   The type of regularizer used for training our model (default: "l2").
       #
       #   Allowed values:
-      #     - "l1" for using L1 regularization
-      #     - "l2" for using L2 regularization
-      #     - nil for no regularization
+      #   - "l1" for using L1 regularization
+      #   - "l2" for using L2 regularization
+      #   - nil for no regularization
       #
       # intercept::
       #   Boolean parameter which indicates the use

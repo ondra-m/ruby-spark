@@ -3,7 +3,7 @@ module Spark
     class MessagePack < Marshal
 
       def name
-        "message_pack"
+        'message_pack'
       end
 
       def self.serialize(data)
@@ -19,7 +19,7 @@ module Spark
 end
 
 begin
-  require "msgpack"
+  require 'msgpack'
 rescue LoadError
   Spark::Serializer::MessagePack = Spark::Serializer::Marshal
 end

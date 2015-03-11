@@ -20,11 +20,11 @@ module Spark
       only_ext       = options.only_ext
 
       env = {
-        "SCALA_VERSION" => scala_version,
-        "SPARK_VERSION" => spark_version,
-        "SPARK_CORE_VERSION" => spark_core,
-        "HADOOP_VERSION" => hadoop_version,
-        "SPARK_HOME" => spark_home
+        'SCALA_VERSION' => scala_version,
+        'SPARK_VERSION' => spark_version,
+        'SPARK_CORE_VERSION' => spark_core,
+        'HADOOP_VERSION' => hadoop_version,
+        'SPARK_HOME' => spark_home
       }
 
       cmd = [SBT]
@@ -38,15 +38,6 @@ module Spark
         end
       end
     end
-
-    private
-
-      # def self.compile_ext(classpath)
-      #   ['scalac',
-      #    '-d', File.join(Spark.target_dir, Spark.ruby_spark_jar),
-      #    '-classpath', "\"#{File.join(classpath, '*')}\"",
-      #    File.join(Spark.spark_ext_dir, 'src', 'main', 'scala', '*.scala')].join(' ')
-      # end
 
   end
 end
