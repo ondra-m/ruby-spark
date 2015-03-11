@@ -2,8 +2,6 @@ module Spark
   module Helper
     module Serialize
 
-      # http://www.ruby-doc.org/core-2.1.1/String.html#method-i-unpack
-
       DIRECTIVE_INTEGER_BIG_ENDIAN = 'l>'
       DIRECTIVE_INTEGERS_BIG_ENDIAN = 'l>*'
       DIRECTIVE_LONG_BIG_ENDIAN = 'q>'

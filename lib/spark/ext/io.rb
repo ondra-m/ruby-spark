@@ -5,17 +5,15 @@ module Spark
       end
 
       module InstanceMethods
-        INTEGER_BIG_ENDIAN = 'l>'
-        LONG_BIG_ENDIAN = 'q>'
 
         # Reading
 
         def read_int
-          read(4).unpack(INTEGER_BIG_ENDIAN)[0]
+          unpack_int(read(4))
         end
 
         def read_long
-          read(8).unpack(LONG_BIG_ENDIAN)[0]
+          unpack_long(read(8))
         end
 
         def read_string
@@ -30,11 +28,11 @@ module Spark
         # Writing
 
         def write_int(data)
-          write([data].pack(INTEGER_BIG_ENDIAN))
+          write(pack_int(data))
         end
 
         def write_long(data)
-          write([data].pack(LONG_BIG_ENDIAN))
+          write(pack_long(data))
         end
 
         def write_string(data)
@@ -49,6 +47,7 @@ module Spark
 
       def self.included(base)
         base.extend(ClassMethods)
+        base.send(:include, Spark::Helper::Serialize)
         base.send(:include, InstanceMethods)
       end
     end
