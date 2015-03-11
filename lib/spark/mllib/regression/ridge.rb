@@ -13,7 +13,7 @@ end
 #
 # == Examples:
 #
-#   Spark::Mllib.load
+#   Spark::Mllib.import
 #
 #   data = [
 #       LabeledPoint.new(0.0, [0.0]),

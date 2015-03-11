@@ -9,7 +9,7 @@
 #
 # == Examples:
 #
-#   Spark::Mllib.load
+#   Spark::Mllib.import
 #
 #   # Dense vectors
 #   data = [

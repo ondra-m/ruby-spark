@@ -1,19 +1,36 @@
 module Spark
   module Mllib
+
+    def self.autoload(klass, location, import=true)
+      if import
+        @for_importing ||= []
+        @for_importing << klass
+      end
+
+      super(klass, location)
+    end
+
+    def self.autoload_without_import(klass, location)
+      autoload(klass, location, false)
+    end
+
+    # Base classes
+    autoload_without_import :VectorBase, 'spark/mllib/vector'
+    autoload_without_import :MatrixBase, 'spark/mllib/matrix'
+    autoload_without_import :RegressionMethodBase,     'spark/mllib/regression/common'
+    autoload_without_import :ClassificationMethodBase, 'spark/mllib/classification/common'
+
     # Linear algebra
     autoload :Vectors,      'spark/mllib/vector'
-    autoload :VectorBase,   'spark/mllib/vector'
     autoload :DenseVector,  'spark/mllib/vector'
     autoload :SparseVector, 'spark/mllib/vector'
     autoload :Matrices,     'spark/mllib/matrix'
-    autoload :MatrixBase,   'spark/mllib/matrix'
     autoload :DenseMatrix,  'spark/mllib/matrix'
     autoload :SparseMatrix, 'spark/mllib/matrix'
 
     # Regression
     autoload :LabeledPoint,            'spark/mllib/regression/labeled_point'
     autoload :RegressionModel,         'spark/mllib/regression/common'
-    autoload :RegressionMethodBase,    'spark/mllib/regression/common'
     autoload :LinearRegressionModel,   'spark/mllib/regression/linear'
     autoload :LinearRegressionWithSGD, 'spark/mllib/regression/linear'
     autoload :LassoModel,              'spark/mllib/regression/lasso'
@@ -23,7 +40,6 @@ module Spark
 
     # Classification
     autoload :ClassificationModel,         'spark/mllib/classification/common'
-    autoload :ClassificationMethodBase,    'spark/mllib/classification/common'
     autoload :LogisticRegressionWithSGD,   'spark/mllib/classification/logistic_regression'
     autoload :LogisticRegressionWithLBFGS, 'spark/mllib/classification/logistic_regression'
     autoload :SVMModel,                    'spark/mllib/classification/svm'
@@ -32,9 +48,8 @@ module Spark
     autoload :NaiveBayes,                  'spark/mllib/classification/naive_bayes'
 
     # Clustering
-    # autoload :ClusteringMethodBase, 'spark/mllib/clustering/common'
-    autoload :KMeans,               'spark/mllib/clustering/kmeans'
-    autoload :KMeansModel,          'spark/mllib/clustering/kmeans'
+    autoload :KMeans,      'spark/mllib/clustering/kmeans'
+    autoload :KMeansModel, 'spark/mllib/clustering/kmeans'
 
     def self.prepare
       return if @prepared
@@ -57,37 +72,10 @@ module Spark
       nil
     end
 
-    def self.load
-      return if @loaded
-
-      prepare
-
-      Object.const_set(:Vectors, Vectors)
-      Object.const_set(:DenseVector, DenseVector)
-      Object.const_set(:SparseVector, SparseVector)
-      Object.const_set(:Matrices, Matrices)
-      Object.const_set(:DenseMatrix, DenseMatrix)
-      Object.const_set(:SparseMatrix, SparseMatrix)
-      Object.const_set(:LabeledPoint, LabeledPoint)
-      Object.const_set(:RegressionModel, RegressionModel)
-      Object.const_set(:LinearRegressionModel, LinearRegressionModel)
-      Object.const_set(:LinearRegressionWithSGD, LinearRegressionWithSGD)
-      Object.const_set(:LassoModel, LassoModel)
-      Object.const_set(:LassoWithSGD, LassoWithSGD)
-      Object.const_set(:RidgeRegressionModel, RidgeRegressionModel)
-      Object.const_set(:RidgeRegressionWithSGD, RidgeRegressionWithSGD)
-      Object.const_set(:ClassificationModel, ClassificationModel)
-      Object.const_set(:ClassificationMethodBase, ClassificationMethodBase)
-      Object.const_set(:LogisticRegressionWithSGD, LogisticRegressionWithSGD)
-      Object.const_set(:LogisticRegressionWithLBFGS, LogisticRegressionWithLBFGS)
-      Object.const_set(:SVMModel, SVMModel)
-      Object.const_set(:SVMWithSGD, SVMWithSGD)
-      Object.const_set(:NaiveBayesModel, NaiveBayesModel)
-      Object.const_set(:NaiveBayes, NaiveBayes)
-      Object.const_set(:KMeans, KMeans)
-      Object.const_set(:KMeansModel, KMeansModel)
-
-      @loaded = true
+    def self.import(to=Object)
+      @for_importing.each do |klass|
+        to.const_set(klass, const_get(klass))
+      end
       nil
     end
 
