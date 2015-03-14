@@ -48,7 +48,7 @@ $ ruby-spark pry
 
 Or on existing project
 
-```
+```ruby
 require 'ruby-spark'
 Spark.start
 
@@ -58,7 +58,7 @@ Spark.sc # => context
 If you want configure Spark first. See [configurations](#configuration) for more details.
 
 
-```
+```ruby
 require 'ruby-spark'
 
 Spark.load_lib(spark_home)
