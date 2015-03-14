@@ -32,3 +32,4 @@ mkmf.log
 ext/spark/target/*
 ext/spark/project/target/*
 ext/spark/project/project/target/*
+wiki/*

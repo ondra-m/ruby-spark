@@ -1,5 +1,10 @@
 # Ruby-Spark
 
+More informations
+
+- [Wiki](/ondra-m/ruby-spark/wiki)
+- ruby-doc
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -28,16 +33,6 @@ To install latest supported Spark. Project is build by [SBT](ext/spark/build.sbt
 $ ruby-spark build
 ```
 
-More options ([default versions here](lib/spark/cli.rb)).
-
-```
-$ ruby-spark build --hadoop-version HADOOP_VERSION \
-                   --spark-home TARGET_DIRECTORY \
-                   --spark-core CORE_VERSION \
-                   --spark-version SPARK_VERSION \
-                   --scala-version SCALA_VERSION
-```
-
 ## Usage
 
 You can use Ruby Spark via interactive shell
@@ -57,7 +52,6 @@ Spark.sc # => context
 
 If you want configure Spark first. See [configurations](#configuration) for more details.
 
-
 ```ruby
 require 'ruby-spark'
 
@@ -72,127 +66,18 @@ Spark.start
 Spark.sc # => context
 ```
 
-### Configuration
-
-<table>
-<thead>
-  <tr>
-    <th>Key</th>
-    <th>Default value</th>
-    <th>Description</th>
-  </tr>
-</thead>
-<tbody>
-  <tr>
-    <td>spark.ruby.worker_type</td>
-    <td><i>depend on system</i></td>
-    <td>
-      Type of workers.
-      <br>
-      <b>process</b>: new workers are created by fork function<br>
-      <b>thread</b>: worker is represented as thread<br>
-      <b>simple</b>: new workers are created by opening new script
-    </td>
-  </tr>
-  <tr>
-    <td>spark.ruby.worker_arguments</td>
-    <td><i>depend on system</i></td>
-    <td>Arguments which will be passed to ruby command</td>
-  </tr>
-  <tr>
-    <td>spark.ruby.parallelize_strategy</td>
-    <td>inplace</td>
-    <td>
-      What happen with Array during parallelize method
-      <br>
-      <b>inplace</b>: an array is converted using choosen serializer<br>
-      <b>deep_copy</b>: and array is cloned first to prevent changin the original data
-    </td>
-  </tr>
-  <tr>
-    <td>spark.ruby.serializer</td>
-    <td>marshal</td>
-    <td>
-      Default serializer
-      <br>
-      <b>marshal</b>: ruby's default (slowest)
-      <b>oj</b>: faster than marshal but doesn't work on jruby<br>
-      <b>message_pack</b>: fastest but cannot serialize large numbers and some objects
-    </td>
-  </tr>
-  <tr>
-    <td>spark.ruby.batch_size</td>
-    <td>1024</td>
-    <td>Number of items which will be serialized and send as one item</td>
-  </tr>
-</tbody>
-</table>
-
-There are 3 way to configure ruby-spark and spark.
-
-
-### By environment variable
-
-```bash
-SPARK_RUBY_SERIALIZER="oj" bin/ruby-spark pry
-```
-
-
-### By configuration
-
-```ruby
-Spark.config do
-  set_app_name "RubySpark"
-  set_master "local[*]"
-  set "spark.ruby.serializer", "oj"
-end
-```
-
-### During data uploading
-
-```ruby
-$sc.parallelize(1..10, 3, serializer: "oj")
-```
-check next section for more informations
-
-
-## Starting/stopping the context
-
-RubySpark allows only one instance of SparkContext.
-
-```ruby
-# Create a context. This method have to called before using Spark's functionality
-Spark.start
-
-# Stop context, clear config and kill all workers
-Spark.stop
-```
-
-Access to the context.
-
-```ruby
-# Running context
-Spark.context
-
-# You can set global variable for quicker use.
-$sc = Spark.context
-```
-
-
-
 ## Uploading a data
-
 
 Single file
 
 ```ruby
-$sc.text_file("spec/inputs/numbers_1_100.txt", workers_num, custom_options)
+$sc.text_file(FILE, workers_num, custom_options)
 ```
 
 All files on directory
 
 ```ruby
-$sc.whole_text_files("spec/inputs", workers_num, custom_options)
+$sc.whole_text_files(DIRECTORY, workers_num, custom_options)
 ```
 
 Direct
@@ -201,7 +86,6 @@ Direct
 $sc.parallelize([1,2,3,4,5], workers_num, custom_options)
 $sc.parallelize(1..5, workers_num, custom_options)
 ```
-
 
 ### Options
 
@@ -223,7 +107,6 @@ $sc.parallelize(1..5, workers_num, custom_options)
 </dl>
 
 
-
 ## Examples
 
 Sum of numbers
@@ -236,31 +119,19 @@ $sc.parallelize(0..10).sum
 Words count using methods
 
 ```ruby
-def split_line(line)
-  line.split
-end
+rdd = $sc.text_file(PATH)
 
-def map(x)
-  [x,1]
-end
+rdd = rdd.flat_map(lambda{|line| line.split})
+         .map(lambda{|word| [word, 1]})
+         .reduce_by_key(lambda{|a, b| a+b})
 
-def reduce(x,y)
-  x+y
-end
-
-rdd = $sc.text_file("spec/inputs/lorem_300.txt")
-rdd = rdd.flat_map(:split_line)
-rdd = rdd.map(:map)
-rdd = rdd.reduce_by_key(:reduce)
 rdd.collect_as_hash
-
-# => {word: count}
 ```
 
 Estimating pi with a custom serializer
 
 ```ruby
-slices = 2
+slices = 3
 n = 100000 * slices
 
 def map(_)
@@ -274,8 +145,24 @@ def map(_)
   end
 end
 
-rdd = $sc.parallelize(1..n, slices, serializer: "oj")
-rdd = rdd.map(:map)
+rdd = Spark.context.parallelize(1..n, slices, serializer: 'oj')
+rdd = rdd.map(method(:map))
 
-puts "Pi is roughly %f" % (4.0 * rdd.sum / n)
+puts 'Pi is roughly %f' % (4.0 * rdd.sum / n)
+```
+
+Linear regression
+
+```ruby
+Spark::Mllib.import
+
+data = [
+  LabeledPoint.new(0.0, [0.0]),
+  LabeledPoint.new(1.0, [1.0]),
+  LabeledPoint.new(3.0, [2.0]),
+  LabeledPoint.new(2.0, [3.0])
+]
+lrm = LinearRegressionWithSGD.train($sc.parallelize(data), initial_weights: [1.0])
+
+lrm.predict([0.0])
 ```
