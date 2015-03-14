@@ -1,37 +1,78 @@
 # Ruby-Spark
 
+## Installation
 
+Add this line to your application's Gemfile:
 
-## Instaling
-
-All options are optional.
-
-```bash
-bin/ruby-spark install --ivy-version     # Version of ivy which will build the SPARK
-                       --hadoop-version  # Version of hadoop which will stored with the SPARK
-                       --spark-home      # Directory where SPARK will be stored
-                       --spark-core      # Version of SPARK core
-                       --spark-version   # Version of SPARK
+```ruby
+gem 'ruby-spark'
 ```
 
-Run to see help with default values
+And then execute:
 
 ```
-bin/ruby-spark help install
+$ bundle
 ```
 
-
-
-## Interactive shell
+Or install it yourself as:
 
 ```
-bin/ruby-spark pry
-bin/ruby-spark irb
-``` 
+$ gem install ruby-spark
+```
+
+### Install Apache Spark
+
+To install latest supported Spark. Project is build by [SBT](ext/spark/build.sbt).
+
+```
+$ ruby-spark build
+```
+
+More options ([default versions here](lib/spark/cli.rb)).
+
+```
+$ ruby-spark build --hadoop-version HADOOP_VERSION \
+                   --spark-home TARGET_DIRECTORY \
+                   --spark-core CORE_VERSION \
+                   --spark-version SPARK_VERSION \
+                   --scala-version SCALA_VERSION
+```
+
+## Usage
+
+You can use Ruby Spark via interactive shell
+
+```
+$ ruby-spark pry
+```
+
+Or on existing project
+
+```
+require 'ruby-spark'
+Spark.start
+
+Spark.sc # => context
+```
+
+If you want configure Spark first. See [configurations](#configuration) for more details.
 
 
+```
+require 'ruby-spark'
 
-## Configuration
+Spark.load_lib(spark_home)
+Spark.config do
+   set_app_name "RubySpark"
+   set 'spark.ruby.batch_size', 100
+   set 'spark.ruby.serializer', 'oj'
+end
+Spark.start
+
+Spark.sc # => context
+```
+
+### Configuration
 
 <table>
 <thead>
