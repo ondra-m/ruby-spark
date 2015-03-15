@@ -108,10 +108,9 @@ module Spark
       #   Random seed value for cluster initialization.
       #
       def self.train(rdd, k, max_iterations: 100, runs: 1, initialization_mode: 'k-means||', seed: nil)
-        # Seed is not available in 1.2.1
         # Call returns KMeansModel
         Spark.jb.call(RubyMLLibAPI.new, 'trainKMeansModel', rdd,
-                      k, max_iterations, runs, initialization_mode)
+                      k, max_iterations, runs, initialization_mode, seed)
       end
 
     end

@@ -6,9 +6,10 @@ import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.classification.NaiveBayes
-import org.apache.spark.mllib.api.python.PythonMLLibAPI
+import org.apache.spark.mllib.api.python.MLLibAPI
 
-class RubyMLLibAPI extends PythonMLLibAPI {
+
+class RubyMLLibAPI extends MLLibAPI {
   // trainLinearRegressionModelWithSGD
   // trainLassoModelWithSGD
   // trainRidgeModelWithSGD
