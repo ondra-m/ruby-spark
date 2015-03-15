@@ -1,5 +1,9 @@
 # Ruby-Spark
 
+Apache Spark™ is a fast and general engine for large-scale data processing.
+
+This Gem allows you use Spark functionality on Ruby.
+
 More informations
 
 - [Wiki](/ondra-m/ruby-spark/wiki)
