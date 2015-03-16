@@ -10,6 +10,7 @@ import scala.collection.JavaConversions._
 
 import org.apache.spark._
 import org.apache.spark.{SparkEnv, Partition, SparkException, TaskContext}
+import org.apache.spark.api.ruby.marshal._
 import org.apache.spark.api.java.{JavaSparkContext, JavaPairRDD, JavaRDD}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
@@ -312,6 +313,30 @@ object RubyRDD extends Logging {
 
   def readBroadcastFromFile(sc: JavaSparkContext, path: String, id: Int): Broadcast[RubyBroadcast] = {
     sc.broadcast(new RubyBroadcast(path, id))
+  }
+
+  /**
+   * Convert an RDD of serialized Ruby objects to RDD of objects, that is usable in Java.
+   */
+  def toJava(rbRDD: JavaRDD[Array[Byte]], batched: Boolean): JavaRDD[Any] = {
+    rbRDD.rdd.mapPartitions { iter =>
+      iter.flatMap { item =>
+        val obj = Marshal.load(item)
+        if(batched){
+          obj.asInstanceOf[Array[_]]
+        }
+        else{
+          Seq(item)
+        }
+      }
+    }.toJavaRDD()
+  }
+
+  /**
+   * Convert an RDD of Java objects to an RDD of serialized Ruby objects, that is usable by Ruby.
+   */
+  def toRuby(jRDD: JavaRDD[_]): JavaRDD[Array[Byte]] = {
+    jRDD.rdd.mapPartitions { iter => new IterableMarshaller(iter) }
   }
 
 }

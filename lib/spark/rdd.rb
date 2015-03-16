@@ -179,7 +179,7 @@ module Spark
 
     def to_java
       rdd = self.reserialize('Marshal')
-      RubySerializer.rubyToJava(rdd.jrdd, rdd.serializer.batched?)
+      RubyRDD.toJava(rdd.jrdd, rdd.serializer.batched?)
     end
 
 

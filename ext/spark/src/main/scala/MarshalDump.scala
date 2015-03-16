@@ -22,6 +22,13 @@ class MarshalDump(os: DataOutputStream) {
 
   def dump(data: Any) {
     data match {
+      case null =>
+        os.writeByte('0')
+
+      case item: Boolean =>
+        val char = if(item) 'T' else 'F'
+        os.writeByte(char)
+
       case item: Int =>
         os.writeByte('i')
         dumpInt(item)
@@ -95,8 +102,7 @@ class MarshalDump(os: DataOutputStream) {
   }
 
   def dumpString(data: String) {
-    dumpInt(data.size)
-    os.write(data.getBytes)
+    dumpString(data.getBytes)
   }
 
   def dumpString(data: Array[Byte]) {

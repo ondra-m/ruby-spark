@@ -1,11 +1,11 @@
-#!/bin/ruby
+#!/usr/bin/env ruby
 
 lib = File.expand_path(File.dirname(__FILE__) + '/../lib')
 $LOAD_PATH.unshift(lib) if File.directory?(lib) && !$LOAD_PATH.include?(lib)
 
-require "ruby-spark"
+require 'ruby-spark'
 
-Spark.disable_log
+Spark.logger.disable
 Spark.start
 
 slices = 3
@@ -22,7 +22,7 @@ def map(_)
   end
 end
 
-rdd = Spark.context.parallelize(1..n, slices, serializer: "oj")
-rdd = rdd.map(:map)
+rdd = Spark.context.parallelize(1..n, slices, serializer: 'oj')
+rdd = rdd.map(method(:map))
 
-puts "Pi is roughly %f" % (4.0 * rdd.sum / n)
+puts 'Pi is roughly %f' % (4.0 * rdd.sum / n)

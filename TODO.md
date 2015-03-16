@@ -1,0 +1,6 @@
+- add compress
+- add Broadcast and Accumulator to rdd using `.bind`
+- refactor JavaBridge: to_java, from_java
+- add Streaming
+- add SQL
+- autobactch serializer
