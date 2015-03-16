@@ -16,9 +16,6 @@ RSpec.describe 'Spark::Mllib clustering' do
     end
 
     it 'deterministic' do
-      # Wait for spark 2.2 because of seed
-      skip
-
       data = Array.new(10) do |i|
         i *= 10
         DenseVector.new([i, i])

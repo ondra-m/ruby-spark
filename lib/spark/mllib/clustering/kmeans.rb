@@ -110,7 +110,7 @@ module Spark
       def self.train(rdd, k, max_iterations: 100, runs: 1, initialization_mode: 'k-means||', seed: nil)
         # Call returns KMeansModel
         Spark.jb.call(RubyMLLibAPI.new, 'trainKMeansModel', rdd,
-                      k, max_iterations, runs, initialization_mode, seed)
+                      k, max_iterations, runs, initialization_mode, Spark.jb.to_long(seed))
       end
 
     end
