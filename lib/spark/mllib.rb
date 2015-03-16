@@ -54,6 +54,9 @@ module Spark
     autoload :KMeans,      'spark/mllib/clustering/kmeans'
     autoload :KMeansModel, 'spark/mllib/clustering/kmeans'
 
+    # Stat
+    autoload :MultivariateGaussian, 'spark/mllib/stat/distribution'
+
     def self.prepare
       return if @prepared
 
