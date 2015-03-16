@@ -6,7 +6,7 @@ This Gem allows you use Spark functionality on Ruby.
 
 More informations
 
-- [Wiki](/ondra-m/ruby-spark/wiki)
+- [Wiki](https://github.com/ondra-m/ruby-spark/wiki)
 - ruby-doc
 
 ## Installation
