@@ -33,6 +33,8 @@ class MarshalDump(os: DataOutputStream) {
       case item: Double =>
         os.writeByte('f')
         dumpFloat(item)
+
+      case item: ArrayBuffer[Any] => dump(item.toArray)
     }
   }
 

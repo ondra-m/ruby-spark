@@ -44,6 +44,18 @@ module Spark
         super(:dense, rows, cols, values.to_a)
       end
 
+      def to_java
+        JDenseMatrix.new(shape[0], shape[1], values.flatten)
+      end
+
+      def self.from_java(object)
+        rows = object.numRows
+        cols = object.numCols
+        values = object.values
+
+        DenseMatrix.new(rows, cols, values)
+      end
+
     end
   end
 end

@@ -51,8 +51,10 @@ module Spark
     autoload :NaiveBayes,                  'spark/mllib/classification/naive_bayes'
 
     # Clustering
-    autoload :KMeans,      'spark/mllib/clustering/kmeans'
-    autoload :KMeansModel, 'spark/mllib/clustering/kmeans'
+    autoload :KMeans,               'spark/mllib/clustering/kmeans'
+    autoload :KMeansModel,          'spark/mllib/clustering/kmeans'
+    autoload :GaussianMixture,      'spark/mllib/clustering/gaussian_mixture'
+    autoload :GaussianMixtureModel, 'spark/mllib/clustering/gaussian_mixture'
 
     # Stat
     autoload :MultivariateGaussian, 'spark/mllib/stat/distribution'

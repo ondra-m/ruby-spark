@@ -24,6 +24,13 @@ module Spark
         case type
         when :dense
           values = values.dup
+          if rows * cols == values.size
+            # Values are on one row
+            # 2x2 => [1,2,3,4]
+            values = values.each_slice(cols).to_a
+          else
+            # 2x2 => [[1,2], [3,4]]
+          end
         when :sparse
           values = Array.new(rows) { Array.new(cols) { 0.0 } }
         else

@@ -70,5 +70,7 @@ module Spark
       jlogger.isEnabledFor(JPriority.toPriority(type.upcase))
     end
 
+    alias_method :warn, :warning
+
   end
 end

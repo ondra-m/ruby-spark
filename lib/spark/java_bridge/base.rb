@@ -24,12 +24,14 @@ module Spark
         'org.apache.spark.mllib.api.ruby.RubyMLLibAPI',
         'scala.collection.mutable.HashMap',
         :JInteger  => 'java.lang.Integer',
+        :JLong     => 'java.lang.Long',
         :JLogger   => 'org.apache.log4j.Logger',
         :JLevel    => 'org.apache.log4j.Level',
         :JPriority => 'org.apache.log4j.Priority',
         :JUtils    => 'org.apache.spark.util.Utils',
         :JStorageLevel => 'org.apache.spark.storage.StorageLevel',
-        :JDenseVector => 'org.apache.spark.mllib.linalg.DenseVector'
+        :JDenseVector => 'org.apache.spark.mllib.linalg.DenseVector',
+        :JDenseMatrix => 'org.apache.spark.mllib.linalg.DenseMatrix'
       ]
 
       JAVA_TEST_OBJECTS = [
@@ -86,6 +88,11 @@ module Spark
         array_list
       end
 
+      def to_long(number)
+        return nil if number.nil?
+        JLong.new(number)
+      end
+
       def ruby_to_java(object)
         if RUBY_TO_JAVA_SKIP.include?(object.class)
           # Some object are convert automatically
@@ -126,7 +133,27 @@ module Spark
             result
           when 'org.apache.spark.mllib.clustering.KMeansModel'
             Spark::Mllib::KMeansModel.from_java(object)
+          when 'org.apache.spark.mllib.linalg.DenseMatrix'
+            Spark::Mllib::DenseMatrix.from_java(object)
           else
+            # RDD
+            simple_name = object.getClass.getSimpleName
+
+            if simple_name != 'JavaRDD' && simple_name.end_with?('RDD')
+              object = object.toJavaRDD
+              simple_name = 'JavaRDD'
+            end
+
+            if simple_name == 'JavaRDD'
+              jrdd = RubySerializer.javaToRuby(object)
+
+              serializer   = Spark.sc.get_serializer('marshal', nil)
+              deserializer = Spark.sc.get_serializer('marshal', 2) # is fully batched
+
+              return Spark::RDD.new(jrdd, Spark.sc, serializer, deserializer)
+            end
+
+            # Unknow
             Spark.logger.warn("Java object '#{object.getClass.name}' was not converted.")
             object
           end
