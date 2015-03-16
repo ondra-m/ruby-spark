@@ -71,19 +71,19 @@ module Spark
       # Call java object
       def call(klass, method, *args)
         # To java
-        args.map!{|item| ruby_to_java(item)}
+        args.map!{|item| to_java(item)}
 
         # Call java
         result = klass.__send__(method, *args)
 
         # To ruby
-        java_to_ruby(result)
+        to_ruby(result)
       end
 
       def to_java_array_list(array)
         array_list = ArrayList.new
         array.each do |item|
-          array_list.add(ruby_to_java(item))
+          array_list.add(to_java(item))
         end
         array_list
       end
@@ -93,7 +93,7 @@ module Spark
         JLong.new(number)
       end
 
-      def ruby_to_java(object)
+      def to_java(object)
         if RUBY_TO_JAVA_SKIP.include?(object.class)
           # Some object are convert automatically
           # This is for preventing errors
@@ -112,39 +112,32 @@ module Spark
       #   Rjb:   object.toArray -> Array
       #   Jruby: object.toArray -> java.lang.Object
       #
-      def java_to_ruby(object)
+      def to_ruby(object)
         if java_object?(object)
-
-          case object.getClass.name
-          when 'scala.collection.convert.Wrappers$SeqWrapper'
-            object.toArray.to_a.map!{|item| java_to_ruby(item)}
-          when 'scala.collection.mutable.WrappedArray$ofRef'
-            object.array.to_a.map!{|item| java_to_ruby(item)}
-          when 'org.apache.spark.mllib.regression.LabeledPoint'
-            Spark::Mllib::LabeledPoint.from_java(object)
-          when 'org.apache.spark.mllib.linalg.DenseVector'
-            Spark::Mllib::DenseVector.from_java(object)
-          when 'scala.collection.mutable.ArraySeq'
+          class_name = object.getClass.getSimpleName
+          case class_name
+          when 'ArraySeq'
             result = []
             iterator = object.iterator
             while iterator.hasNext
-              result << java_to_ruby(iterator.next)
+              result << to_ruby(iterator.next)
             end
             result
-          when 'org.apache.spark.mllib.clustering.KMeansModel'
-            Spark::Mllib::KMeansModel.from_java(object)
-          when 'org.apache.spark.mllib.linalg.DenseMatrix'
-            Spark::Mllib::DenseMatrix.from_java(object)
+          when 'SeqWrapper'; object.toArray.to_a.map!{|item| to_ruby(item)}
+          when 'ofRef';      object.array.to_a.map!{|item| to_ruby(item)} # WrappedArray$ofRef
+          when 'LabeledPoint'; Spark::Mllib::LabeledPoint.from_java(object)
+          when 'DenseVector';  Spark::Mllib::DenseVector.from_java(object)
+          when 'KMeansModel';  Spark::Mllib::KMeansModel.from_java(object)
+          when 'DenseMatrix';  Spark::Mllib::DenseMatrix.from_java(object)
           else
-            # RDD
-            simple_name = object.getClass.getSimpleName
-
-            if simple_name != 'JavaRDD' && simple_name.end_with?('RDD')
+            # Some RDD
+            if class_name != 'JavaRDD' && class_name.end_with?('RDD')
               object = object.toJavaRDD
-              simple_name = 'JavaRDD'
+              class_name = 'JavaRDD'
             end
 
-            if simple_name == 'JavaRDD'
+            # JavaRDD
+            if class_name == 'JavaRDD'
               jrdd = RubyRDD.toRuby(object)
 
               serializer   = Spark.sc.get_serializer('marshal', nil)
@@ -163,6 +156,9 @@ module Spark
           object
         end
       end
+
+      alias_method :java_to_ruby, :to_ruby
+      alias_method :ruby_to_java, :to_java
 
       private
 
