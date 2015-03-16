@@ -115,26 +115,9 @@ module Spark
       def java_to_ruby(object)
         if java_object?(object)
 
-          case object.getClass.name
-          when 'scala.collection.convert.Wrappers$SeqWrapper'
-            object.toArray.to_a.map!{|item| java_to_ruby(item)}
-          when 'scala.collection.mutable.WrappedArray$ofRef'
-            object.array.to_a.map!{|item| java_to_ruby(item)}
-          when 'org.apache.spark.mllib.regression.LabeledPoint'
-            Spark::Mllib::LabeledPoint.from_java(object)
-          when 'org.apache.spark.mllib.linalg.DenseVector'
-            Spark::Mllib::DenseVector.from_java(object)
-          when 'scala.collection.mutable.ArraySeq'
-            result = []
-            iterator = object.iterator
-            while iterator.hasNext
-              result << java_to_ruby(iterator.next)
-            end
-            result
-          when 'org.apache.spark.mllib.clustering.KMeansModel'
-            Spark::Mllib::KMeansModel.from_java(object)
-          when 'org.apache.spark.mllib.linalg.DenseMatrix'
-            Spark::Mllib::DenseMatrix.from_java(object)
+          klass = Converter.by_name(object.getClass.name)
+          if klass
+            klass.to_ruby(object)
           else
             # RDD
             simple_name = object.getClass.getSimpleName
@@ -157,7 +140,6 @@ module Spark
             Spark.logger.warn("Java object '#{object.getClass.name}' was not converted.")
             object
           end
-
         else
           # Already transfered
           object
@@ -200,3 +182,5 @@ module Spark
     end
   end
 end
+
+require 'spark/java_bridge/converter'

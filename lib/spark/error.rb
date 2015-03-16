@@ -45,6 +45,10 @@ module Spark
   class AccumulatorError < StandardError
   end
 
+  # Name already exist
+  class JavaBridgeError < StandardError
+  end
+
   # Wrong instances
   class MllibError < StandardError
   end

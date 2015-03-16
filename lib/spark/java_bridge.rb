@@ -1,9 +1,10 @@
 module Spark
   module JavaBridge
 
-    autoload :Base,  'spark/java_bridge/base'
-    autoload :JRuby, 'spark/java_bridge/jruby'
-    autoload :RJB,   'spark/java_bridge/rjb'
+    autoload :Base,      'spark/java_bridge/base'
+    autoload :Converter, 'spark/java_bridge/converter'
+    autoload :JRuby,     'spark/java_bridge/jruby'
+    autoload :RJB,       'spark/java_bridge/rjb'
 
     include Spark::Helper::System
 
