@@ -10,7 +10,6 @@ require 'socket'
 require_relative 'spark_files'
 
 Broadcast   = Spark::Broadcast
-Accumulator = Spark::Accumulator
 
 # =================================================================================================
 # Worker
@@ -115,7 +114,7 @@ module Worker
         socket.write_int(WORKER_DONE)
 
         # Send changed accumulator
-        changed = Accumulator.changed
+        changed = Spark::Accumulator.changed
         socket.write_int(changed.size)
         changed.each do |accumulator|
           socket.write_data([accumulator.id, accumulator.value])

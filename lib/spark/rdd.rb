@@ -168,15 +168,6 @@ module Spark
       self
     end
 
-    def accumulator(*accumulators)
-      if accumulators.empty?
-        return @command.accumulator
-      end
-
-      @command.add_accumulator(*accumulators)
-      self
-    end
-
     def to_java
       rdd = self.reserialize('Marshal')
       RubyRDD.toJava(rdd.jrdd, rdd.serializer.batched?)

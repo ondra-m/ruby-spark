@@ -15,8 +15,7 @@ module Spark
     attr_reader :command
 
     def_delegators :@command, :serializer, :serializer=, :deserializer, :deserializer=, :commands,
-                              :commands=, :libraries, :libraries=, :accumulators, :accumulators=,
-                              :bound_objects, :bound_objects=
+                              :commands=, :libraries, :libraries=, :bound_objects, :bound_objects=
 
     def initialize(serializer, deserializer=nil)
       create_command
@@ -37,7 +36,6 @@ module Spark
       copy.deserializer  = self.deserializer.dup
       copy.commands      = self.commands.dup
       copy.libraries     = self.libraries.dup
-      copy.accumulators  = self.accumulators.dup
       copy.bound_objects = self.bound_objects.dup
       copy
     end
@@ -69,10 +67,6 @@ module Spark
 
     def add_library(*libraries)
       @command.libraries += libraries
-    end
-
-    def add_accumulator(*accumulators)
-      @command.accumulators += accumulators
     end
 
     def bind(objects)

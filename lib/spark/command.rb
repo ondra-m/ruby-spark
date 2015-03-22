@@ -5,14 +5,13 @@ module Spark
   #
   class Command
 
-    attr_accessor :serializer, :deserializer, :commands, :libraries, :accumulators, :bound_objects
+    attr_accessor :serializer, :deserializer, :commands, :libraries, :bound_objects
 
     def initialize
       @serializer = nil
       @deserializer = nil
       @commands = []
       @libraries = []
-      @accumulators = []
       @bound_objects = {}
     end
 
@@ -60,7 +59,7 @@ module Spark
     # Bound objects can depend on library which is loaded during @execute
     # In that case worker raise "undefined class/module"
     def marshal_dump
-      [@serializer, @deserializer, @commands, @libraries, @accumulators, serialized_bound_objects]
+      [@serializer, @deserializer, @commands, @libraries, serialized_bound_objects]
     end
 
     def marshal_load(array)
@@ -68,7 +67,6 @@ module Spark
       @deserializer = array.shift
       @commands = array.shift
       @libraries = array.shift
-      @accumulators = array.shift
       @serialized_bound_objects = array.shift
     end
 

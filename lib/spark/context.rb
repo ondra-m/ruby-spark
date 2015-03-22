@@ -143,18 +143,18 @@ module Spark
     # data type if provided.
     #
     # == Example:
-    #   accum = $sc.accumulator(7, 1)
+    #   accum = $sc.accumulator(7)
     #
     #   rdd = $sc.parallelize(0..5, 4)
-    #   rdd = rdd.accumulator(accum)
-    #   rdd = rdd.map_partitions(lambda{|_| Accumulator[1].add(1) })
+    #   rdd = rdd.bind(accum: accum)
+    #   rdd = rdd.map_partitions(lambda{|_| accum.add(1) })
     #   rdd = rdd.collect
     #
     #   accum.value
     #   # => 11
     #
-    def accumulator(value, id=nil, accum_param=:+, zero_value=0)
-      Spark::Accumulator.new(value, id, accum_param, zero_value)
+    def accumulator(value, accum_param=:+, zero_value=0)
+      Spark::Accumulator.new(value, accum_param, zero_value)
     end
 
     # Distribute a local Ruby collection to form an RDD

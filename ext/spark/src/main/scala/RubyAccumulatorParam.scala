@@ -13,8 +13,6 @@ import org.apache.spark.util.Utils
 /**
  * Internal class that acts as an `AccumulatorParam` for Ruby accumulators. Inside, it
  * collects a list of pickled strings that we pass to Ruby through a socket.
- *
- * Partly copied from PythonAccumulatorParam (spark 1.2)
  */
 private class RubyAccumulatorParam(serverHost: String, serverPort: Int)
   extends AccumulatorParam[List[Array[Byte]]] {
@@ -59,6 +57,8 @@ private class RubyAccumulatorParam(serverHost: String, serverPort: Int)
       socketOutputStream.flush()
 
       // Wait for acknowledgement
+      // http://stackoverflow.com/questions/28560133/ruby-server-java-scala-client-deadlock
+      //
       // if(in.readInt() != RubyConstant.ACCUMULATOR_ACK){
       //   throw new SparkException("Accumulator was not acknowledged")
       // }
