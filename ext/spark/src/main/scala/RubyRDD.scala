@@ -311,7 +311,7 @@ object RubyRDD extends Logging {
     JavaRDD.fromRDD(sc.sc.parallelize(objs, parallelism))
   }
 
-  def readBroadcastFromFile(sc: JavaSparkContext, path: String, id: Int): Broadcast[RubyBroadcast] = {
+  def readBroadcastFromFile(sc: JavaSparkContext, path: String, id: java.lang.Long): Broadcast[RubyBroadcast] = {
     sc.broadcast(new RubyBroadcast(path, id))
   }
 

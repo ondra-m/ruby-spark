@@ -125,17 +125,17 @@ module Spark
     # be sent to each cluster only once.
     #
     # == Example:
-    #   broadcast1 = $sc.broadcast('a', 1)
-    #   broadcast2 = $sc.broadcast('b', 2)
+    #   broadcast1 = $sc.broadcast('a')
+    #   broadcast2 = $sc.broadcast('b')
     #
     #   rdd = $sc.parallelize(0..5, 4)
-    #   rdd = rdd.broadcast(broadcast1, broadcast2)
-    #   rdd = rdd.map_partitions_with_index(lambda{|part, index| [Broadcast[1] * index, Broadcast[2] * index] })
+    #   rdd = rdd.bind(broadcast1: broadcast1, broadcast2: broadcast2)
+    #   rdd = rdd.map_partitions_with_index(lambda{|part, index| [broadcast1.value * index, broadcast2.value * index] })
     #   rdd.collect
     #   # => ["", "", "a", "b", "aa", "bb", "aaa", "bbb"]
     #
-    def broadcast(value, id=nil)
-      Spark::Broadcast.new(self, value, id)
+    def broadcast(value)
+      Spark::Broadcast.new(self, value)
     end
 
     # Create an Accumulator with the given initial value, using a given

@@ -32,12 +32,12 @@ RSpec.describe Spark::Context do
     values1 = [1,2,3]
     values2 = [4,5,6]
 
-    broadcast1 = $sc.broadcast(values1, 1)
-    broadcast2 = $sc.broadcast(values2, 2)
+    broadcast1 = $sc.broadcast(values1)
+    broadcast2 = $sc.broadcast(values2)
 
     rdd = $sc.parallelize(0..5, workers)
-    rdd = rdd.broadcast(broadcast1, broadcast2)
-    rdd = rdd.map_partitions(lambda{|_| Broadcast[1] + Broadcast[2] })
+    rdd = rdd.bind(broadcast1: broadcast1, broadcast2: broadcast2)
+    rdd = rdd.map_partitions(lambda{|_| broadcast1.value + broadcast2.value })
 
     expect(rdd.sum).to eql(
       (values1 + values2).reduce(:+) * workers

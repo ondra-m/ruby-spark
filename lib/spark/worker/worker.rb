@@ -9,7 +9,6 @@ require 'socket'
 
 require_relative 'spark_files'
 
-Broadcast   = Spark::Broadcast
 
 # =================================================================================================
 # Worker
@@ -67,7 +66,7 @@ module Worker
         # Load broadcast
         count = socket.read_int
         count.times do
-          Spark::Broadcast.load(socket.read_long, socket.read_string)
+          Spark::Broadcast.register(socket.read_long, socket.read_string)
         end
 
         # Load command

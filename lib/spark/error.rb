@@ -34,8 +34,7 @@ module Spark
   end
 
   # Broadcasts
-  # Existing keys
-  # Wrong ID
+  # Missing path
   class BroadcastError < StandardError
   end
 

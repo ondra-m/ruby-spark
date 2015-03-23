@@ -8,6 +8,6 @@ import org.apache.spark.api.python.PythonBroadcast
  *
  * Class use Python logic - only for semantic
  */
-class RubyBroadcast(@transient var _path: String, @transient var id: Int) extends PythonBroadcast(_path) {
+class RubyBroadcast(@transient var _path: String, @transient var id: java.lang.Long) extends PythonBroadcast(_path) {
 
 }
