@@ -85,6 +85,7 @@ module Spark
           Pry.start
         end
       end
+      alias_command :shell, :pry
 
 
       # IRB -------------------------------------------------------------------
