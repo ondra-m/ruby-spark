@@ -4,10 +4,19 @@ Apache Spark™ is a fast and general engine for large-scale data processing.
 
 This Gem allows you use Spark functionality on Ruby.
 
-More informations
+> Word count in Spark's Ruby API
 
+```ruby
+file = spark.text_file("hdfs://...")
+ 
+file.flat_map(lambda{|line| line.split})
+    .map(lambda{|word| [word, 1]})
+    .reduce_by_key(lambda{|a, b| a+b})
+```
+
+- [Apache Spark](http://spark.apache.org)
 - [Wiki](https://github.com/ondra-m/ruby-spark/wiki)
-- ruby-doc
+- [Ruby-doc](http://www.rubydoc.info/github/ondra-m/ruby-spark)
 
 ## Installation
 
