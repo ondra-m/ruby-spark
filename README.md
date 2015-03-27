@@ -9,9 +9,9 @@ This Gem allows you use Spark functionality on Ruby.
 ```ruby
 file = spark.text_file("hdfs://...")
  
-rdd = file.flat_map(:split)
-rdd = rdd.map(lambda{|word| [word, 1]})
-rdd = rdd.reduce_by_key(lambda{|a, b| a+b})
+file.flat_map(:split)
+    .map(lambda{|word| [word, 1]})
+    .reduce_by_key(lambda{|a, b| a+b})
 ```
 
 - [Apache Spark](http://spark.apache.org)
