@@ -15,12 +15,12 @@ module Spark
       #   module HashExtension
       #     module InstanceMethods
       #       def a_with_spark
-      #         2      
+      #         2
       #       end
       #
       #       def b_with_spark
       #         1
-      #       end    
+      #       end
       #     end
       #
       #     def self.included(base)
@@ -55,4 +55,4 @@ module Spark
   end
 end
 
-Module.include(Spark::CoreExtension::Module)
+Module.__send__(:include, Spark::CoreExtension::Module)

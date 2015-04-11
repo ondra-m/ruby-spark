@@ -3,7 +3,7 @@ module Spark
     module IPSocket
       module ClassMethods
       end
-      
+
       module InstanceMethods
         def port
           addr[1]
@@ -17,7 +17,7 @@ module Spark
           addr[3]
         end
       end
-      
+
       def self.included(base)
         base.extend(ClassMethods)
         base.send(:include, InstanceMethods)
@@ -26,4 +26,4 @@ module Spark
   end
 end
 
-IPSocket.include(Spark::CoreExtension::IPSocket)
+IPSocket.__send__(:include, Spark::CoreExtension::IPSocket)

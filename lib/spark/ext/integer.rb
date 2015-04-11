@@ -3,10 +3,10 @@ module Spark
     module Integer
       module ClassMethods
       end
-      
+
       module InstanceMethods
       end
-      
+
       def self.included(base)
         base.extend(ClassMethods)
         base.send(:include, InstanceMethods)
@@ -22,4 +22,4 @@ module Spark
   end
 end
 
-Integer.include(Spark::CoreExtension::Integer)
+Integer.__send__(:include, Spark::CoreExtension::Integer)

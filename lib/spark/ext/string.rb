@@ -3,13 +3,13 @@ module Spark
     module String
       module ClassMethods
       end
-      
+
       module InstanceMethods
         def camelize_with_spark
           self.gsub(/\/(.?)/) { "::#{$1.upcase}" }.gsub(/(?:^|_)(.)/) { $1.upcase }
         end
       end
-      
+
       def self.included(base)
         base.extend(ClassMethods)
         base.send(:include, InstanceMethods)
@@ -21,4 +21,4 @@ module Spark
   end
 end
 
-String.include(Spark::CoreExtension::String)
+String.__send__(:include, Spark::CoreExtension::String)

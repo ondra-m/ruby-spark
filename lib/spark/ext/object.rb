@@ -3,13 +3,13 @@ module Spark
     module Object
       module ClassMethods
       end
-      
+
       module InstanceMethods
         def deep_copy_with_spark
           Marshal.load(Marshal.dump(self))
         end
       end
-      
+
       def self.included(base)
         base.extend(ClassMethods)
         base.send(:include, InstanceMethods)
@@ -21,4 +21,4 @@ module Spark
   end
 end
 
-Object.include(Spark::CoreExtension::Object)
+Object.__send__(:include, Spark::CoreExtension::Object)

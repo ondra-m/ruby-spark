@@ -54,4 +54,4 @@ module Spark
   end
 end
 
-IO.include(Spark::CoreExtension::IO)
+IO.__send__(:include, Spark::CoreExtension::IO)

@@ -38,4 +38,4 @@ module Spark
   end
 end
 
-Hash.include(Spark::CoreExtension::Hash)
+Hash.__send__(:include, Spark::CoreExtension::Hash)
