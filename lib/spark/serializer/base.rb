@@ -137,7 +137,7 @@ module Spark
           # Size and data can have different encoding
           # Marshal: both ASCII
           # Oj: ASCII and UTF-8
-          io.write(pack_int(serialized.size))
+          io.write(pack_int(serialized.bytesize))
           io.write(serialized)
         end
 
