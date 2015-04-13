@@ -16,12 +16,12 @@ numbers = range(0, int(os.environ.get('NUMBERS_COUNT')))
 random_file_path = os.environ.get('RANDOM_FILE_PATH')
 
 with open(random_file_path, 'r') as f:
-  random_strings = f.read()
+  random_strings = f.read().split()
+
 
 # =============================================================================
 # Serialization
 # =============================================================================
-
 
 t = time()
 rdd_numbers = sc.parallelize(numbers, workers)

@@ -25,7 +25,6 @@ end
 # Serialization
 # =============================================================================
 
-
 time = Benchmark.realtime do
   @rdd_numbers = sc.parallelize(@numbers, @workers)
 end
