@@ -133,7 +133,12 @@ module Spark
 
         data.each do |item|
           serialized = serialize(item)
-          io.write(pack_int(serialized.size) + serialized)
+
+          # Size and data can have different encoding
+          # Marshal: both ASCII
+          # Oj: ASCII and UTF-8
+          io.write(pack_int(serialized.size))
+          io.write(serialized)
         end
 
         io.flush
