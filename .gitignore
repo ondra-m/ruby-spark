@@ -34,3 +34,4 @@ ext/spark/project/target/*
 ext/spark/project/project/target/*
 wiki/*
 /benchmark/performance/spark/*
+/benchmark/performance/rspark/*
