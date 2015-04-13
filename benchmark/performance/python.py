@@ -1,5 +1,6 @@
 import os
 from time import time
+from operator import add
 from pyspark import SparkContext
 
 sc = SparkContext(appName="Python", master="local[*]")
@@ -41,6 +42,29 @@ t = time() - t
 log('TextFileSerialization', t)
 
 
+# =============================================================================
+# Computing
+# =============================================================================
+
+t = time()
+rdd_numbers.map(lambda x: x*2).collect()
+t = time() - t
+log('X2Computing', t)
+
+
+t = time()
+rdd_numbers.map(lambda x: x*2).map(lambda x: x*3).map(lambda x: x*4).collect()
+t = time() - t
+log('X2X3X4Computing', t)
+
+
+t = time()
+rdd = rdd_file_string.flatMap(lambda x: x.split(' '))
+rdd = rdd.map(lambda x: (x, 1))
+rdd = rdd.reduceByKey(add)
+rdd.collect()
+t = time() - t
+log('WordCount', t)
 
 
 log_file.close()

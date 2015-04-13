@@ -46,11 +46,35 @@ end
 log('TextFileSerialization', time)
 
 
+# =============================================================================
+# Computing
+# =============================================================================
+
+time = Benchmark.realtime do
+  @rdd_numbers.map(lambda{|x| x*2}).collect
+end
+
+log('X2Computing', time)
 
 
+time = Benchmark.realtime do
+  x2 = lambda{|x| x*2}
+  x3 = lambda{|x| x*3}
+  x4 = lambda{|x| x*4}
+  @rdd_numbers.map(x2).map(x3).map(x4).collect
+end
+
+log('X2X3X4Computing', time)
 
 
+time = Benchmark.realtime do
+  rdd = @rdd_file_string.flat_map(:split)
+  rdd = rdd.map(lambda{|word| [word, 1]})
+  rdd = rdd.reduce_by_key(lambda{|a, b| a+b})
+  rdd.collect
+end
 
+log('WordCount', time)
 
 
 $log_file.close

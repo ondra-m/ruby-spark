@@ -8,12 +8,15 @@ set -e
 
 # Settings
 export WORKERS=2
-export NUMBERS_COUNT=10000000
-export RANDOM_FILE_ROWS=1000
+export NUMBERS_COUNT=10000
+export RANDOM_FILE_ROWS=100
 export RANDOM_FILE_PER_LINE=10
-export RANDOM_FILE_DUPLICATES=100
+export RANDOM_FILE_DUPLICATES=5
 export RANDOM_FILE_PATH=$(mktemp)
 export RUBY_BATCH_SIZE=1024
+
+mx="4096m"
+ms="4096m"
 
 # Parse arguments
 while (( "$#" )); do
@@ -42,6 +45,14 @@ while (( "$#" )); do
       RUBY_BATCH_SIZE="$2"
       shift
       ;;
+    --mx)
+      mx="$2"
+      shift
+      ;;
+    --ms)
+      ms="$2"
+      shift
+      ;;
     *)
       break
       ;;
@@ -68,6 +79,10 @@ if [[ -z "$SPARK_HOME" ]]; then
   export SPARK_HOME=$(pwd)/spark
 fi
 
+if [[ -z "$RSPARK_HOME" ]]; then
+  export RSPARK_HOME=$(pwd)/rspark
+fi
+
 export SPARK_RUBY_BATCH_SIZE="$RUBY_BATCH_SIZE"
 SPARK_CLASSPATH=$($SPARK_HOME/bin/compute-classpath.sh 2>/dev/null)
 
@@ -76,10 +91,9 @@ export RUBY_MARSHAL_LOG=$(mktemp)
 export RUBY_OJ_LOG=$(mktemp)
 export PYTHON_LOG=$(mktemp)
 export SCALA_LOG=$(mktemp)
+export R_LOG=$(mktemp)
 
-export JAVA_OPTS="$JAVA_OPTS -Xms4096m -Xmx4096m"
-export _JAVA_OPTIONS="$_JAVA_OPTIONS -Xms4096m -Xmx4096m"
-export JAVA_OPTIONS="$JAVA_OPTIONS -Xms4096m -Xmx4096m"
+export _JAVA_OPTIONS="$_JAVA_OPTIONS -Xms$ms -Xmx$mx"
 
 # Run:
 # --- Ruby
@@ -98,6 +112,9 @@ export RUBY_LOG="$RUBY_OJ_LOG"
 /usr/bin/env scalac -cp $SPARK_CLASSPATH scala.scala -d scala.jar #&>/dev/null
 "$SPARK_HOME"/bin/spark-submit --master "local[*]" $(pwd)/scala.jar #&>/dev/null
 
+# --- R
+"$RSPARK_HOME"/sparkR r.r #&>/dev/null
+
 # Parse results
 echo "# Ruby (Marshal)"
 cat $RUBY_MARSHAL_LOG
@@ -113,3 +130,7 @@ echo ""
 
 echo "# Scala"
 cat $SCALA_LOG
+echo ""
+
+echo "# R"
+cat $R_LOG
