@@ -20,6 +20,9 @@ object Scala {
     val numbersCount = System.getenv("NUMBERS_COUNT").toInt
     val textFile = System.getenv("TEXT_FILE")
 
+    val numbers = 0 until numbersCount
+    val strings = Source.fromFile(textFile).mkString.split("\n")
+
 
     // =============================================================================
     // Serialization
@@ -28,10 +31,17 @@ object Scala {
     var time: Long = 0
 
     time = System.currentTimeMillis
-    val rddNumbers = sc.parallelize(0 until numbersCount, workers)
+    val rddNumbers = sc.parallelize(numbers, workers)
     time = System.currentTimeMillis - time
 
     log("NumbersSerialization", time/1000.0)
+
+
+    time = System.currentTimeMillis
+    val rddStrings = sc.parallelize(strings, workers)
+    time = System.currentTimeMillis - time
+
+    log("StringsSerialization", time/1000.0)
 
 
     // =============================================================================

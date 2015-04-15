@@ -19,16 +19,26 @@ workers = ENV['WORKERS'].to_i
 numbers_count = ENV['NUMBERS_COUNT'].to_i
 text_file = ENV['TEXT_FILE']
 
+numbers = (0...numbers_count).to_a
+strings = File.read(text_file).split("\n")
+
 
 # =============================================================================
 # Serialization
 # =============================================================================
 
 time = Benchmark.realtime do
-  @rdd_numbers = sc.parallelize(0...numbers_count, workers)
+  @rdd_numbers = sc.parallelize(numbers, workers)
 end
 
 log('NumbersSerialization', time)
+
+
+time = Benchmark.realtime do
+  @rdd_strings = sc.parallelize(strings, workers)
+end
+
+log('StringsSerialization', time)
 
 
 # =============================================================================

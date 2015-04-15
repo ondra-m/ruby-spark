@@ -18,15 +18,24 @@ workers = int(os.environ.get('WORKERS'))
 numbers_count = int(os.environ.get('NUMBERS_COUNT'))
 text_file = os.environ.get('TEXT_FILE')
 
+numers = range(numbers_count)
+with open(text_file) as t:
+  strings = t.read().split("\n")
+
 
 # =============================================================================
 # Serialization
 # =============================================================================
 
 t = time()
-rdd_numbers = sc.parallelize(range(numbers_count), workers)
+rdd_numbers = sc.parallelize(numers, workers)
 t = time() - t
 log('NumbersSerialization', t)
+
+t = time()
+rdd_strings = sc.parallelize(strings, workers)
+t = time() - t
+log('StringsSerialization', t)
 
 
 # =============================================================================

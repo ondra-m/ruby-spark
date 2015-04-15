@@ -9,14 +9,14 @@ set -e
 # Settings
 export WORKERS=2
 export MATRIX_SIZE=500
-export NUMBERS_COUNT=1000000
+export NUMBERS_COUNT=5000000
 export TEXT_FILE=$(mktemp)
 export PI_DIGIT=5000
 export RUBY_BATCH_SIZE=2048
 
-text_file_rows=100
+text_file_rows=10000
 text_file_per_line=10
-text_file_duplicates=5
+text_file_duplicates=50
 
 mx="4096m"
 ms="4096m"
