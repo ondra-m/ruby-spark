@@ -41,11 +41,11 @@ log('NumbersSerialization', time)
 is_prime = Proc.new do |x|
   case
   when x < 2
-    false
+    [x, false]
   when x == 2
-    true
+    [x, true]
   when x % 2 == 0
-    false
+    [x, false]
   else
     upper = Math.sqrt(x.to_f).to_i
     result = true
@@ -60,7 +60,7 @@ is_prime = Proc.new do |x|
       i += 2
     end
 
-    result
+    [x, result]
   end
 end
 
@@ -115,7 +115,7 @@ pi_func = Proc.new do |size|
   result = ''
 
   q, r, t, k, n, l = 1, 0, 1, 1, 3, 3
-  while size > 0 do
+  while size > 0
     if 4*q+r-t < n*t
       result << n.to_s
       size -= 1

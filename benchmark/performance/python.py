@@ -38,11 +38,11 @@ log('NumbersSerialization', t)
 
 def is_prime(x):
   if x < 2:
-    return False
+    return [x, False]
   elif x == 2:
-    return True
+    return [x, True]
   elif x % 2 == 0:
-    return False
+    return [x, False]
   else:
     upper = int(math.sqrt(float(x)))
     result = True
@@ -55,7 +55,7 @@ def is_prime(x):
 
       i += 2
 
-    return result
+    return [x, result]
 
 t = time()
 rdd_numbers.map(is_prime).collect()

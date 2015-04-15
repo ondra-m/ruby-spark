@@ -43,13 +43,13 @@ object Scala {
     time = System.currentTimeMillis
     val primes = rddNumbers.map{ x =>
       if(x < 2){
-        false
+        (x, false)
       }
       else if(x == 2){
-        true
+        (x, true)
       }
       else if(x % 2 == 0){
-        false
+        (x, false)
       }
       else{
         val upper = math.sqrt(x.toDouble).toInt
@@ -65,7 +65,7 @@ object Scala {
           }
         }
 
-        result
+        (x, result)
       }
     }
     primes.collect()

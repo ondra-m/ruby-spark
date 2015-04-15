@@ -11,7 +11,7 @@ export WORKERS=2
 export MATRIX_SIZE=500
 export NUMBERS_COUNT=1000000
 export TEXT_FILE=$(mktemp)
-export PI_DIGIT=2000
+export PI_DIGIT=5000
 export RUBY_BATCH_SIZE=2048
 
 text_file_rows=100

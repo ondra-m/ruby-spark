@@ -31,13 +31,13 @@ logInfo('NumbersSerialization', time)
 
 isPrime = function(x) {
   if(x < 2){
-    FALSE
+    c(x, FALSE)
   }
   else if(x == 2){
-    TRUE
+    c(x, TRUE)
   }
   else if(x %% 2 == 0){
-    FALSE
+    c(x, FALSE)
   }
   else{
     upper <- as.numeric(sqrt(as.double(x)))
@@ -53,7 +53,7 @@ isPrime = function(x) {
       i <- i+2
     }
 
-    result
+    c(x, result)
   }
 }
 
