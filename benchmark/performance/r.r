@@ -10,9 +10,8 @@ logInfo <- function(...){
 }
 
 workers <- as.integer(Sys.getenv('WORKERS'))
-numbers <- as.numeric(seq(0, as.integer(Sys.getenv('NUMBERS_COUNT'))))
-randomFilePath <- Sys.getenv('RANDOM_FILE_PATH')
-randomStrings <- scan(randomFilePath, character(0))
+numbersCount <- as.integer(Sys.getenv('NUMBERS_COUNT'))
+textFile <- Sys.getenv('TEXT_FILE')
 
 
 # =============================================================================
@@ -20,60 +19,50 @@ randomStrings <- scan(randomFilePath, character(0))
 # =============================================================================
 
 time <- proc.time()
-rddNumbers <- parallelize(sc, numbers, workers)
+rddNumbers <- parallelize(sc, as.numeric(seq(0, numbersCount)), workers)
 time <- as.double(proc.time()-time)[3]
 
 logInfo('NumbersSerialization', time)
-
-
-time <- proc.time()
-rddStrings <- parallelize(sc, randomStrings, workers)
-time <- as.double(proc.time()-time)[3]
-
-logInfo('RandomStringSerialization', time)
-
-
-time <- proc.time()
-rddFileString <- textFile(sc, randomFilePath, workers)
-time <- as.double(proc.time()-time)[3]
-
-logInfo('TextFileSerialization', time)
 
 
 # =============================================================================
 # Computing
 # =============================================================================
 
+isPrime = function(x) {
+  if(x < 2){
+    FALSE
+  }
+  else if(x == 2){
+    TRUE
+  }
+  else if(x %% 2 == 0){
+    FALSE
+  }
+  else{
+    upper <- as.numeric(sqrt(as.double(x)))
+    result <- TRUE
+
+    i <- 3
+    while(i <= upper){
+      if(x %% i == 0){
+        result = FALSE
+        break
+      }
+
+      i <- i+2
+    }
+
+    result
+  }
+}
+
 time <- proc.time()
-rdd <- map(rddNumbers, function(x){ x*2 })
-capture.output(collect(rdd), file='NUL')
+rdd <- map(rddNumbers, isPrime)
+capture.output(collect(rdd), file='/dev/null')
 time <- as.double(proc.time()-time)[3]
 
-logInfo('X2Computing', time)
-
-
-time <- proc.time()
-rdd <- map(rddNumbers, function(x){ x*2 })
-rdd <- map(rdd, function(x){ x*3 })
-rdd <- map(rdd, function(x){ x*4 })
-capture.output(collect(rdd), file='NUL')
-time <- as.double(proc.time()-time)[3]
-
-logInfo('X2X3X4Computing', time)
-
-
-time <- proc.time()
-words <- flatMap(rddFileString,
-                 function(line) {
-                   strsplit(line, " ")[[1]]
-                 })
-wordCount <- map(words, function(word) { list(word, 1L) })
-
-counts <- reduceByKey(wordCount, "+", 2L)
-capture.output(collect(counts), file="/dev/null")
-time <- as.double(proc.time()-time)[3]
-
-logInfo('WordCount', time)
+logInfo('IsPrime', time)
 
 
 close(logFile)

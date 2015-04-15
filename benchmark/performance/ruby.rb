@@ -15,10 +15,9 @@ def log(*values)
   $log_file.puts(values.join(';'))
 end
 
-@workers = ENV['WORKERS'].to_i
-@numbers = (0...ENV['NUMBERS_COUNT'].to_i).to_a
-@random_file_path = ENV['RANDOM_FILE_PATH']
-@random_strings = File.read(@random_file_path).split
+workers = ENV['WORKERS'].to_i
+numbers_count = ENV['NUMBERS_COUNT'].to_i
+text_file = ENV['TEXT_FILE']
 
 
 # =============================================================================
@@ -26,55 +25,125 @@ end
 # =============================================================================
 
 time = Benchmark.realtime do
-  @rdd_numbers = sc.parallelize(@numbers, @workers)
+  @rdd_numbers = sc.parallelize(0...numbers_count, workers)
 end
 
 log('NumbersSerialization', time)
-
-
-time = Benchmark.realtime do
-  @rdd_strings = sc.parallelize(@random_strings, @workers)
-end
-
-log('RandomStringSerialization', time)
-
-
-time = Benchmark.realtime do
-  @rdd_file_string = sc.text_file(@random_file_path, @workers)
-end
-
-log('TextFileSerialization', time)
 
 
 # =============================================================================
 # Computing
 # =============================================================================
 
-time = Benchmark.realtime do
-  @rdd_numbers.map(lambda{|x| x*2}).collect
+
+# --- Is prime? ---------------------------------------------------------------
+
+is_prime = Proc.new do |x|
+  case
+  when x < 2
+    false
+  when x == 2
+    true
+  when x % 2 == 0
+    false
+  else
+    upper = Math.sqrt(x.to_f).to_i
+    result = true
+
+    i = 3
+    while i <= upper
+      if x % i == 0
+        result = false
+        break
+      end
+
+      i += 2
+    end
+
+    result
+  end
 end
 
-log('X2Computing', time)
-
-
 time = Benchmark.realtime do
-  x2 = lambda{|x| x*2}
-  x3 = lambda{|x| x*3}
-  x4 = lambda{|x| x*4}
-  @rdd_numbers.map(x2).map(x3).map(x4).collect
+  @rdd_numbers.map(is_prime).collect
 end
 
-log('X2X3X4Computing', time)
+log('IsPrime', time)
 
 
-time = Benchmark.realtime do
-  rdd = @rdd_file_string.flat_map(:split)
-  rdd = rdd.map(lambda{|word| [word, 1]})
-  rdd = rdd.reduce_by_key(lambda{|a, b| a+b})
-  rdd.collect
+# --- Matrix multiplication ---------------------------------------------------
+
+matrix_size = ENV['MATRIX_SIZE'].to_i
+
+matrix = Array.new(matrix_size) do |row|
+  Array.new(matrix_size) do |col|
+    row+col
+  end
+end;
+
+multiplication_func = Proc.new do |matrix|
+  size = matrix.size
+
+  Array.new(size) do |row|
+    Array.new(size) do |col|
+      matrix[row]
+
+      result = 0
+      size.times do |i|
+        result += matrix[row][i] * matrix[col][i]
+      end
+      result
+    end
+  end
 end
 
-log('WordCount', time)
+time = Benchmark.realtime do
+  rdd = sc.parallelize(matrix, 1)
+  rdd.map_partitions(multiplication_func).collect
+end
+
+log('MatrixMultiplication', time)
+
+
+# --- Pi digits ---------------------------------------------------------------
+# http://rosettacode.org/wiki/Pi#Ruby
+
+pi_digit = ENV['PI_DIGIT'].to_i
+
+pi_func = Proc.new do |size|
+  size = size.first
+  result = ''
+
+  q, r, t, k, n, l = 1, 0, 1, 1, 3, 3
+  while size > 0 do
+    if 4*q+r-t < n*t
+      result << n.to_s
+      size -= 1
+      nr = 10*(r-n*t)
+      n = ((10*(3*q+r)) / t) - 10*n
+      q *= 10
+      r = nr
+    else
+      nr = (2*q+r) * l
+      nn = (q*(7*k+2)+r*l) / (t*l)
+      q *= k
+      t *= l
+      l += 2
+      k += 1
+      n = nn
+      r = nr
+    end
+  end
+
+  [result]
+end
+
+time = Benchmark.realtime do
+  rdd = sc.parallelize([pi_digit], 1)
+  rdd.map_partitions(pi_func).collect
+end
+
+log('PiDigit', time)
 
 
 $log_file.close

@@ -8,15 +8,19 @@ set -e
 
 # Settings
 export WORKERS=2
-export NUMBERS_COUNT=10000
-export RANDOM_FILE_ROWS=100
-export RANDOM_FILE_PER_LINE=10
-export RANDOM_FILE_DUPLICATES=5
-export RANDOM_FILE_PATH=$(mktemp)
-export RUBY_BATCH_SIZE=1024
+export MATRIX_SIZE=500
+export NUMBERS_COUNT=1000000
+export TEXT_FILE=$(mktemp)
+export PI_DIGIT=2000
+export RUBY_BATCH_SIZE=2048
+
+text_file_rows=100
+text_file_per_line=10
+text_file_duplicates=5
 
 mx="4096m"
 ms="4096m"
+
 
 # Parse arguments
 while (( "$#" )); do
@@ -25,20 +29,28 @@ while (( "$#" )); do
       WORKERS="$2"
       shift
       ;;
+    --matrix-size)
+      MATRIX_SIZE="$2"
+      shift
+      ;;
     --numbers-count)
       NUMBERS_COUNT="$2"
       shift
       ;;
     --random-file-rows)
-      RANDOM_FILE_ROWS="$2"
+      text_file_rows="$2"
       shift
       ;;
-    --random-file-per-line)
-      RANDOM_FILE_PER_LINE="$2"
+    --text-file-per-line)
+      text_file_per_line="$2"
       shift
       ;;
-    --random-file-duplicates)
-      RANDOM_FILE_DUPLICATES="$2"
+    --text-file-duplicates)
+      text_file_duplicates="$2"
+      shift
+      ;;
+    --pi-digit)
+      PI_DIGIT="$2"
       shift
       ;;
     --ruby-batch-size)
@@ -60,19 +72,21 @@ while (( "$#" )); do
   shift
 done
 
+
 # Generating
 file=$(mktemp)
 
-for (( i=0; i<$RANDOM_FILE_ROWS; i++ ))
+for (( i=0; i<$text_file_rows; i++ ))
 do
-  shuf -n $RANDOM_FILE_PER_LINE /usr/share/dict/words | tr '\n' ' ' >> $file
+  shuf -n $text_file_per_line /usr/share/dict/words | tr '\n' ' ' >> $file
   echo >> $file
 done
 
-for (( i=0; i<$RANDOM_FILE_DUPLICATES; i++ ))
+for (( i=0; i<$text_file_duplicates; i++ ))
 do
-  cat $file >> $RANDOM_FILE_PATH
+  cat $file >> $TEXT_FILE
 done
+
 
 # Before run
 if [[ -z "$SPARK_HOME" ]]; then
@@ -86,6 +100,9 @@ fi
 export SPARK_RUBY_BATCH_SIZE="$RUBY_BATCH_SIZE"
 SPARK_CLASSPATH=$($SPARK_HOME/bin/compute-classpath.sh 2>/dev/null)
 
+export _JAVA_OPTIONS="$_JAVA_OPTIONS -Xms$ms -Xmx$mx"
+
+
 # Log files
 export RUBY_MARSHAL_LOG=$(mktemp)
 export RUBY_OJ_LOG=$(mktemp)
@@ -93,7 +110,6 @@ export PYTHON_LOG=$(mktemp)
 export SCALA_LOG=$(mktemp)
 export R_LOG=$(mktemp)
 
-export _JAVA_OPTIONS="$_JAVA_OPTIONS -Xms$ms -Xmx$mx"
 
 # Run:
 # --- Ruby
@@ -113,7 +129,8 @@ export RUBY_LOG="$RUBY_OJ_LOG"
 "$SPARK_HOME"/bin/spark-submit --master "local[*]" $(pwd)/scala.jar #&>/dev/null
 
 # --- R
-"$RSPARK_HOME"/sparkR r.r #&>/dev/null
+# "$RSPARK_HOME"/sparkR r.r #&>/dev/null
+
 
 # Parse results
 echo "# Ruby (Marshal)"

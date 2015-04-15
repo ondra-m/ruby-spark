@@ -1,5 +1,7 @@
 import os
+import math
 from time import time
+from random import random
 from operator import add
 from pyspark import SparkContext
 
@@ -13,11 +15,8 @@ def log(*values):
   log_file.write('\n')
 
 workers = int(os.environ.get('WORKERS'))
-numbers = range(0, int(os.environ.get('NUMBERS_COUNT')))
-random_file_path = os.environ.get('RANDOM_FILE_PATH')
-
-with open(random_file_path, 'r') as f:
-  random_strings = f.read().split()
+numbers_count = int(os.environ.get('NUMBERS_COUNT'))
+text_file = os.environ.get('TEXT_FILE')
 
 
 # =============================================================================
@@ -25,46 +24,116 @@ with open(random_file_path, 'r') as f:
 # =============================================================================
 
 t = time()
-rdd_numbers = sc.parallelize(numbers, workers)
+rdd_numbers = sc.parallelize(range(numbers_count), workers)
 t = time() - t
 log('NumbersSerialization', t)
-
-
-t = time()
-rdd_strings = sc.parallelize(random_strings, workers)
-t = time() - t
-log('RandomStringSerialization', t)
-
-
-t = time()
-rdd_file_string = sc.textFile(random_file_path, workers)
-t = time() - t
-log('TextFileSerialization', t)
 
 
 # =============================================================================
 # Computing
 # =============================================================================
 
+
+# --- Is prime? ---------------------------------------------------------------
+
+def is_prime(x):
+  if x < 2:
+    return False
+  elif x == 2:
+    return True
+  elif x % 2 == 0:
+    return False
+  else:
+    upper = int(math.sqrt(float(x)))
+    result = True
+
+    i = 3
+    while i <= upper:
+      if x % i == 0:
+        result = False
+        break
+
+      i += 2
+
+    return result
+
 t = time()
-rdd_numbers.map(lambda x: x*2).collect()
+rdd_numbers.map(is_prime).collect()
 t = time() - t
-log('X2Computing', t)
 
+log('IsPrime', t)
+
+
+# --- Matrix multiplication ---------------------------------------------------
+
+matrix_size = int(os.environ.get('MATRIX_SIZE'))
+
+matrix = []
+for row in range(matrix_size):
+  matrix.append([])
+  for col in range(matrix_size):
+    matrix[row].append(row+col)
+
+def multiplication_func(matrix):
+  matrix = list(matrix)
+  size = len(matrix)
+
+  new_matrix = []
+  for row in range(size):
+    new_matrix.append([])
+    for col in range(size):
+
+      result = 0
+      for i in range(size):
+        result += matrix[row][i] * matrix[col][i]
+      new_matrix[row].append(result)
+
+  return new_matrix
 
 t = time()
-rdd_numbers.map(lambda x: x*2).map(lambda x: x*3).map(lambda x: x*4).collect()
+rdd = sc.parallelize(matrix, 1)
+rdd.mapPartitions(multiplication_func).collect()
 t = time() - t
-log('X2X3X4Computing', t)
 
+log('MatrixMultiplication', t)
+
+
+# --- Pi digits ---------------------------------------------------------------
+# http://rosettacode.org/wiki/Pi#Python
+
+pi_digit = int(os.environ.get('PI_DIGIT'))
+
+def pi_func(size):
+  size = size.next()
+  result = ''
+
+  q, r, t, k, n, l = 1, 0, 1, 1, 3, 3
+  while size > 0:
+    if 4*q+r-t < n*t:
+      result += str(n)
+      size -= 1
+      nr = 10*(r-n*t)
+      n  = ((10*(3*q+r))//t)-10*n
+      q  *= 10
+      r  = nr
+    else:
+      nr = (2*q+r)*l
+      nn = (q*(7*k)+2+(r*l))//(t*l)
+      q  *= k
+      t  *= l
+      l  += 2
+      k += 1
+      n  = nn
+      r  = nr
+
+  return [result]
 
 t = time()
-rdd = rdd_file_string.flatMap(lambda x: x.split(' '))
-rdd = rdd.map(lambda x: (x, 1))
-rdd = rdd.reduceByKey(add)
-rdd.collect()
+rdd = sc.parallelize([pi_digit], 1)
+rdd.mapPartitions(pi_func).collect()
 t = time() - t
-log('WordCount', t)
+
+log('PiDigit', t)
 
 
 log_file.close()

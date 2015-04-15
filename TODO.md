@@ -2,4 +2,6 @@
 - refactor JavaBridge: to_java, from_java
 - add Streaming
 - add SQL
-- autobactch serializer
+- autobatch serializer
+- worker informations (time, memory, ...)
+- encoding parameter to context.text_file
