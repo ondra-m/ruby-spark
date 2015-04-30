@@ -20,6 +20,7 @@ numbers_count = ENV['NUMBERS_COUNT'].to_i
 text_file = ENV['TEXT_FILE']
 
 numbers = (0...numbers_count).to_a
+floats = numbers.map(&:to_f)
 strings = File.read(text_file).split("\n")
 
 
@@ -32,6 +33,13 @@ time = Benchmark.realtime do
 end
 
 log('NumbersSerialization', time)
+
+
+time = Benchmark.realtime do
+  @rdd_floats = sc.parallelize(floats, workers)
+end
+
+log('FloatsSerialization', time)
 
 
 time = Benchmark.realtime do

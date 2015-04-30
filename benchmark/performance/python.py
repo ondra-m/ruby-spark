@@ -18,7 +18,8 @@ workers = int(os.environ.get('WORKERS'))
 numbers_count = int(os.environ.get('NUMBERS_COUNT'))
 text_file = os.environ.get('TEXT_FILE')
 
-numers = range(numbers_count)
+numbers = range(numbers_count)
+floats = [float(i) for i in numbers]
 with open(text_file) as t:
   strings = t.read().split("\n")
 
@@ -28,9 +29,16 @@ with open(text_file) as t:
 # =============================================================================
 
 t = time()
-rdd_numbers = sc.parallelize(numers, workers)
+rdd_numbers = sc.parallelize(numbers, workers)
 t = time() - t
 log('NumbersSerialization', t)
+
+
+t = time()
+rdd_floats = sc.parallelize(floats, workers)
+t = time() - t
+log('FloatsSerialization', t)
+
 
 t = time()
 rdd_strings = sc.parallelize(strings, workers)

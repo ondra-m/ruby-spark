@@ -8,13 +8,13 @@ set -e
 
 # Settings
 export WORKERS=2
-export MATRIX_SIZE=500
-export NUMBERS_COUNT=5000000
+export MATRIX_SIZE=100
+export NUMBERS_COUNT=1000000
 export TEXT_FILE=$(mktemp)
-export PI_DIGIT=5000
+export PI_DIGIT=1000
 export RUBY_BATCH_SIZE=2048
 
-text_file_rows=10000
+text_file_rows=10
 text_file_per_line=10
 text_file_duplicates=50
 
@@ -112,21 +112,28 @@ export R_LOG=$(mktemp)
 
 
 # Run:
+echo "Workers: $WORKERS"
+echo "Matrix size: $MATRIX_SIZE"
+echo "Numbers count: $NUMBERS_COUNT"
+echo "Pi digits: $PI_DIGIT"
+echo "File: rows = $(($text_file_rows * $text_file_duplicates))"
+echo "      per line = $text_file_per_line"
+
 # --- Ruby
 export SPARK_RUBY_SERIALIZER='marshal'
 export RUBY_LOG="$RUBY_MARSHAL_LOG"
-/usr/bin/env ruby ruby.rb #&>/dev/null
+/usr/bin/env ruby ruby.rb &>/dev/null
 
 export SPARK_RUBY_SERIALIZER='oj'
 export RUBY_LOG="$RUBY_OJ_LOG"
-/usr/bin/env ruby ruby.rb #&>/dev/null
+/usr/bin/env ruby ruby.rb &>/dev/null
 
-# --- Python
-"$SPARK_HOME"/bin/spark-submit --master "local[*]" $(pwd)/python.py #&>/dev/null
+# # --- Python
+"$SPARK_HOME"/bin/spark-submit --master "local[*]" $(pwd)/python.py &>/dev/null
 
-# --- Scala
-/usr/bin/env scalac -cp $SPARK_CLASSPATH scala.scala -d scala.jar #&>/dev/null
-"$SPARK_HOME"/bin/spark-submit --master "local[*]" $(pwd)/scala.jar #&>/dev/null
+# # --- Scala
+/usr/bin/env scalac -cp $SPARK_CLASSPATH scala.scala -d scala.jar &>/dev/null
+"$SPARK_HOME"/bin/spark-submit --master "local[*]" $(pwd)/scala.jar &>/dev/null
 
 # --- R
 # "$RSPARK_HOME"/sparkR r.r #&>/dev/null

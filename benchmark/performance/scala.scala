@@ -21,6 +21,7 @@ object Scala {
     val textFile = System.getenv("TEXT_FILE")
 
     val numbers = 0 until numbersCount
+    val floats = numbers.map(_.toDouble)
     val strings = Source.fromFile(textFile).mkString.split("\n")
 
 
@@ -35,6 +36,13 @@ object Scala {
     time = System.currentTimeMillis - time
 
     log("NumbersSerialization", time/1000.0)
+
+
+    time = System.currentTimeMillis
+    val rddFloats = sc.parallelize(floats, workers)
+    time = System.currentTimeMillis - time
+
+    log("FloatsSerialization", time/1000.0)
 
 
     time = System.currentTimeMillis
