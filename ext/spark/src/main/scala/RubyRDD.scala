@@ -10,13 +10,14 @@ import scala.collection.JavaConversions._
 
 import org.apache.spark._
 import org.apache.spark.{SparkEnv, Partition, SparkException, TaskContext}
+import org.apache.spark.api.ruby._
 import org.apache.spark.api.ruby.marshal._
 import org.apache.spark.api.java.{JavaSparkContext, JavaPairRDD, JavaRDD}
+import org.apache.spark.api.python.PythonRDD
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.util.Utils
 import org.apache.spark.InterruptibleIterator
-import org.apache.spark.api.python.PythonRDD
 
 
 /* =================================================================================================
@@ -32,8 +33,6 @@ class RubyRDD(
   extends RDD[Array[Byte]](parent){
 
     val bufferSize = conf.getInt("spark.buffer.size", 65536)
-    val workerType = conf.get("spark.ruby.worker.type")
-    val workerArguments = conf.get("spark.ruby.worker.arguments")
 
     val asJavaRDD: JavaRDD[Array[Byte]] = JavaRDD.fromRDD(this)
 
@@ -48,7 +47,7 @@ class RubyRDD(
       val env = SparkEnv.get
 
       // Get worker and id
-      val (worker, workerId) = RubyWorker.create(workerDir, workerType, workerArguments)
+      val (worker, workerId) = RubyWorker.create(env)
 
       // Start a thread to feed the process input from our parent's iterator
       val writerThread = new WriterThread(env, worker, split, context)

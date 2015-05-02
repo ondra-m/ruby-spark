@@ -7,7 +7,7 @@ module Spark
 
     include Spark::Helper::System
 
-    PROPERTIES = {
+    TYPES = {
       'spark.shuffle.spill' => :boolean,
       'spark.ruby.batch_size' => :integer
     }
@@ -28,6 +28,7 @@ module Spark
 
     def spark_conf
       if Spark.started?
+        # Get latest configuration
         Spark.context.jcontext.conf
       else
         @spark_conf
@@ -35,16 +36,34 @@ module Spark
     end
 
     def valid!
-      if !contains('spark.app.name')
-        raise Spark::ConfigurationError, 'An application name must be set in your configuration'
+      errors = []
+
+      if !contains?('spark.app.name')
+        errors << 'An application name must be set in your configuration.'
       end
 
-      if !contains('spark.master')
-        raise Spark::ConfigurationError, 'A master URL must be set in your configuration'
+      if !contains?('spark.master')
+        errors << 'A master URL must be set in your configuration.'
       end
 
       if Spark::Serializer.get(get('spark.ruby.serializer')).nil?
-        raise Spark::ConfigurationError, 'Default serializer must be set in your configuration'
+        errors << 'Default serializer must be set in your configuration.'
+      end
+
+      scanned = get('spark.ruby.executor.command').scan('%s')
+
+      if scanned.size == 0
+        errors << "Executor command must contain '%s'."
+      end
+
+      if scanned.size > 1
+        errors << "Executor command can contain only one '%s'."
+      end
+
+      if errors.any?
+        errors.map!{|error| "- #{error}"}
+
+        raise Spark::ConfigurationError, "Configuration is not valid:\r\n#{errors.join("\r\n")}"
       end
     end
 
@@ -56,7 +75,7 @@ module Spark
     def get(key)
       value = spark_conf.get(key.to_s)
 
-      case PROPERTIES[key]
+      case TYPES[key]
       when :boolean
         parse_boolean(value)
       when :integer
@@ -72,7 +91,7 @@ module Spark
       Hash[spark_conf.getAll.map{|tuple| [tuple._1, tuple._2]}]
     end
 
-    def contains(key)
+    def contains?(key)
       spark_conf.contains(key.to_s)
     end
 
@@ -109,42 +128,18 @@ module Spark
     # Defaults
 
     def set_default
-      set_app_name(default_app_name)
-      set_master(default_master)
-      set('spark.ruby.worker.type', default_worker_type)
-      set('spark.ruby.worker.arguments', default_worker_arguments)
-      set('spark.ruby.worker.memory', default_worker_memory)
+      set_app_name('RubySpark')
+      set_master('local[*]')
+      set('spark.executor.extraClassPath', Spark.ruby_spark_jar)
+      set('spark.ruby.driver_home', Spark.home)
       set('spark.ruby.parallelize_strategy', default_parallelize_strategy)
       set('spark.ruby.serializer', default_serializer)
       set('spark.ruby.batch_size', default_batch_size)
-    end
-
-    def default_app_name
-      'RubySpark'
-    end
-
-    def default_master
-      'local[*]'
-    end
-
-    def default_serializer
-      ENV['SPARK_RUBY_SERIALIZER'] || Spark::Serializer::DEFAULT_SERIALIZER_NAME
-    end
-
-    def default_batch_size
-      ENV['SPARK_RUBY_BATCH_SIZE'] || Spark::Serializer::DEFAULT_BATCH_SIZE.to_s
-    end
-
-    def default_worker_type
-      ENV['SPARK_RUBY_WORKER_TYPE'] || 'process'
-    end
-
-    def default_worker_arguments
-      ENV['SPARK_RUBY_WORKER_ARGUMENTS'] || ''
-    end
-
-    def default_worker_memory
-      ENV['SPARK_RUBY_WORKER_MEMORY'] || ''
+      set('spark.ruby.executor.uri', default_executor_uri)
+      set('spark.ruby.executor.command', default_executor_command)
+      set('spark.ruby.executor.options', default_executor_options)
+      set('spark.ruby.worker.type', default_worker_type)
+      load_worker_envs
     end
 
     # How to handle with data in method parallelize.
@@ -155,6 +150,76 @@ module Spark
     #
     def default_parallelize_strategy
       ENV['SPARK_RUBY_PARALLELIZE_STRATEGY'] || 'inplace'
+    end
+
+    def default_serializer
+      ENV['SPARK_RUBY_SERIALIZER'] || Spark::Serializer::DEFAULT_SERIALIZER_NAME
+    end
+
+    def default_batch_size
+      ENV['SPARK_RUBY_BATCH_SIZE'] || Spark::Serializer::DEFAULT_BATCH_SIZE.to_s
+    end
+
+    # Ruby executor.
+    #
+    # == Options:
+    # nil::
+    #   System's gem is loaded (ruby-spark).
+    #
+    # other::
+    #   Path of library which will be used.
+    #   Current ruby-spark gem is used.
+    #   (default)
+    #
+    def default_executor_uri
+      ENV['SPARK_RUBY_EXECUTOR_URI'] || ''
+    end
+
+    # Command template which is applied when scala want create a ruby
+    # process (e.g. master, home request). Command is represented by '%s'.
+    #
+    # == Example:
+    #   bash --norc -i -c "export HOME=/home/user; cd; source .bashrc; %s"
+    #
+    def default_executor_command
+      ENV['SPARK_RUBY_EXECUTOR_COMMAND'] || '%s'
+    end
+
+    # Options for every worker.
+    #
+    # == Examples:
+    #   -J-Xmx512m
+    #
+    def default_executor_options
+      ENV['SPARK_RUBY_EXECUTOR_OPTIONS'] || ''
+    end
+
+    # Type of worker.
+    #
+    # == Options:
+    # process:: (default)
+    # thread:: (experimental)
+    #
+    def default_worker_type
+      ENV['SPARK_RUBY_WORKER_TYPE'] || 'process'
+    end
+
+    # Load environment variables for worker from ENV.
+    #
+    # == Examples:
+    #   SPARK_RUBY_WORKER_ENV_KEY1="1"
+    #   SPARK_RUBY_WORKER_ENV_KEY2="2"
+    #
+    def load_worker_envs
+      prefix = 'SPARK_RUBY_WORKER_ENV_'
+
+      envs = ENV.select{|key, _| key.start_with?(prefix)}
+      envs.each do |key, value|
+        key = key.dup # ENV keys are frozen
+        key.slice!(0, prefix.size)
+
+        set("spark.ruby.worker.env.#{key}", value)
+      end
     end
 
 

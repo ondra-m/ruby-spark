@@ -1,15 +1,16 @@
 package org.apache.spark.api.ruby
 
-import java.io.{DataInputStream, InputStream, DataOutputStream}
+import java.io.{File, DataInputStream, InputStream, DataOutputStream, FileOutputStream}
 import java.net.{InetAddress, ServerSocket, Socket, SocketException}
+import java.nio.file.Paths
 
 import scala.collection.mutable
 import scala.collection.JavaConversions._
 
 import org.apache.spark._
+import org.apache.spark.api.python.PythonRDD
 import org.apache.spark.util.Utils
 import org.apache.spark.util.RedirectThread
-import org.apache.spark.Logging
 
 
 /* =================================================================================================
@@ -27,22 +28,23 @@ object RubyWorker extends Logging {
   private val serverHost = InetAddress.getByAddress(Array(127, 0, 0, 1))
   private var serverPort: Int = 0
 
-  private var master: Process = null
+  private var master: ExecutedFileCommand = null
   private var masterSocket: Socket = null
   private var masterOutputStream: DataOutputStream = null
-  private var masterInputStream:  DataInputStream = null
+  private var masterInputStream: DataInputStream = null
 
   private var workers = new mutable.WeakHashMap[Socket, Long]()
+
 
   /* ----------------------------------------------------------------------------------------------
    * Create new worker but first check if exist SocketServer and master process.
    * If not it will create them. Worker have 2 chance to create.
    */
 
-  def create(workerDir: String, workerType: String, workerArguments: String): (Socket, Long) = {
+  def create(env: SparkEnv): (Socket, Long) = {
     synchronized {
       // Create the server if it hasn't been started
-      createServer(workerDir, workerType, workerArguments)
+      createServer(env)
 
       // Attempt to connect, restart and retry once if it fails
       try {
@@ -79,7 +81,7 @@ object RubyWorker extends Logging {
    * is set to default. If server is created withou exception -> create master.
    */
 
-  private def createServer(workerDir: String, workerType: String, workerArguments: String){
+  private def createServer(env: SparkEnv){
     synchronized {
       // Already running?
       if(serverSocket != null && masterSocket != null) {
@@ -92,9 +94,9 @@ object RubyWorker extends Logging {
         serverPort = serverSocket.getLocalPort
 
         // Create a master for worker creations
-        createMaster(workerDir, workerType, workerArguments)
+        createMaster(env)
       } catch {
-        case e: Exception => 
+        case e: Exception =>
           throw new SparkException("There was a problem with creating a server", e)
       }
     }
@@ -106,17 +108,50 @@ object RubyWorker extends Logging {
    * get copy of address space.
    */
 
-  private def createMaster(workerDir: String, workerType: String, workerArguments: String){
+  private def createMaster(env: SparkEnv){
     synchronized {
-      // Create and start the master
-      // -C: change worker dir before execution
-      val exec = List("ruby", "-C", workerDir, workerArguments, "master.rb").filter(_ != "")
+      val isDriver = env.executorId == SparkContext.DRIVER_IDENTIFIER
+      val executorOptions = env.conf.get("spark.ruby.executor.options", "")
+      val commandTemplate = env.conf.get("spark.ruby.executor.command")
+      val workerType = env.conf.get("spark.ruby.worker.type")
 
-      val pb = new ProcessBuilder(exec)
-      pb.environment().put("WORKER_TYPE", workerType)
-      pb.environment().put("WORKER_ARGUMENTS", workerArguments)
-      pb.environment().put("SERVER_PORT", serverPort.toString())
-      master = pb.start()
+      // Where is root of ruby-spark
+      var executorLocation = ""
+
+      if(isDriver){
+        // Use worker from current active gem location
+        executorLocation = env.conf.get("spark.ruby.driver_home")
+      }
+      else{
+        // Ruby-spark package uri
+        val uri = env.conf.get("spark.ruby.executor.uri", "")
+
+        if(uri.isEmpty){
+          // Use gem installed on the system
+          try {
+            val homeCommand = new FileCommand(commandTemplate, "ruby-spark home", env)
+
+            executorLocation = homeCommand.run.readLine
+          } catch {
+            case e: java.io.IOException =>
+              throw new SparkException("Ruby-spark gem is not installed.", e)
+          }
+        }
+        else{
+          // Prepare and use gem from uri
+        }
+      }
+
+      // Master and worker are saved in GEM_ROOT/lib/spark/worker
+      executorLocation = Paths.get(executorLocation, "lib", "spark", "worker").toString
+
+      // Create master command
+      // -C: change worker dir before execution
+      val masterRb = s"ruby $executorOptions -C $executorLocation master.rb $workerType $serverPort"
+      val masterCommand = new FileCommand(commandTemplate, masterRb, env)
+
+      // Start master
+      master = masterCommand.run
 
       // Redirect master stdout and stderr
       redirectStreamsToStderr(master.getInputStream, master.getErrorStream)
@@ -128,6 +163,8 @@ object RubyWorker extends Logging {
         masterSocket = serverSocket.accept()
         masterOutputStream = new DataOutputStream(masterSocket.getOutputStream)
         masterInputStream  = new DataInputStream(masterSocket.getInputStream)
+
+        PythonRDD.writeUTF(executorOptions, masterOutputStream)
       } catch {
         case e: Exception =>
           throw new SparkException("Ruby master did not connect back in time", e)
@@ -162,7 +199,7 @@ object RubyWorker extends Logging {
    */
 
   def remove(worker: Socket, workerId: Long){
-    try { 
+    try {
       workers.remove(worker)
     } catch {
       case e: Exception => logWarning(s"Worker $workerId does not exist (maybe is already removed)")
@@ -177,7 +214,7 @@ object RubyWorker extends Logging {
       workers.foreach { case (socket, id) => killAndWait(id) }
 
       // Kill master
-      master.destroy()
+      master.destroy
 
       // Stop SocketServer
       serverSocket.close()
@@ -206,5 +243,4 @@ object RubyWorker extends Logging {
   }
 
   /* ------------------------------------------------------------------------------------------- */
-
 }

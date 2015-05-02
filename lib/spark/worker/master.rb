@@ -18,31 +18,27 @@ Process.setsid
 module Master
 
   def self.create
-    case ENV['WORKER_TYPE']
-    when 'process'
-      Master::Process.new
+    case ARGV[0].to_s.strip
     when 'thread'
       Master::Thread.new
+    else
+      Master::Process.new
     end
   end
 
   class Base
-
-    include Spark::Helper::Serialize
     include Spark::Constant
 
     def initialize
-      @worker_arguments = ENV['WORKER_ARGUMENTS']
-      @port = ENV['SERVER_PORT']
-
+      @port = ARGV[1].to_s.strip.to_i
       @socket = TCPSocket.open('localhost', @port)
+      @worker_arguments = @socket.read_string
     end
 
     def run
       selector = NIO::Selector.new
       monitor = selector.register(@socket, :r)
       monitor.value = Proc.new { receive_message }
-
       loop {
         selector.select {|monitor| monitor.value.call}
       }
