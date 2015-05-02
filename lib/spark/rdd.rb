@@ -1316,12 +1316,11 @@ module Spark
 
       def _jrdd
         command = @command.build
-        class_tag = @prev_jrdd.classTag
 
         broadcasts = @command.bound_objects.select{|_, value| value.is_a?(Spark::Broadcast)}.values
         broadcasts = to_java_array_list(broadcasts.map(&:jbroadcast))
 
-        ruby_rdd = RubyRDD.new(@prev_jrdd.rdd, command, Spark.worker_dir, broadcasts, @context.jaccumulator, class_tag)
+        ruby_rdd = RubyRDD.new(@prev_jrdd.rdd, command, broadcasts, @context.jaccumulator)
         ruby_rdd.asJavaRDD
       end
 

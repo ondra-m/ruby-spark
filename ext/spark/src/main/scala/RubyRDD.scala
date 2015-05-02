@@ -24,13 +24,11 @@ import org.apache.spark.api.python.PythonRDD
  * =================================================================================================
  */
 
-class RubyRDD[T: ClassTag](
-  parent: RDD[T],
-  command: Array[Byte],
-  workerDir: String,
-  broadcastVars: ArrayList[Broadcast[RubyBroadcast]],
-  accumulator: Accumulator[List[Array[Byte]]])
-
+class RubyRDD(
+    @transient parent: RDD[_],
+    command: Array[Byte],
+    broadcastVars: ArrayList[Broadcast[RubyBroadcast]],
+    accumulator: Accumulator[List[Array[Byte]]])
   extends RDD[Array[Byte]](parent){
 
     val bufferSize = conf.getInt("spark.buffer.size", 65536)
