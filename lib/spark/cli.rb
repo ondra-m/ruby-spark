@@ -57,6 +57,7 @@ module Spark
         c.syntax = 'pry [options]'
         c.description = 'Start ruby shell for spark'
         c.option '--spark-home STRING', String, 'Directory where SPARK is stored'
+        c.option '--properties-file STRING', String, 'Path to a file from which to load extra properties'
         c.option '--[no-]start', 'Start SPARK immediately'
         c.option '--[no-]logger', 'Enable/disable logger (default: enable)'
 
@@ -69,6 +70,8 @@ module Spark
           Spark.config do
             set_app_name 'Pry RubySpark'
           end
+
+          Spark.config.from_file(options.properties_file)
 
           if options.start
             # Load Java and Spark

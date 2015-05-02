@@ -18,6 +18,16 @@ module Spark
       set_default
     end
 
+    def from_file(file)
+      check_read_only
+
+      if File.exist?(file)
+        file = File.expand_path(file)
+        properties = Spark.jb.call(JUtils, 'getPropertiesFromFile', file)
+        properties.each{|key, value| set(key, value)}
+      end
+    end
+
     def [](key)
       get(key)
     end
@@ -96,11 +106,8 @@ module Spark
     end
 
     def set(key, value)
-      if read_only?
-        raise Spark::ConfigurationError, 'Configuration is ready only'
-      else
-        spark_conf.set(key.to_s, value.to_s)
-      end
+      check_read_only
+      spark_conf.set(key.to_s, value.to_s)
     end
 
     def set_app_name(name)
@@ -222,11 +229,18 @@ module Spark
       end
     end
 
-
     # Aliases
     alias_method :getAll,     :get_all
     alias_method :setAppName, :set_app_name
     alias_method :setMaster,  :set_master
+
+    private
+
+      def check_read_only
+        if read_only?
+          raise Spark::ConfigurationError, 'Configuration is ready only'
+        end
+      end
 
   end
 end

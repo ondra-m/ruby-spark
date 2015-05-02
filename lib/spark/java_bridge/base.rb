@@ -125,6 +125,7 @@ module Spark
             result
           when 'SeqWrapper'; object.toArray.to_a.map!{|item| to_ruby(item)}
           when 'ofRef';      object.array.to_a.map!{|item| to_ruby(item)} # WrappedArray$ofRef
+          when 'Map3';       Hash[object.toSeq.array.to_a.map!{|item| [item._1, item._2]}]
           when 'LabeledPoint'; Spark::Mllib::LabeledPoint.from_java(object)
           when 'DenseVector';  Spark::Mllib::DenseVector.from_java(object)
           when 'KMeansModel';  Spark::Mllib::KMeansModel.from_java(object)
