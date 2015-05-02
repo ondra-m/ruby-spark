@@ -8,7 +8,7 @@ This Gem allows you use Spark functionality on Ruby.
 
 ```ruby
 file = spark.text_file("hdfs://...")
- 
+
 file.flat_map(:split)
     .map(lambda{|word| [word, 1]})
     .reduce_by_key(lambda{|a, b| a+b})
@@ -40,8 +40,12 @@ $ gem install ruby-spark
 
 ### Install Apache Spark
 
-To install latest supported Spark. Project is build by [SBT](ext/spark/build.sbt).
+To install latest supported Spark. First compile native extension:
 
+```
+$ rake compile
+```
+Then build Spark, [SBT](ext/spark/build.sbt) is used for compiling.
 ```
 $ ruby-spark build
 ```
