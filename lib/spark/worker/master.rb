@@ -49,8 +49,7 @@ module Master
     end
 
     def receive_message
-      # Read int
-      command = unpack_int(read(4))
+      command = @socket.read_int
 
       case command
       when CREATE_WORKER
@@ -64,20 +63,11 @@ module Master
 
     def kill_worker_and_wait
       if kill_worker
-        write(pack_int(SUCCESSFULLY_KILLED))
+        @socket.write_int(SUCCESSFULLY_KILLED)
       else
-        write(pack_int(UNSUCCESSFUL_KILLING))
+        @socket.write_int(UNSUCCESSFUL_KILLING)
       end
     end
-
-    def read(count)
-      @socket.read(count)
-    end
-
-    def write(data)
-      @socket.write(data)
-    end
-
   end
 
   # ===============================================================================================
@@ -99,7 +89,7 @@ module Master
     end
 
     def kill_worker
-      worker_id = unpack_long(read(8))
+      worker_id = @socket.read_long
       ::Process.kill('TERM', worker_id)
     rescue
       nil
@@ -143,7 +133,7 @@ module Master
     end
 
     def kill_worker
-      worker_id = unpack_long(read(8))
+      worker_id = @socket.read_long
 
       thread = ObjectSpace._id2ref(worker_id)
       thread.kill
