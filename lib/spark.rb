@@ -116,6 +116,10 @@ module Spark
     @root ||= File.expand_path('..', File.dirname(__FILE__))
   end
 
+  def self.home
+    root
+  end
+
   # Default directory for java extensions
   def self.target_dir
     @target_dir ||= File.join(root, 'target')
@@ -127,7 +131,7 @@ module Spark
   end
 
   def self.ruby_spark_jar
-    @ruby_spark_jar ||= 'ruby-spark.jar'
+    @ruby_spark_jar ||= File.join(target_dir, 'ruby-spark.jar')
   end
 
   def self.spark_ext_dir

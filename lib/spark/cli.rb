@@ -141,6 +141,15 @@ module Spark
         end
       end
 
+
+      # Home ------------------------------------------------------------------
+      command :home do |c|
+        c.action do |args, options|
+          puts Spark.home
+          exit(0)
+        end
+      end
+
       run!
     end
 
