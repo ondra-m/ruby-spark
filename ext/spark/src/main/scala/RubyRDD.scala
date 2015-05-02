@@ -37,7 +37,7 @@ class RubyRDD(
 
     val asJavaRDD: JavaRDD[Array[Byte]] = JavaRDD.fromRDD(this)
 
-    override def getPartitions = parent.partitions
+    override def getPartitions: Array[Partition] = firstParent.partitions
 
     override val partitioner = None
 
@@ -133,7 +133,7 @@ class RubyRDD(
           dataOut.flush()
 
           // Data
-          PythonRDD.writeIteratorToStream(parent.iterator(split, context), dataOut)
+          PythonRDD.writeIteratorToStream(firstParent.iterator(split, context), dataOut)
           dataOut.writeInt(RubyConstant.DATA_EOF)
           dataOut.flush()
         } catch {
