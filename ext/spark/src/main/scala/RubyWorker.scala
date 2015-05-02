@@ -59,7 +59,7 @@ object RubyWorker extends Logging {
 
   /* ----------------------------------------------------------------------------------------------
    * Create a worker throught master process. Return new socket and id.
-   * According spark.ruby.worker_type id will be:
+   * According spark.ruby.worker.type id will be:
    *   process: PID
    *   thread: thread object id
    */

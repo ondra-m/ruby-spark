@@ -153,6 +153,15 @@ module Spark
         end
       end
 
+
+      # Ruby spark jar --------------------------------------------------------
+      command :ruby_spark_jar do |c|
+        c.action do |args, options|
+          puts Spark.ruby_spark_jar
+          exit(0)
+        end
+      end
+
       run!
     end
 
