@@ -5,16 +5,27 @@ import java.io.{File, FileOutputStream, InputStreamReader, BufferedReader}
 import org.apache.spark.{SparkEnv, Logging}
 import org.apache.spark.util._
 
+
+/* =================================================================================================
+ * class FileCommand
+ * =================================================================================================
+ *
+ * Save command to file and than execute him because from Scala you cannot simply run
+ * something like "bash --norc -i -c 'source .zshrc; ruby master.rb'"
+ */
+
 class FileCommand(command: String) extends Logging {
 
   var pb: ProcessBuilder = null
   var file: File = null
 
+  // Command is complete.
   def this(command: String, env: SparkEnv) = {
     this(command)
     create(env)
   }
 
+  // Template must contains %s which will be replaced for command
   def this(template: String, command: String, env: SparkEnv) = {
     this(template.format(command), env)
   }
@@ -38,8 +49,15 @@ class FileCommand(command: String) extends Logging {
   def run = {
     new ExecutedFileCommand(pb.start)
   }
-
 }
+
+
+/* =================================================================================================
+ * class ExecutedFileCommand
+ * =================================================================================================
+ *
+ * Represent process executed from file.
+ */
 
 class ExecutedFileCommand(process: Process) {
 
