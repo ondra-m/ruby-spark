@@ -67,7 +67,7 @@ Spark.start
 Spark.sc # => context
 ```
 
-If you want configure Spark first. See [configurations](#configuration) for more details.
+If you want configure Spark first. See [configurations](https://github.com/ondra-m/ruby-spark/wiki/Configuration) for more details.
 
 ```ruby
 require 'ruby-spark'
