@@ -137,7 +137,6 @@ module Spark
     def set_default
       set_app_name('RubySpark')
       set_master('local[*]')
-      set('spark.executor.extraClassPath', Spark.ruby_spark_jar)
       set('spark.ruby.driver_home', Spark.home)
       set('spark.ruby.parallelize_strategy', default_parallelize_strategy)
       set('spark.ruby.serializer', default_serializer)

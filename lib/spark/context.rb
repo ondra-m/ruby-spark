@@ -20,6 +20,7 @@ module Spark
     def initialize
       Spark.config.valid!
       @jcontext = JavaSparkContext.new(Spark.config.spark_conf)
+      @jcontext.addJar(Spark.ruby_spark_jar)
 
       # Does not work on 1.2
       # ui.attachTab(RubyTab.new(ui, to_java_hash(RbConfig::CONFIG)))
