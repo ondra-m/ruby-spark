@@ -21,7 +21,7 @@ module Spark
     def from_file(file)
       check_read_only
 
-      if File.exist?(file)
+      if file && File.exist?(file)
         file = File.expand_path(file)
         properties = Spark.jb.call(JUtils, 'getPropertiesFromFile', file)
         properties.each{|key, value| set(key, value)}
