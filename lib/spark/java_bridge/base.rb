@@ -14,6 +14,7 @@ module Spark
         'org.apache.spark.SparkConf',
         'org.apache.spark.api.java.JavaSparkContext',
         'org.apache.spark.api.ruby.RubyRDD',
+        'org.apache.spark.api.ruby.RubyUtils',
         'org.apache.spark.api.ruby.RubyWorker',
         'org.apache.spark.api.ruby.PairwiseRDD',
         'org.apache.spark.api.ruby.RubyAccumulatorParam',
@@ -123,9 +124,12 @@ module Spark
               result << to_ruby(iterator.next)
             end
             result
+          when 'Map2', 'Map3', 'Map4', 'HashTrieMap'
+            Hash[
+              object.toSeq.array.to_a.map!{|item| [item._1, item._2]}
+            ]
           when 'SeqWrapper'; object.toArray.to_a.map!{|item| to_ruby(item)}
           when 'ofRef';      object.array.to_a.map!{|item| to_ruby(item)} # WrappedArray$ofRef
-          when 'Map3';       Hash[object.toSeq.array.to_a.map!{|item| [item._1, item._2]}]
           when 'LabeledPoint'; Spark::Mllib::LabeledPoint.from_java(object)
           when 'DenseVector';  Spark::Mllib::DenseVector.from_java(object)
           when 'KMeansModel';  Spark::Mllib::KMeansModel.from_java(object)

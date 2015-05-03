@@ -23,8 +23,7 @@ module Spark
 
       if file && File.exist?(file)
         file = File.expand_path(file)
-        properties = Spark.jb.call(JUtils, 'getPropertiesFromFile', file)
-        properties.each{|key, value| set(key, value)}
+        RubyUtils.loadPropertiesFile(spark_conf, file)
       end
     end
 
