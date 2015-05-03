@@ -1088,7 +1088,7 @@ module Spark
       # Allow spill data to disk due to memory limit
       # spilling = config['spark.shuffle.spill'] || false
       spilling = false
-      memory   = config['spark.ruby.worker.memory']
+      memory = ''
 
       # Set spilling to false if worker has unlimited memory
       if memory.empty?
