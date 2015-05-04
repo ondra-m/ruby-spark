@@ -144,7 +144,7 @@ module Spark
       set('spark.ruby.executor.command', default_executor_command)
       set('spark.ruby.executor.options', default_executor_options)
       set('spark.ruby.worker.type', default_worker_type)
-      load_worker_envs
+      load_executor_envs
     end
 
     # How to handle with data in method parallelize.
@@ -209,21 +209,21 @@ module Spark
       ENV['SPARK_RUBY_WORKER_TYPE'] || 'process'
     end
 
-    # Load environment variables for worker from ENV.
+    # Load environment variables for executor from ENV.
     #
     # == Examples:
-    #   SPARK_RUBY_WORKER_ENV_KEY1="1"
-    #   SPARK_RUBY_WORKER_ENV_KEY2="2"
+    #   SPARK_RUBY_EXECUTOR_ENV_KEY1="1"
+    #   SPARK_RUBY_EXECUTOR_ENV_KEY2="2"
     #
-    def load_worker_envs
-      prefix = 'SPARK_RUBY_WORKER_ENV_'
+    def load_executor_envs
+      prefix = 'SPARK_RUBY_EXECUTOR_ENV_'
 
       envs = ENV.select{|key, _| key.start_with?(prefix)}
       envs.each do |key, value|
         key = key.dup # ENV keys are frozen
         key.slice!(0, prefix.size)
 
-        set("spark.ruby.worker.env.#{key}", value)
+        set("spark.ruby.executor.env.#{key}", value)
       end
     end
 

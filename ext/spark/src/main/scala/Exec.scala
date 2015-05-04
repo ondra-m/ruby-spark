@@ -2,6 +2,8 @@ package org.apache.spark.api.ruby
 
 import java.io.{File, FileOutputStream, InputStreamReader, BufferedReader}
 
+import scala.collection.JavaConversions._
+
 import org.apache.spark.{SparkEnv, Logging}
 import org.apache.spark.util._
 
@@ -26,8 +28,9 @@ class FileCommand(command: String) extends Logging {
   }
 
   // Template must contains %s which will be replaced for command
-  def this(template: String, command: String, env: SparkEnv) = {
+  def this(template: String, command: String, env: SparkEnv, envVars: Map[String, String]) = {
     this(template.format(command), env)
+    setEnvVars(envVars)
   }
 
   private def create(env: SparkEnv) {
@@ -44,6 +47,10 @@ class FileCommand(command: String) extends Logging {
     logInfo(s"New FileCommand at ${file.getAbsolutePath}")
 
     pb = new ProcessBuilder(shell, file.getAbsolutePath)
+  }
+
+  def setEnvVars(vars: Map[String, String]) {
+    pb.environment().putAll(vars)
   }
 
   def run = {

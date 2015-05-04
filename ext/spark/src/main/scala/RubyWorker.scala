@@ -129,7 +129,7 @@ object RubyWorker extends Logging {
         if(uri.isEmpty){
           // Use gem installed on the system
           try {
-            val homeCommand = new FileCommand(commandTemplate, "ruby-spark home", env)
+            val homeCommand = new FileCommand(commandTemplate, "ruby-spark home", env, getEnvVars(env))
 
             executorLocation = homeCommand.run.readLine
           } catch {
@@ -148,7 +148,7 @@ object RubyWorker extends Logging {
       // Create master command
       // -C: change worker dir before execution
       val masterRb = s"ruby $executorOptions -C $executorLocation master.rb $workerType $serverPort"
-      val masterCommand = new FileCommand(commandTemplate, masterRb, env)
+      val masterCommand = new FileCommand(commandTemplate, masterRb, env, getEnvVars(env))
 
       // Start master
       master = masterCommand.run
@@ -170,6 +170,17 @@ object RubyWorker extends Logging {
           throw new SparkException("Ruby master did not connect back in time", e)
       }
     }
+  }
+
+  /* ----------------------------------------------------------------------------------------------
+   * Gel all environment variables for executor
+   */
+
+  def getEnvVars(env: SparkEnv): Map[String, String] = {
+    val prefix = "spark.ruby.executor.env."
+    env.conf.getAll.filter{case (k, _) => k.startsWith(prefix)}
+                   .map{case (k, v) => (k.substring(prefix.length), v)}
+                   .toMap
   }
 
   /* ------------------------------------------------------------------------------------------- */
