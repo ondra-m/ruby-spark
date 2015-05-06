@@ -40,7 +40,7 @@ $ gem install ruby-spark
 
 ### Install Apache Spark
 
-To install latest supported Spark. First compile native extension:
+If you want use gem from local fs you have to first compile native extension:
 
 ```
 $ rake compile
