@@ -87,8 +87,6 @@ end
 
 # Start Apache Spark
 Spark.start
-
-Spark.sc # => context
 ```
 
 ## Uploading a data
@@ -108,8 +106,8 @@ sc.whole_text_files(DIRECTORY, workers_num, custom_options)
 Direct uploading structures from ruby:
 
 ```ruby
-$sc.parallelize([1,2,3,4,5], workers_num, custom_options)
-$sc.parallelize(1..5, workers_num, custom_options)
+sc.parallelize([1,2,3,4,5], workers_num, custom_options)
+sc.parallelize(1..5, workers_num, custom_options)
 ```
 
 ### Options
@@ -153,7 +151,7 @@ rdd = rdd.flat_map(lambda{|line| line.split})
 rdd.collect_as_hash
 ```
 
-Estimating pi with a custom serializer
+Estimating PI with a custom serializer
 
 ```ruby
 slices = 3
@@ -188,14 +186,19 @@ rdd.collect # => #<BigDecimal, '0.31415926...'>
 Linear regression
 
 ```ruby
-Spark::Mllib.import
+# Import Mllib classes into Object
+# Otherwise are accessible via Spark::Mllib::LinearRegressionWithSGD
+Spark::Mllib.import(Object)
 
+# Training data
 data = [
   LabeledPoint.new(0.0, [0.0]),
   LabeledPoint.new(1.0, [1.0]),
   LabeledPoint.new(3.0, [2.0]),
   LabeledPoint.new(2.0, [3.0])
 ]
+
+# Train a model
 lrm = LinearRegressionWithSGD.train(sc.parallelize(data), initial_weights: [1.0])
 
 lrm.predict([0.0])
