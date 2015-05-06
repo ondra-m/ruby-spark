@@ -1064,6 +1064,17 @@ module Spark
       self.sort_by('lambda{|(key, _)| key}')
     end
 
+    # Sort the RDD by value
+    #
+    # == Example:
+    #   rdd = $sc.parallelize([["a", 3], ["b", 1], ["c", 2]])
+    #   rdd.sort_by_value.collect
+    #   # => [["b", 1], ["c", 2], ["a", 3]]
+    #
+    def sort_by_value(ascending=true, num_partitions=nil)
+      self.sort_by('lambda{|(_, value)| value}')
+    end
+
     # Sorts this RDD by the given key_function
     #
     # This is a different implementation than spark. Sort by doesn't use
@@ -1190,6 +1201,7 @@ module Spark
     alias_method :defaultReducePartitions, :default_reduce_partitions
     alias_method :setName, :set_name
     alias_method :addLibrary, :add_library
+    alias_method :require, :add_library
 
     alias_method :flatMap, :flat_map
     alias_method :mapPartitions, :map_partitions
