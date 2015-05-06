@@ -52,10 +52,10 @@ $ ruby-spark build
 
 ## Usage
 
-You can use Ruby Spark via interactive shell
+You can use Ruby Spark via interactive shell (Pry is used)
 
 ```
-$ ruby-spark pry
+$ ruby-spark shell
 ```
 
 Or on existing project
