@@ -45,7 +45,7 @@ If you want use gem from local fs you have to first compile native extension:
 ```
 $ rake compile
 ```
-Then build Spark, [SBT](ext/spark/build.sbt) is used for compiling.
+Then build Spark ([SBT](ext/spark/build.sbt) is used for compiling):
 ```
 $ ruby-spark build
 ```
@@ -62,9 +62,12 @@ Or on existing project
 
 ```ruby
 require 'ruby-spark'
+
+# Create a SparkContext
 Spark.start
 
-Spark.sc # => context
+# Context reference
+Spark.sc
 ```
 
 If you want configure Spark first. See [configurations](https://github.com/ondra-m/ruby-spark/wiki/Configuration) for more details.
@@ -72,12 +75,17 @@ If you want configure Spark first. See [configurations](https://github.com/ondra
 ```ruby
 require 'ruby-spark'
 
+# Use if you have custom SPARK_HOME
 Spark.load_lib(spark_home)
+
+# Configuration
 Spark.config do
    set_app_name "RubySpark"
    set 'spark.ruby.batch_size', 100
    set 'spark.ruby.serializer', 'oj'
 end
+
+# Start Apache Spark
 Spark.start
 
 Spark.sc # => context
@@ -85,19 +93,19 @@ Spark.sc # => context
 
 ## Uploading a data
 
-Single file
+Single text file:
 
 ```ruby
-$sc.text_file(FILE, workers_num, custom_options)
+sc.text_file(FILE, workers_num, custom_options)
 ```
 
-All files on directory
+All files on directory:
 
 ```ruby
-$sc.whole_text_files(DIRECTORY, workers_num, custom_options)
+sc.whole_text_files(DIRECTORY, workers_num, custom_options)
 ```
 
-Direct
+Direct uploading structures from ruby:
 
 ```ruby
 $sc.parallelize([1,2,3,4,5], workers_num, custom_options)
@@ -129,14 +137,14 @@ $sc.parallelize(1..5, workers_num, custom_options)
 Sum of numbers
 
 ```ruby
-$sc.parallelize(0..10).sum
+sc.parallelize(0..10).sum
 # => 55
 ```
 
 Words count using methods
 
 ```ruby
-rdd = $sc.text_file(PATH)
+rdd = sc.text_file(PATH)
 
 rdd = rdd.flat_map(lambda{|line| line.split})
          .map(lambda{|word| [word, 1]})
@@ -168,6 +176,15 @@ rdd = rdd.map(method(:map))
 puts 'Pi is roughly %f' % (4.0 * rdd.sum / n)
 ```
 
+Estimating PI
+
+```ruby
+rdd = sc.parallelize([10_000], 1)
+rdd = rdd.add_library('bigdecimal/math')
+rdd = rdd.map(lambda{|x| BigMath.PI(x)})
+rdd.collect # => #<BigDecimal, '0.31415926...'>
+```
+
 Linear regression
 
 ```ruby
@@ -179,7 +196,7 @@ data = [
   LabeledPoint.new(3.0, [2.0]),
   LabeledPoint.new(2.0, [3.0])
 ]
-lrm = LinearRegressionWithSGD.train($sc.parallelize(data), initial_weights: [1.0])
+lrm = LinearRegressionWithSGD.train(sc.parallelize(data), initial_weights: [1.0])
 
 lrm.predict([0.0])
 ```
