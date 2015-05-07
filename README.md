@@ -20,6 +20,12 @@ file.flat_map(:split)
 
 ## Installation
 
+### Requirments
+
+- Java 7+
+- Ruby 2+
+- MRI or JRuby
+
 Add this line to your application's Gemfile:
 
 ```ruby
@@ -42,7 +48,7 @@ Run `rake compile` if you are using gem from local filesystem.
 
 ### Build Apache Spark
 
-This command will download Spark and build extensions for this gem ([SBT](ext/spark/build.sbt) is used for compiling):
+This command will download Spark and build extensions for this gem ([SBT](ext/spark/build.sbt) is used for compiling). For more informations check [wiki](https://github.com/ondra-m/ruby-spark/wiki/Installation). Everything is stored by default at [GEM_ROOT]/target,
 
 ```
 $ ruby-spark build
@@ -87,6 +93,14 @@ end
 Spark.start
 ```
 
+Finally, to stop the cluster. On the shell is Spark stopped automatically when you exist.
+
+```ruby
+Spark.stop
+```
+
+
+
 ## Uploading a data
 
 Single text file:
@@ -101,7 +115,7 @@ All files on directory:
 sc.whole_text_files(DIRECTORY, workers_num, custom_options)
 ```
 
-Direct uploading structures from ruby:
+Direct uploading structures from ruby (choosen serializer must be able to serialize it):
 
 ```ruby
 sc.parallelize([1,2,3,4,5], workers_num, custom_options)
@@ -140,12 +154,21 @@ sc.parallelize(0..10).sum
 Words count using methods
 
 ```ruby
+# Content:
+# "first line"
+# "second line"
 rdd = sc.text_file(PATH)
 
+# ["first", "line", "second", "line"]
 rdd = rdd.flat_map(lambda{|line| line.split})
-         .map(lambda{|word| [word, 1]})
-         .reduce_by_key(lambda{|a, b| a+b})
 
+# [["first", 1], ["line", 1], ["second", 1], ["line", 1]]
+rdd = rdd.map(lambda{|word| [word, 1]})
+
+# [["first", 1], ["line", 2], ["second", 1]]
+rdd = rdd.reduce_by_key(lambda{|a, b| a+b})
+
+# {"first"=>1, "line"=>2, "second"=>1}
 rdd.collect_as_hash
 ```
 
