@@ -38,13 +38,10 @@ Or install it yourself as:
 $ gem install ruby-spark
 ```
 
-### Install Apache Spark
+Run `rake compile` if you are using gem from local filesystem.
 
-If you want use gem from local fs you have to first compile native extension:
+### Build Apache Spark
 
-```
-$ rake compile
-```
 Then build Spark ([SBT](ext/spark/build.sbt) is used for compiling):
 ```
 $ ruby-spark build
