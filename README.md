@@ -42,7 +42,8 @@ Run `rake compile` if you are using gem from local filesystem.
 
 ### Build Apache Spark
 
-Then build Spark ([SBT](ext/spark/build.sbt) is used for compiling):
+This command will download Spark and build extensions for this gem ([SBT](ext/spark/build.sbt) is used for compiling):
+
 ```
 $ ruby-spark build
 ```
