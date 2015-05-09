@@ -85,6 +85,10 @@ module Spark
       # Load from Java iterator by calling hasNext and next
       #
       def load_from_iterator(iterator)
+        unless Spark.jb.java_object?(iterator)
+          raise Spark::SerializeError, "Class #{iterator.class} is not a Java object."
+        end
+
         result = []
         while iterator.hasNext
           item = iterator.next
@@ -96,19 +100,15 @@ module Spark
             # Serialized data
             result << deserialize(item)
           else
-            # Java object
-            if try(item, :getClass)
-              case item.getClass.name
-              when '[B'
-                # Array of bytes
-                result << deserialize(pack_unsigned_chars(item.to_a))
-              when 'scala.Tuple2'
-                # Tuple2
-                result << deserialize(item._1, item._2)
-              end
+            case item.getClass.getSimpleName
+            when 'byte[]'
+              result << deserialize(pack_unsigned_chars(item.to_a))
+            when 'Tuple2'
+              result << deserialize(item._1, item._2)
+            else
+              raise Spark::SerializeError, "Cannot deserialize #{item.getClass.getSimpleName} class."
             end
           end
-
         end
 
         result.flatten!(1) if batched?

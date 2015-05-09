@@ -7,11 +7,11 @@ module Spark
       end
 
       def serialize(data)
-        ::Oj::dump(data)
+        ::Oj.dump(data)
       end
 
       def deserialize(data)
-        ::Oj::load(data)
+        ::Oj.load(data)
       end
 
     end

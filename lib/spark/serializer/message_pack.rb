@@ -7,11 +7,11 @@ module Spark
       end
 
       def self.serialize(data)
-        ::MessagePack::dump(data)
+        ::MessagePack.dump(data)
       end
 
       def self.deserialize(data)
-        ::MessagePack::load(data)
+        ::MessagePack.load(data)
       end
 
     end
