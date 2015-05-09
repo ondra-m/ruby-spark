@@ -150,7 +150,7 @@ All operations can be divided into 2 groups:
 
 See [wiki page](https://github.com/ondra-m/ruby-spark/wiki/RDD) or [Ruby-doc](http://www.rubydoc.info/github/ondra-m/ruby-spark/master/Spark/RDD) for more details.
 
-### Transformations
+#### Transformations
 
 ```ruby
 rdd.map(lambda{|item| ...})
@@ -161,7 +161,7 @@ rdd.map_paritions(lambda{|iterator| ...})
 # ...
 ```
 
-### Actions
+#### Actions
 
 ```ruby
 rdd.count
