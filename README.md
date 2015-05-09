@@ -101,25 +101,25 @@ Spark.stop
 
 
 
-## Uploading a data
+## Creating RDD (upload data)
 
 Single text file:
 
 ```ruby
-sc.text_file(FILE, workers_num, custom_options)
+rdd = sc.text_file(FILE, workers_num, custom_options)
 ```
 
 All files on directory:
 
 ```ruby
-sc.whole_text_files(DIRECTORY, workers_num, custom_options)
+rdd = sc.whole_text_files(DIRECTORY, workers_num, custom_options)
 ```
 
 Direct uploading structures from ruby (choosen serializer must be able to serialize it):
 
 ```ruby
-sc.parallelize([1,2,3,4,5], workers_num, custom_options)
-sc.parallelize(1..5, workers_num, custom_options)
+rdd = sc.parallelize([1,2,3,4,5], workers_num, custom_options)
+rdd = sc.parallelize(1..5, workers_num, custom_options)
 ```
 
 ### Options
@@ -140,6 +140,35 @@ sc.parallelize(1..5, workers_num, custom_options)
     <b>use</b>: <i>direct (upload direct to java)</i>, <i>file (upload throught a file)</i>
   </dd>
 </dl>
+
+## Operations
+
+All operations can be divided into 2 groups:
+
+- **Transformations:** append new operation to current RDD and return new
+- **Actions:** add operation and start calculations
+
+See [wiki page](https://github.com/ondra-m/ruby-spark/wiki/RDD) or [Ruby-doc](http://www.rubydoc.info/github/ondra-m/ruby-spark/master/Spark/RDD) for more details.
+
+### Transformations
+
+```ruby
+rdd.map(lambda{|item| ...})
+rdd.flat_map(lambda{|item| ...})
+rdd.filter(lambda{|item| ...})
+rdd.union(rdd)
+rdd.map_paritions(lambda{|iterator| ...})
+# ...
+```
+
+### Actions
+
+```ruby
+rdd.count
+rdd.take(n)
+rdd.collect
+# ...
+```
 
 
 ## Examples
