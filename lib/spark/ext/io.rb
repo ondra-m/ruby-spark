@@ -41,8 +41,11 @@ module Spark
           write(pack_long(data))
         end
 
+        # Size and data can have different encoding
+        # Marshal: both ASCII
+        # Oj: ASCII and UTF-8
         def write_string(data)
-          write_int(data.size)
+          write_int(data.bytesize)
           write(data)
         end
 
