@@ -64,7 +64,6 @@ module Spark
         end
       end
 
-
       # Load from Java iterator by calling hasNext and next
       def load_from_iterator(iterator)
         result = []
