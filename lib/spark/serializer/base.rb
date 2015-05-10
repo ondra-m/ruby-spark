@@ -9,6 +9,12 @@ module Spark
         after_initialize
       end
 
+      def check_each(data)
+        unless data.respond_to?(:each)
+          error('Data must be iterable.')
+        end
+      end
+
       def to_s
         "#{self.class.name.split('::').last} -> #{serializer}"
       end
@@ -48,12 +54,6 @@ module Spark
 
         def error(message)
           raise Spark::SerializeError, message
-        end
-
-        def check_each(data)
-          unless data.respond_to?(:each)
-            error('Data must be iterable.')
-          end
         end
 
     end

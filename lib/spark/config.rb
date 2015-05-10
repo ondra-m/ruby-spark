@@ -140,7 +140,6 @@ module Spark
       set('spark.ruby.serializer', default_serializer)
       set('spark.ruby.serializer.compress', default_serializer_compress)
       set('spark.ruby.serializer.batch_size', default_serializer_batch_size)
-      set('spark.ruby.parallelize_strategy', default_parallelize_strategy)
       set('spark.ruby.executor.uri', default_executor_uri)
       set('spark.ruby.executor.command', default_executor_command)
       set('spark.ruby.executor.options', default_executor_options)
@@ -158,16 +157,6 @@ module Spark
 
     def default_serializer_batch_size
       ENV['SPARK_RUBY_SERIALIZER_BATCH_SIZE'] || Spark::Serializer::DEFAULT_BATCH_SIZE
-    end
-
-    # How to handle with data in method parallelize.
-    #
-    # == Possible options:
-    # inplace:: data are changed directly to save memory
-    # deep_copy:: data are cloned fist
-    #
-    def default_parallelize_strategy
-      ENV['SPARK_RUBY_PARALLELIZE_STRATEGY'] || 'inplace'
     end
 
     # Ruby executor.

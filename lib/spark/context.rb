@@ -192,10 +192,7 @@ module Spark
     # == Parameters:
     # data:: Range or Array
     # num_slices:: number of slice
-    # options::
-    #   - use
-    #   - serializer
-    #   - batch_size
+    # serializer:: custom serializer (default: serializer based on configuration)
     #
     # == Examples:
     #   $sc.parallelize(["1", "2", "3"]).map(lambda{|x| x.to_i}).collect
@@ -204,27 +201,21 @@ module Spark
     #   $sc.parallelize(1..3).map(:to_s).collect
     #   #=> ["1", "2", "3"]
     #
-    def parallelize(data, num_slices=nil, options={})
+    def parallelize(data, num_slices=nil, serializer=nil)
+      serializer.check_each(data)
+
       num_slices ||= default_parallelism
-
-      serializer = options[:serializer]
       serializer ||= default_serializer
-
-      if data.is_a?(Array) && config('spark.ruby.parallelize_strategy') == 'deep_copy'
-        data = data.deep_copy
-      else
-        # For enumerator or range
-        # data = data.to_a
-      end
 
       # Through file
       file = Tempfile.new('to_parallelize', temp_dir)
       serializer.dump_to_io(data, file)
       file.close # not unlink
       jrdd = RubyRDD.readRDDFromFile(jcontext, file.path, num_slices)
-      file.unlink
 
       Spark::RDD.new(jrdd, self, serializer)
+    ensure
+      file && file.unlink
     end
 
     # Read a text file from HDFS, a local file system (available on all nodes), or any

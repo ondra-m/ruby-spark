@@ -29,6 +29,9 @@ module Spark
         "Batched(#{batch_size}) -> #{serializer}"
       end
 
+
+      # === Dump ==============================================================
+
       def dump_to_io(data, io)
         check_each(data)
 
@@ -43,6 +46,9 @@ module Spark
 
         io.flush
       end
+
+
+      # === Load ==============================================================
 
       def load_from_io(io)
         # Lazy deserialization
