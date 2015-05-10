@@ -32,8 +32,8 @@ module Spark
     def deep_copy
       copy = self.dup
       copy.create_command
-      copy.serializer    = self.serializer.dup
-      copy.deserializer  = self.deserializer.dup
+      copy.serializer    = self.serializer.deep_copy
+      copy.deserializer  = self.deserializer.deep_copy
       copy.commands      = self.commands.dup
       copy.libraries     = self.libraries.dup
       copy.bound_objects = self.bound_objects.dup

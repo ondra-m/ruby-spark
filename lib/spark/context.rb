@@ -2,6 +2,7 @@
 Spark.load_lib
 
 module Spark
+  ##
   # Main entry point for Spark functionality. A SparkContext represents the connection to a Spark
   # cluster, and can be used to create RDDs, accumulators and broadcast variables on that cluster.
   #
@@ -57,11 +58,53 @@ module Spark
       sc.defaultParallelism
     end
 
-    def get_serializer(serializer, *args)
-      serializer   = Spark::Serializer.get(serializer)
-      serializer ||= Spark::Serializer.get(config['spark.ruby.serializer'])
-      serializer.new(config['spark.ruby.batch_size']).set(*args)
+    # Default serializer
+    #
+    # Batch -> Basic -> Compress
+    #
+    def default_serializer
+      # Container
+      serializer = Spark::Serializer.new
+
+      # Batching
+      batch_size = default_batch_size
+      if batch_size == 'auto'
+        serializer.add('auto_batched')
+      else
+        serializer.add('batched', batch_size)
+      end
+
+      # Basic
+      serializer.add(config.get('spark.ruby.serializer'))
+
+      # Compressing
+      if default_compress
+        serializer.add('compressed')
+      end
+
+      # Finall
+      serializer
     end
+
+    def default_batch_size
+      size = config.get('spark.ruby.serializer.batch_size').to_i
+      if size >= 1
+        size
+      else
+        'auto'
+      end
+    end
+
+    def default_compress
+      config.get('spark.ruby.serializer.compress')
+    end
+
+    # def get_serializer(name, *args)
+    #   klass   = Spark::Serializer.get(name)
+    #   klass ||= default_serializer
+
+    #   klass.new(default_batch_size, default_compress).set(*args)
+    # end
 
     # Set a local property that affects jobs submitted from this thread, such as the
     # Spark fair scheduler pool.
@@ -179,28 +222,26 @@ module Spark
     def parallelize(data, num_slices=nil, options={})
       num_slices ||= default_parallelism
 
-      # use = jruby? ? (options[:use] || :direct) : :file
-      use = :file
-      serializer = get_serializer(options[:serializer], options[:batch_size])
+      serializer = options[:serializer]
+      serializer ||= default_serializer
 
-      if data.is_a?(Array) && config['spark.ruby.parallelize_strategy'] == 'deep_copy'
+      if data.is_a?(Array) && config.get('spark.ruby.parallelize_strategy') == 'deep_copy'
         data = data.deep_copy
       else
         # For enumerator or range
         data = data.to_a
       end
 
-      case use
-      when :direct
-        serializer.dump_to_java(data)
-        jrdd = jcontext.parallelize(data, num_slices)
-      when :file
-        file = Tempfile.new('to_parallelize', temp_dir)
-        serializer.dump(data, file)
-        file.close # not unlink
-        jrdd = RubyRDD.readRDDFromFile(jcontext, file.path, num_slices)
-        file.unlink
-      end
+      # # Direct
+      # serializer.dump_to_java(data)
+      # jrdd = jcontext.parallelize(data, num_slices)
+
+      # Through file
+      file = Tempfile.new('to_parallelize', temp_dir)
+      serializer.dump_to_io(data, file)
+      file.close # not unlink
+      jrdd = RubyRDD.readRDDFromFile(jcontext, file.path, num_slices)
+      file.unlink
 
       Spark::RDD.new(jrdd, self, serializer)
     end

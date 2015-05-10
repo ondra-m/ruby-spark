@@ -1,9 +1,9 @@
 module Spark
-  module Serializer
-    class Oj < Marshal
+  class Serializer
+    class Oj < BasicBase
 
-      def name
-        'oj'
+      def initialize
+        require 'oj'
       end
 
       def serialize(data)
@@ -18,8 +18,4 @@ module Spark
   end
 end
 
-begin
-  require 'oj'
-rescue LoadError
-  Spark::Serializer::Oj = Spark::Serializer::Marshal
-end
+Spark::Serializer.register('oj', Spark::Serializer::Oj)

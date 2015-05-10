@@ -9,7 +9,7 @@ module Spark
 
     TYPES = {
       'spark.shuffle.spill' => :boolean,
-      'spark.ruby.batch_size' => :integer
+      'spark.ruby.serializer.compress' => :boolean
     }
 
     # Initialize java SparkConf and load default configuration.
@@ -55,8 +55,8 @@ module Spark
         errors << 'A master URL must be set in your configuration.'
       end
 
-      if Spark::Serializer.get(get('spark.ruby.serializer')).nil?
-        errors << 'Default serializer must be set in your configuration.'
+      if Spark::Serializer.find(get('spark.ruby.serializer')).nil?
+        errors << 'Unknow serializer.'
       end
 
       scanned = get('spark.ruby.executor.command').scan('%s')
@@ -137,14 +137,27 @@ module Spark
       set_app_name('RubySpark')
       set_master('local[*]')
       set('spark.ruby.driver_home', Spark.home)
-      set('spark.ruby.parallelize_strategy', default_parallelize_strategy)
       set('spark.ruby.serializer', default_serializer)
-      set('spark.ruby.batch_size', default_batch_size)
+      set('spark.ruby.serializer.compress', default_serializer_compress)
+      set('spark.ruby.serializer.batch_size', default_serializer_batch_size)
+      set('spark.ruby.parallelize_strategy', default_parallelize_strategy)
       set('spark.ruby.executor.uri', default_executor_uri)
       set('spark.ruby.executor.command', default_executor_command)
       set('spark.ruby.executor.options', default_executor_options)
       set('spark.ruby.worker.type', default_worker_type)
       load_executor_envs
+    end
+
+    def default_serializer
+      ENV['SPARK_RUBY_SERIALIZER'] || Spark::Serializer::DEFAULT_SERIALIZER_NAME
+    end
+
+    def default_serializer_compress
+      ENV['SPARK_RUBY_SERIALIZER_COMPRESS'] || 'false'
+    end
+
+    def default_serializer_batch_size
+      ENV['SPARK_RUBY_SERIALIZER_BATCH_SIZE'] || Spark::Serializer::DEFAULT_BATCH_SIZE
     end
 
     # How to handle with data in method parallelize.
@@ -155,14 +168,6 @@ module Spark
     #
     def default_parallelize_strategy
       ENV['SPARK_RUBY_PARALLELIZE_STRATEGY'] || 'inplace'
-    end
-
-    def default_serializer
-      ENV['SPARK_RUBY_SERIALIZER'] || Spark::Serializer::DEFAULT_SERIALIZER_NAME
-    end
-
-    def default_batch_size
-      ENV['SPARK_RUBY_BATCH_SIZE'] || Spark::Serializer::DEFAULT_BATCH_SIZE.to_s
     end
 
     # Ruby executor.

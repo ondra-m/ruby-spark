@@ -12,6 +12,12 @@ module Spark
           unpack_int(read(4))
         end
 
+        def read_int_or_eof
+          bytes = read(4)
+          return Spark::Constant::DATA_EOF if bytes.nil?
+          unpack_int(bytes)
+        end
+
         def read_long
           unpack_long(read(8))
         end
@@ -55,3 +61,4 @@ module Spark
 end
 
 IO.__send__(:include, Spark::CoreExtension::IO)
+StringIO.__send__(:include, Spark::CoreExtension::IO)
