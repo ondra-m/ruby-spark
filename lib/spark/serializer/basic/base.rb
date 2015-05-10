@@ -1,15 +1,26 @@
 module Spark
   class Serializer
-    class BasicBase < Base
+    class BasicBase
 
-      def dump(data)
-        data.map do |item|
-          serialize(item)
-        end
+      def initialize
+        after_initialize
       end
 
-      def load(data, *)
-        deserialize(data)
+      def marshal_dump
+      end
+
+      def marshal_load(*)
+        before_marshal_load
+      end
+
+      def after_initialize
+      end
+
+      def before_marshal_load
+      end
+
+      def to_s
+        self.class.name.split('::').last
       end
 
     end

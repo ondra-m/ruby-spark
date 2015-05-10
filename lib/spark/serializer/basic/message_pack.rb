@@ -2,15 +2,19 @@ module Spark
   class Serializer
     class MessagePack < BasicBase
 
-      def initialize
+      def after_initialize
         require 'msgpack'
       end
 
-      def serialize(data)
+      def before_marshal_load
+        after_initialize
+      end
+
+      def dump(data)
         ::MessagePack.dump(data)
       end
 
-      def deserialize(data)
+      def load(data)
         ::MessagePack.load(data)
       end
 
@@ -18,4 +22,4 @@ module Spark
   end
 end
 
-Spark::Serializer.register('messagepack', 'message_pack', 'msgpack', Spark::Serializer::MessagePack)
+Spark::Serializer.register('messagepack', 'message_pack', 'msgpack', 'msg_pack', Spark::Serializer::MessagePack)

@@ -2,18 +2,20 @@ module Spark
   class Serializer
     class Compressed < Base
 
-      def initialize
+      def after_initialize
         require 'zlib'
       end
 
-      def dump(data)
-        data.map do |item|
-          Zlib::Deflate.deflate(item)
-        end
+      def before_marshal_load
+        after_initialize
       end
 
-      def load(data, *)
-        Zlib::Inflate.inflate(data)
+      def dump(data)
+        Zlib::Deflate.deflate(@serializer.dump(data))
+      end
+
+      def load(data)
+        @serializer.load(Zlib::Inflate.inflate(data))
       end
 
     end

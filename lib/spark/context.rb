@@ -60,51 +60,37 @@ module Spark
 
     # Default serializer
     #
-    # Batch -> Basic -> Compress
+    # Batch -> Compress -> Basic
     #
     def default_serializer
-      # Container
-      serializer = Spark::Serializer.new
+      # Basic
+      serializer = Spark::Serializer.find!(config('spark.ruby.serializer')).new
 
-      # Batching
+      # Compress
+      if config('spark.ruby.serializer.compress')
+        serializer = Spark::Serializer.compressed(serializer)
+      end
+
+      # Bactching
       batch_size = default_batch_size
       if batch_size == 'auto'
-        serializer.add('auto_batched')
+        serializer = Spark::Serializer.auto_batched(serializer)
       else
-        serializer.add('batched', batch_size)
+        serializer = Spark::Serializer.batched(serializer, batch_size)
       end
 
-      # Basic
-      serializer.add(config.get('spark.ruby.serializer'))
-
-      # Compressing
-      if default_compress
-        serializer.add('compressed')
-      end
-
-      # Finall
+      # Finally, "container" contains serializers
       serializer
     end
 
     def default_batch_size
-      size = config.get('spark.ruby.serializer.batch_size').to_i
+      size = config('spark.ruby.serializer.batch_size').to_i
       if size >= 1
         size
       else
         'auto'
       end
     end
-
-    def default_compress
-      config.get('spark.ruby.serializer.compress')
-    end
-
-    # def get_serializer(name, *args)
-    #   klass   = Spark::Serializer.get(name)
-    #   klass ||= default_serializer
-
-    #   klass.new(default_batch_size, default_compress).set(*args)
-    # end
 
     # Set a local property that affects jobs submitted from this thread, such as the
     # Spark fair scheduler pool.
@@ -136,12 +122,11 @@ module Spark
     # be changed at runtime.
     #
     def config(key=nil)
-      # if key
-      #   Spark.config[key]
-      # else
-      #   Spark.config.get_all
-      # end
-      Spark.config
+      if key
+        Spark.config.get(key)
+      else
+        Spark.config
+      end
     end
 
     # Add a file to be downloaded with this Spark job on every node.
@@ -225,16 +210,12 @@ module Spark
       serializer = options[:serializer]
       serializer ||= default_serializer
 
-      if data.is_a?(Array) && config.get('spark.ruby.parallelize_strategy') == 'deep_copy'
+      if data.is_a?(Array) && config('spark.ruby.parallelize_strategy') == 'deep_copy'
         data = data.deep_copy
       else
         # For enumerator or range
-        data = data.to_a
+        # data = data.to_a
       end
-
-      # # Direct
-      # serializer.dump_to_java(data)
-      # jrdd = jcontext.parallelize(data, num_slices)
 
       # Through file
       file = Tempfile.new('to_parallelize', temp_dir)

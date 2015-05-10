@@ -2,15 +2,19 @@ module Spark
   class Serializer
     class Oj < BasicBase
 
-      def initialize
+      def after_initialize
         require 'oj'
       end
 
-      def serialize(data)
+      def before_marshal_load
+        after_initialize
+      end
+
+      def dump(data)
         ::Oj.dump(data)
       end
 
-      def deserialize(data)
+      def load(data)
         ::Oj.load(data)
       end
 

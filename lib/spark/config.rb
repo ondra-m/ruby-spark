@@ -153,7 +153,7 @@ module Spark
     end
 
     def default_serializer_compress
-      ENV['SPARK_RUBY_SERIALIZER_COMPRESS'] || 'false'
+      ENV['SPARK_RUBY_SERIALIZER_COMPRESS'] || Spark::Serializer::DEFAULT_COMPRESS
     end
 
     def default_serializer_batch_size
