@@ -34,6 +34,10 @@ module Spark
       @command = Spark::CommandBuilder.new(serializer, deserializer)
     end
 
+    def inspect
+      %{#<#{self.class.name}:0x#{object_id}>}
+    end
+
 
     # =============================================================================
     # Operators
@@ -1313,6 +1317,10 @@ module Spark
 
       @context = prev.context
       @command = command
+    end
+
+    def inspect
+      %{#<#{self.class.name}:0x#{object_id} "#{@command.commands.join(' -> ')}">}
     end
 
     def pipelinable?
