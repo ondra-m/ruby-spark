@@ -32,19 +32,24 @@ module Spark
       klass
     end
 
+    def self.build(&block)
+      class_eval(&block)
+    end
+
   end
 end
 
-# Abstract parents
-require 'spark/serializer/base'
+# Parents
+require 'spark/serializer/simple'
 require 'spark/serializer/basic/base'
 
 # Basic
 require 'spark/serializer/basic/oj'
 require 'spark/serializer/basic/marshal'
 require 'spark/serializer/basic/message_pack'
+require 'spark/serializer/basic/text'
 
-# # Special
+# Others
 require 'spark/serializer/batched'
 require 'spark/serializer/auto_batched'
 require 'spark/serializer/compressed'

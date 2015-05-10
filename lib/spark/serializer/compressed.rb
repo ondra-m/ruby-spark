@@ -1,6 +1,6 @@
 module Spark
   class Serializer
-    class Compressed < Base
+    class Compressed < Simple
 
       def after_initialize
         require 'zlib'

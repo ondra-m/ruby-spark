@@ -1,6 +1,6 @@
 module Spark
   class Serializer
-    class Batched < Base
+    class Batched < Simple
 
       attr_reader :batch_size
 
@@ -51,49 +51,17 @@ module Spark
       # === Load ==============================================================
 
       def load_from_io(io)
-        # Lazy deserialization
-        return to_enum(__callee__, io) unless block_given?
+        result = super
 
-        loop do
-          size = io.read_int_or_eof
-          break if size == Spark::Constant::DATA_EOF
-
-          # Load one item
-          data = io.read(size)
-          data = @serializer.load(data)
-
-          if batched?
-            data.each {|item| yield item }
-          else
-            yield data
-          end
+        if result && batched?
+          result.lazy.flat_map{|x| x}
+        else
+          result
         end
       end
 
-      # Load from Java iterator by calling hasNext and next
       def load_from_iterator(iterator)
-        result = []
-        while iterator.hasNext
-          item = iterator.next
-
-          # mri: data are String
-          # jruby: data are bytes Array
-
-          if item.is_a?(String)
-            # Serialized data
-            result << @serializer.load(item)
-          else
-            case item.getClass.getSimpleName
-            when 'byte[]'
-              result << @serializer.load(pack_unsigned_chars(item.to_a))
-            # when 'Tuple2'
-            #   result << deserialize(item._1, item._2)
-            else
-              raise Spark::SerializeError, "Cannot deserialize #{item.getClass.getSimpleName} class."
-            end
-          end
-        end
-
+        result = super
         result.flatten!(1) if batched?
         result
       end

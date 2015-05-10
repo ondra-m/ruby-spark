@@ -202,10 +202,10 @@ module Spark
     #   #=> ["1", "2", "3"]
     #
     def parallelize(data, num_slices=nil, serializer=nil)
-      serializer.check_each(data)
-
       num_slices ||= default_parallelism
       serializer ||= default_serializer
+
+      serializer.check_each(data)
 
       # Through file
       file = Tempfile.new('to_parallelize', temp_dir)
@@ -230,11 +230,12 @@ module Spark
     #   $sc.text_file(f.path).map(lambda{|x| x.to_i}).collect
     #   # => [1, 2]
     #
-    def text_file(path, min_partitions=nil, options={})
+    def text_file(path, min_partitions=nil, encoding=Encoding::UTF_8, serializer=nil)
       min_partitions ||= default_parallelism
-      serializer = get_serializer(options[:serializer], options[:batch_size])
+      serializer     ||= default_serializer
+      deserializer     = Spark::Serializer.build { simple(text(encoding)) }
 
-      Spark::RDD.new(@jcontext.textFile(path, min_partitions), self, serializer, get_serializer('UTF8'))
+      Spark::RDD.new(@jcontext.textFile(path, min_partitions), self, serializer, deserializer)
     end
 
     # Read a directory of text files from HDFS, a local file system (available on all nodes), or any
