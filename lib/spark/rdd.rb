@@ -35,7 +35,14 @@ module Spark
     end
 
     def inspect
-      %{#<#{self.class.name}:0x#{object_id}>}
+      comms = @command.commands.join(' -> ')
+
+      result  = %{#<#{self.class.name}:0x#{object_id}}
+      result << %{ (#{comms})\n} if comms
+      result << %{  Serializer: "#{serializer}"\n}
+      result << %{Deserializer: "#{deserializer}"}
+      result << %{>}
+      result
     end
 
 
@@ -1317,10 +1324,6 @@ module Spark
 
       @context = prev.context
       @command = command
-    end
-
-    def inspect
-      %{#<#{self.class.name}:0x#{object_id} "#{@command.commands.join(' -> ')}">}
     end
 
     def pipelinable?
