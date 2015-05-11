@@ -6,6 +6,10 @@ module Spark
         after_initialize
       end
 
+      def ==(other)
+        self.to_s == other.to_s
+      end
+
       def marshal_dump
       end
 

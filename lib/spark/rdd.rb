@@ -38,7 +38,7 @@ module Spark
       comms = @command.commands.join(' -> ')
 
       result  = %{#<#{self.class.name}:0x#{object_id}}
-      result << %{ (#{comms})\n} if comms
+      result << %{ (#{comms})\n} unless comms.empty?
       result << %{  Serializer: "#{serializer}"\n}
       result << %{Deserializer: "#{deserializer}"}
       result << %{>}
