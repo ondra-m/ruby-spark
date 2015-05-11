@@ -68,6 +68,7 @@ RSpec.describe Spark::Serializer do
     batched1 = described_class::Batched.new(compressed1, 1)
 
     expect(described_class.build{ marshal }).to eq(marshal1)
+    expect(described_class.build{ marshal }).to eq(described_class.build{ __marshal__ })
     expect(described_class.build{ compressed(marshal) }).to eq(compressed1)
     expect(described_class.build{ batched(compressed(marshal), 1) }).to eq(batched1)
   end

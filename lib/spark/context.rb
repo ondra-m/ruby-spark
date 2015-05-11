@@ -233,7 +233,7 @@ module Spark
     def text_file(path, min_partitions=nil, encoding=Encoding::UTF_8, serializer=nil)
       min_partitions ||= default_parallelism
       serializer     ||= default_serializer
-      deserializer     = Spark::Serializer.build { simple(text(encoding)) }
+      deserializer     = Spark::Serializer.build { __simple__(__text__(encoding)) }
 
       Spark::RDD.new(@jcontext.textFile(path, min_partitions), self, serializer, deserializer)
     end
