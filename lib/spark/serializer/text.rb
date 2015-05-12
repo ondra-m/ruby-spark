@@ -1,18 +1,11 @@
 module Spark
-  class Serializer
-    ##
-    # Text
-    #
-    # This class should be used only for loading data from io
-    #
-    class Text
+  module Serializer
+    class Text < Base
 
       attr_reader :encoding
 
       def initialize(encoding=Encoding::UTF_8)
-        unless encoding.is_a?(Encoding)
-          raise Spark::SerializeError, 'Encoding must be an instance of Encoding'
-        end
+        error('Encoding must be an instance of Encoding') unless encoding.is_a?(Encoding)
 
         @encoding = encoding
       end

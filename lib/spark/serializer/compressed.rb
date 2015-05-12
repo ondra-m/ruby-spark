@@ -1,13 +1,9 @@
 module Spark
-  class Serializer
-    class Compressed < Simple
+  module Serializer
+    class Compressed < Base
 
-      def after_initialize
-        require 'zlib'
-      end
-
-      def before_marshal_load
-        after_initialize
+      def initialize(serializer)
+        @serializer = serializer
       end
 
       def dump(data)
@@ -22,4 +18,10 @@ module Spark
   end
 end
 
-Spark::Serializer.register('compress', 'compressed', Spark::Serializer::Compressed)
+begin
+  # TODO: require only if it is necessary
+  require 'zlib'
+
+  Spark::Serializer.register('compress', 'compressed', Spark::Serializer::Compressed)
+rescue LoadError
+end

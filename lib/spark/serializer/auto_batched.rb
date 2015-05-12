@@ -1,5 +1,5 @@
 module Spark
-  class Serializer
+  module Serializer
     ##
     # AutoBatched serializator
     #
@@ -9,16 +9,15 @@ module Spark
 
       MAX_RATIO = 10
 
-      def initialize(serializer, batch_size=65536)
-        super
+      def initialize(serializer, best_size=65536)
+        @serializer = serializer
+        @best_size = best_size.to_i
+
+        error('Batch size must be greater than 1') if @best_size < 2
       end
 
-      def batched?
-        true
-      end
-
-      def to_s
-        "Auto#{super}"
+      def name
+        "AutoBatched(#{@best_size})"
       end
 
       def dump_to_io(data, io)
@@ -29,7 +28,7 @@ module Spark
 
         index = 0
         batch = 2
-        max = @batch_size * MAX_RATIO
+        max = @best_size * MAX_RATIO
 
         loop do
           chunk = data.slice(index, batch)
@@ -43,7 +42,7 @@ module Spark
           index += batch
 
           size = serialized.bytesize
-          if size < @batch_size
+          if size < @best_size
             batch *= 2
           elsif size > max && batch > 1
             batch /= 2

@@ -1,6 +1,6 @@
 module Spark
-  class Serializer
-    class Marshal < BasicBase
+  module Serializer
+    class Marshal < Base
 
       def dump(data)
         ::Marshal.dump(data)

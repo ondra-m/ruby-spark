@@ -8,7 +8,7 @@ class Spark::Command::SortByKey < _Base
   variable :ascending,  function: false, type: [TrueClass, FalseClass]
   variable :spilling,   function: false, type: [TrueClass, FalseClass]
   variable :memory,     function: false, type: [Numeric, NilClass]
-  variable :serializer, function: false, type: Spark::Serializer::Simple
+  variable :serializer, function: false, type: Spark::Serializer::Base
 
   # Currently disabled
   def before_run

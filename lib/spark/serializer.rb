@@ -2,7 +2,7 @@ module Spark
   ##
   # Serializer
   #
-  class Serializer
+  module Serializer
 
     DEFAULT_COMPRESS = false
     DEFAULT_BATCH_SIZE = 1024
@@ -58,17 +58,18 @@ module Spark
   end
 end
 
-# Parents
-require 'spark/serializer/simple'
-require 'spark/serializer/basic/base'
+# Parent
+require 'spark/serializer/base'
 
 # Basic
-require 'spark/serializer/basic/oj'
-require 'spark/serializer/basic/marshal'
-require 'spark/serializer/basic/message_pack'
-require 'spark/serializer/basic/text'
+require 'spark/serializer/oj'
+require 'spark/serializer/marshal'
+require 'spark/serializer/message_pack'
+require 'spark/serializer/text'
 
 # Others
 require 'spark/serializer/batched'
 require 'spark/serializer/auto_batched'
 require 'spark/serializer/compressed'
+require 'spark/serializer/pair'
+require 'spark/serializer/cartesian'

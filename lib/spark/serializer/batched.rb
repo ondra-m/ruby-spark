@@ -1,11 +1,13 @@
 module Spark
-  class Serializer
-    class Batched < Simple
+  module Serializer
+    class Batched < Base
 
-      attr_reader :batch_size
+      attr_writer :serializer
 
-      def initialize(serializer, batch_size)
-        super(serializer)
+      def initialize(serializer, batch_size=nil)
+        batch_size ||= Spark::Serializer::DEFAULT_BATCH_SIZE
+
+        @serializer = serializer
         @batch_size = batch_size.to_i
 
         error('Batch size must be greater than 0') if @batch_size < 1
@@ -13,20 +15,27 @@ module Spark
 
       # Really batched
       def batched?
-        batch_size > 1
+        @batch_size > 1
       end
 
-      def marshal_dump
-        super + [@batch_size]
+      def unbatch!
+        @batch_size = 1
       end
 
-      def marshal_load(data)
-        super
-        @batch_size = data.shift
+      def load(data)
+        @serializer.load(data)
+      end
+
+      def dump(data)
+        @serializer.dump(data)
+      end
+
+      def name
+        "Batched(#{@batch_size})"
       end
 
       def to_s
-        "Batched(#{batch_size}) -> #{serializer}"
+        "#{name} -> #{@serializer}"
       end
 
 
@@ -36,11 +45,11 @@ module Spark
         check_each(data)
 
         if batched?
-          data = data.each_slice(batch_size)
+          data = data.each_slice(@batch_size)
         end
 
         data.each do |item|
-          serialized = @serializer.dump(item)
+          serialized = dump(item)
           io.write_string(serialized)
         end
 
@@ -51,19 +60,21 @@ module Spark
       # === Load ==============================================================
 
       def load_from_io(io)
-        result = super
+        return to_enum(__callee__, io) unless block_given?
 
-        if result && batched?
-          result.lazy.flat_map{|x| x}
-        else
-          result
+        loop do
+          size = io.read_int_or_eof
+          break if size == Spark::Constant::DATA_EOF
+
+          data = io.read(size)
+          data = load(data)
+
+          if batched?
+            data.each{|item| yield item }
+          else
+            yield data
+          end
         end
-      end
-
-      def load_from_iterator(iterator)
-        result = super
-        result.flatten!(1) if batched?
-        result
       end
 
     end
