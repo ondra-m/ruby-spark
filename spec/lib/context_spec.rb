@@ -7,7 +7,9 @@ RSpec.describe Spark::Context do
     numbers = (0...100).to_a
     func = lambda{|part| part.size}
 
-    rdd = $sc.parallelize(numbers, workers, batch_size: 1)
+    ser = Spark::Serializer.build { __batched__(__marshal__, 1) }
+
+    rdd = $sc.parallelize(numbers, workers, ser)
 
     rdd_result = $sc.run_job(rdd, func)
     result = numbers.each_slice(numbers.size/workers).map(&func)
