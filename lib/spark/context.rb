@@ -233,7 +233,7 @@ module Spark
     def text_file(path, min_partitions=nil, encoding=Encoding::UTF_8, serializer=nil)
       min_partitions ||= default_parallelism
       serializer     ||= default_serializer
-      deserializer     = Spark::Serializer.build { __simple__(__text__(encoding)) }
+      deserializer     = Spark::Serializer.build { __text__(encoding) }
 
       Spark::RDD.new(@jcontext.textFile(path, min_partitions), self, serializer, deserializer)
     end
@@ -254,10 +254,10 @@ module Spark
     #   $sc.whole_text_files(dir).flat_map(lambda{|key, value| value.split}).collect
     #   # => ["1", "2", "3", "4"]
     #
-    def whole_text_files(path, min_partitions=nil, options={})
+    def whole_text_files(path, min_partitions=nil, serializer=nil)
       min_partitions ||= default_parallelism
-      serializer = get_serializer(options[:serializer], options[:batch_size])
-      deserializer = get_serializer('Pair', get_serializer('UTF8'), get_serializer('UTF8'))
+      serializer     ||= default_serializer
+      deserializer     = Spark::Serializer.build{ __pair__(__text__, __text__) }
 
       Spark::RDD.new(@jcontext.wholeTextFiles(path, min_partitions), self, serializer, deserializer)
     end
@@ -296,9 +296,13 @@ module Spark
       # Rjb represent Fixnum as Integer but Jruby as Long
       partitions = to_java_array_list(convert_to_java_int(partitions))
 
+      # File for result
+      file = Tempfile.new('collect', temp_dir)
+
       mapped = rdd.new_rdd_from_command(command, *args)
-      iterator = PythonRDD.runJob(rdd.context.sc, mapped.jrdd, partitions, allow_local)
-      mapped.collect_from_iterator(iterator)
+      RubyRDD.runJob(rdd.context.sc, mapped.jrdd, partitions, allow_local, file.path)
+
+      mapped.collect_from_file(file)
     end
 
 

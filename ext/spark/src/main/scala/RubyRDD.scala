@@ -290,9 +290,21 @@ class PairwiseRDD(prev: RDD[Array[Byte]]) extends RDD[(Long, Array[Byte])](prev)
 
 object RubyRDD extends Logging {
 
+  def runJob(
+      sc: SparkContext,
+      rdd: JavaRDD[Array[Byte]],
+      partitions: ArrayList[Int],
+      allowLocal: Boolean,
+      filename: String): String = {
+    type ByteArray = Array[Byte]
+    type UnrolledPartition = Array[ByteArray]
+    val allPartitions: Array[UnrolledPartition] =
+      sc.runJob(rdd, (x: Iterator[ByteArray]) => x.toArray, partitions, allowLocal)
+    val flattenedPartition: UnrolledPartition = Array.concat(allPartitions: _*)
+    writeRDDToFile(flattenedPartition.iterator, filename)
+  }
+
   def readRDDFromFile(sc: JavaSparkContext, filename: String, parallelism: Int): JavaRDD[Array[Byte]] = {
-    // Too slow
-    // val file = new DataInputStream(new FileInputStream(filename))
     val file = new DataInputStream(new BufferedInputStream(new FileInputStream(filename)))
     val objs = new collection.mutable.ArrayBuffer[Array[Byte]]
     try {
@@ -306,6 +318,22 @@ object RubyRDD extends Logging {
       case eof: EOFException => {}
     }
     JavaRDD.fromRDD(sc.sc.parallelize(objs, parallelism))
+  }
+
+  def writeRDDToFile[T](items: Iterator[T], filename: String): String = {
+    val file = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(filename)))
+
+    try {
+      PythonRDD.writeIteratorToStream(items, file)
+    } finally {
+      file.close()
+    }
+
+    filename
+  }
+
+  def writeRDDToFile[T](rdd: RDD[T], filename: String): String = {
+    writeRDDToFile(rdd.collect.iterator, filename)
   }
 
   def readBroadcastFromFile(sc: JavaSparkContext, path: String, id: java.lang.Long): Broadcast[RubyBroadcast] = {

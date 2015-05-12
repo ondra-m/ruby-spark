@@ -145,8 +145,8 @@ module Spark
             if class_name == 'JavaRDD'
               jrdd = RubyRDD.toRuby(object)
 
-              serializer   = Spark.sc.get_serializer('marshal', nil)
-              deserializer = Spark.sc.get_serializer('marshal', 2) # is fully batched
+              serializer = Spark::Serializer.build { __batched__(__marshal__) }
+              serializer = Spark::Serializer.build { __batched__(__marshal__, 2) }
 
               return Spark::RDD.new(jrdd, Spark.sc, serializer, deserializer)
             end
