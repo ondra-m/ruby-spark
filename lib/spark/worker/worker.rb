@@ -78,6 +78,9 @@ module Worker
         # Compute
         @iterator = @command.execute(@iterator, @split_index)
 
+        # Result is not iterable
+        @iterator = [@iterator] unless @iterator.respond_to?(:each)
+
         # Send result
         @command.serializer.dump_to_io(@iterator, socket)
       end
