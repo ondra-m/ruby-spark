@@ -190,9 +190,9 @@ require 'spark/version'
 require 'spark/error'
 
 # Make sure that Spark be always stopped
-Kernel::at_exit do
+Kernel.at_exit do
   begin
-    Spark.stop
+    Spark.started? && Spark.stop
   rescue
   end
 end
