@@ -85,8 +85,8 @@ Spark.load_lib(spark_home)
 # Configuration
 Spark.config do
    set_app_name "RubySpark"
-   set 'spark.ruby.batch_size', 100
    set 'spark.ruby.serializer', 'oj'
+   set 'spark.ruby.serializer.batch_size', 100
 end
 
 # Start Apache Spark
@@ -106,20 +106,20 @@ Spark.stop
 Single text file:
 
 ```ruby
-rdd = sc.text_file(FILE, workers_num, custom_options)
+rdd = sc.text_file(FILE, workers_num, serializer=nil)
 ```
 
 All files on directory:
 
 ```ruby
-rdd = sc.whole_text_files(DIRECTORY, workers_num, custom_options)
+rdd = sc.whole_text_files(DIRECTORY, workers_num, serializer=nil)
 ```
 
 Direct uploading structures from ruby (choosen serializer must be able to serialize it):
 
 ```ruby
-rdd = sc.parallelize([1,2,3,4,5], workers_num, custom_options)
-rdd = sc.parallelize(1..5, workers_num, custom_options)
+rdd = sc.parallelize([1,2,3,4,5], workers_num, serializer=nil)
+rdd = sc.parallelize(1..5, workers_num, serializer=nil)
 ```
 
 ### Options
@@ -131,13 +131,10 @@ rdd = sc.parallelize(1..5, workers_num, custom_options)
     <i>(This value can be overwriten by spark)</i>
   </dd>
 
-  <dt>custom_options</dt>
+  <dt>serializer</dt>
   <dd>
-    <b>serializer</b>: name of serializator used for this RDD<br>
-    <b>batch_size</b>: see configuration<br>
-    <br>
-    <i>(Available only for parallelize)</i><br>
-    <b>use</b>: <i>direct (upload direct to java)</i>, <i>file (upload throught a file)</i>
+    Custom serializer.
+    <i>(default: by <b>spark.ruby.serializer</b> configurations)</i>
   </dd>
 </dl>
 

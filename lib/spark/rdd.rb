@@ -231,7 +231,7 @@ module Spark
     # to satisfy the limit.
     #
     # == Example:
-    #   rdd = $sc.parallelize(0..100, 20, batch_size: 1)
+    #   rdd = $sc.parallelize(0..100, 20)
     #   rdd.take(5)
     #   # => [0, 1, 2, 3, 4]
     #
@@ -326,7 +326,7 @@ module Spark
     #   seq = lambda{|x,y| x+y}
     #   com = lambda{|x,y| x*y}
     #
-    #   rdd = $sc.parallelize(1..10, 2, batch_size: 1)
+    #   rdd = $sc.parallelize(1..10, 2)
     #   rdd.aggregate(1, seq, com)
     #   # => 656
     #
@@ -623,7 +623,7 @@ module Spark
     # of the original partition.
     #
     # == Example:
-    #   rdd = $sc.parallelize(0...4, 4, batch_size: 1)
+    #   rdd = $sc.parallelize(0...4, 4)
     #   rdd.map_partitions_with_index(lambda{|part, index| part.first * index}).collect
     #   # => [0, 1, 4, 9]
     #
@@ -656,7 +656,7 @@ module Spark
     # Return an RDD created by coalescing all elements within each partition into an array.
     #
     # == Example:
-    #   rdd = $sc.parallelize(0..10, 3, batch_size: 1)
+    #   rdd = $sc.parallelize(0..10, 3)
     #   rdd.glom.collect
     #   # => [[0, 1, 2], [3, 4, 5, 6], [7, 8, 9, 10]]
     #
@@ -937,7 +937,7 @@ module Spark
     #     x+y
     #   end
     #
-    #   rdd = $sc.parallelize(["a","b","c","a","b","c","a","c"], 2, batch_size: 1).map(lambda{|x| [x, 1]})
+    #   rdd = $sc.parallelize(["a","b","c","a","b","c","a","c"], 2).map(lambda{|x| [x, 1]})
     #   rdd.combine_by_key(method(:combiner), method(:merge), method(:merge)).collect_as_hash
     #   # => {"a"=>3, "b"=>2, "c"=>3}
     #
@@ -1004,7 +1004,7 @@ module Spark
     #     x*y
     #   end
     #
-    #   rdd = $sc.parallelize([["a", 1], ["b", 2], ["a", 3], ["a", 4], ["c", 5]], 2, batch_size: 1)
+    #   rdd = $sc.parallelize([["a", 1], ["b", 2], ["a", 3], ["a", 4], ["c", 5]], 2)
     #   rdd.aggregate_by_key(1, method(:combine), method(:merge))
     #   # => [["b", 3], ["a", 16], ["c", 6]]
     #

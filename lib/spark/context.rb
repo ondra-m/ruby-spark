@@ -268,7 +268,7 @@ module Spark
     # If partitions is not specified, this will run over all partitions.
     #
     # == Example:
-    #   rdd = $sc.parallelize(0..10, 5, batch_size: 1)
+    #   rdd = $sc.parallelize(0..10, 5)
     #   $sc.run_job(rdd, lambda{|x| x.to_s}, [0,2])
     #   # => ["[0, 1]", "[4, 5]"]
     #
