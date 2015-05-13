@@ -2,6 +2,6 @@
 - refactor JavaBridge: to_java, from_java
 - add Streaming
 - add SQL
-- autobatch serializer
 - worker informations (time, memory, ...)
 - encoding parameter to context.text_file
+- killing zombie workers
