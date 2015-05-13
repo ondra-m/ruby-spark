@@ -1,18 +1,18 @@
-require "spec_helper"
+require 'spec_helper'
 
 def func3(x)
   x.map(&:to_i).reduce(:+)
 end
 
 def func4_with_index(data, index)
-  {
+  [{
     index => data.map(&:to_i).reduce(:*)
-  }
+  }]
 end
 
-RSpec::shared_examples "a map partitions" do |workers|
+RSpec.shared_examples 'a map partitions' do |workers|
   context "with #{workers || 'default'} worker" do
-    it "without index" do
+    it 'without index' do
       rdd2 = rdd(workers).map_partitions(func1)
       result = func1.call(numbers)
 
@@ -35,7 +35,7 @@ RSpec::shared_examples "a map partitions" do |workers|
       expect(rdd4.collect).to eql(rdd3.collect)
     end
 
-    it "with index" do
+    it 'with index' do
       rdd2 = rdd(workers).map_partitions_with_index(method(:func4_with_index))
       result = rdd2.collect
 
@@ -52,7 +52,7 @@ RSpec::shared_examples "a map partitions" do |workers|
   end
 end
 
-RSpec::describe "Spark::RDD.map_partitions(_with_index)" do
+RSpec::describe 'Spark::RDD.map_partitions(_with_index)' do
   let(:func1) { lambda{|x| x.map(&:to_i)} }
   let(:func2) {
     lambda{|x|
@@ -60,28 +60,28 @@ RSpec::describe "Spark::RDD.map_partitions(_with_index)" do
     }
   }
 
-  context "throught parallelize" do
+  context 'throught parallelize' do
     let(:numbers) { 0..1000 }
 
     def rdd(workers)
       $sc.parallelize(numbers, workers)
     end
 
-    it_behaves_like "a map partitions", nil
-    it_behaves_like "a map partitions", 1
-    it_behaves_like "a map partitions", rand(2..10)
+    it_behaves_like 'a map partitions', nil
+    it_behaves_like 'a map partitions', 1
+    it_behaves_like 'a map partitions', rand(2..10)
   end
 
-  context "throught text_file" do
-    let(:file)    { File.join("spec", "inputs", "numbers_0_100.txt") }
+  context 'throught text_file' do
+    let(:file)    { File.join('spec', 'inputs', 'numbers_0_100.txt') }
     let(:numbers) { File.readlines(file).map(&:strip) }
 
     def rdd(workers)
       $sc.text_file(file, workers)
     end
 
-    it_behaves_like "a map partitions", nil
-    it_behaves_like "a map partitions", 1
-    it_behaves_like "a map partitions", rand(2..10)
+    it_behaves_like 'a map partitions', nil
+    it_behaves_like 'a map partitions', 1
+    it_behaves_like 'a map partitions', rand(2..10)
   end
 end

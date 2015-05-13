@@ -30,7 +30,7 @@ module Spark
       cmd = [SBT]
       cmd << SBT_EXT
       cmd << SBT_DEPS unless only_ext
-      cmd << SBT_CLEAN unless $debug
+      cmd << SBT_CLEAN unless $DEBUG
 
       Dir.chdir(Spark.spark_ext_dir) do
         unless Kernel.system(env, cmd.join(' '))

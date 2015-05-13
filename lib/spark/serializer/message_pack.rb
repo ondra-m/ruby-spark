@@ -1,17 +1,13 @@
 module Spark
   module Serializer
-    class MessagePack < Marshal
+    class MessagePack < Base
 
-      def name
-        'message_pack'
+      def dump(data)
+        ::MessagePack.dump(data)
       end
 
-      def self.serialize(data)
-        ::MessagePack::dump(data)
-      end
-
-      def self.deserialize(data)
-        ::MessagePack::load(data)
+      def load(data)
+        ::MessagePack.load(data)
       end
 
     end
@@ -19,7 +15,9 @@ module Spark
 end
 
 begin
+  # TODO: require only if it is necessary
   require 'msgpack'
+
+  Spark::Serializer.register('messagepack', 'message_pack', 'msgpack', 'msg_pack', Spark::Serializer::MessagePack)
 rescue LoadError
-  Spark::Serializer::MessagePack = Spark::Serializer::Marshal
 end

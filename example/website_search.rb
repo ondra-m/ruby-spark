@@ -10,8 +10,7 @@ require 'ruby-spark'
 options = {
   sitemap: 'http://fit.cvut.cz/sitemap.xml',
   query: 'cvut',
-  workers: 2,
-  batch_size: 1024
+  workers: 2
 }
 
 opt_parser = OptionParser.new do |opts|
@@ -30,10 +29,6 @@ opt_parser = OptionParser.new do |opts|
 
   opts.on('-w', '--workers WORKERS_NUM', Integer, 'Number of workers') do |workers|
     options[:workers] = workers
-  end
-
-  opts.on('-b', '--batch BATCH_SIZE', Integer, 'Batch size') do |batch|
-    options[:batch_size] = batch
   end
 
   opts.on('--quite', 'Run quitely') do |v|
@@ -77,7 +72,7 @@ end
 
 Spark.start
 
-rdd = Spark.sc.parallelize(@links, options[:workers], batch_size: options[:batch_size])
+rdd = Spark.sc.parallelize(@links, options[:workers])
               .add_library('open-uri')
               .bind(query: options[:query])
               .map(func)

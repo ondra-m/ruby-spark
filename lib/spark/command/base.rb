@@ -16,6 +16,10 @@ class Spark::Command::Base
     end
   end
 
+  def to_s
+    self.class.name.split('::').last
+  end
+
   def self.error(message)
     raise Spark::CommandError, message
   end

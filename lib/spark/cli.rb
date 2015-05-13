@@ -21,7 +21,7 @@ module Spark
       program :version, Spark::VERSION
       program :description, 'Ruby wrapper for Spark'
 
-      global_option('-d', '--debug', 'Logging message to stdout'){ $debug = true }
+      global_option('-d', '--debug', 'Logging message to stdout'){ $DEBUG = true }
       default_command :help
 
 

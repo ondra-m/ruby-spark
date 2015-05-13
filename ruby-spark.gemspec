@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.version       = Spark::VERSION
   spec.authors       = ['Ondřej Moravčík']
   spec.email         = ['moravcik.ondrej@gmail.com']
-  spec.summary       = %q{Ruby wrapper for Spark}
+  spec.summary       = %q{Ruby wrapper for Apache Spark}
   spec.description   = %q{}
   spec.homepage      = ''
   spec.license       = 'MIT'

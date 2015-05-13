@@ -14,8 +14,7 @@ Spark::Mllib.import
 def spark_start
   Spark.logger.disable
   Spark.config do
-    set 'spark.ruby.parallelize_strategy', 'deep_copy'
-    set 'spark.ruby.batch_size', 100
+    set 'spark.ruby.serializer.batch_size', 100
   end
   Spark.start
   $sc = Spark.context

@@ -1,17 +1,13 @@
 module Spark
   module Serializer
-    class Oj < Marshal
+    class Oj < Base
 
-      def name
-        'oj'
+      def dump(data)
+        ::Oj.dump(data)
       end
 
-      def serialize(data)
-        ::Oj::dump(data)
-      end
-
-      def deserialize(data)
-        ::Oj::load(data)
+      def load(data)
+        ::Oj.load(data)
       end
 
     end
@@ -19,7 +15,9 @@ module Spark
 end
 
 begin
+  # TODO: require only if it is necessary
   require 'oj'
+
+  Spark::Serializer.register('oj', Spark::Serializer::Oj)
 rescue LoadError
-  Spark::Serializer::Oj = Spark::Serializer::Marshal
 end

@@ -73,13 +73,16 @@ module Worker
         @command = socket.read_data
 
         # Load iterator
-        @iterator = @command.deserializer.load(socket).lazy
+        @iterator = @command.deserializer.load_from_io(socket).lazy
 
         # Compute
         @iterator = @command.execute(@iterator, @split_index)
 
+        # Result is not iterable
+        @iterator = [@iterator] unless @iterator.respond_to?(:each)
+
         # Send result
-        @command.serializer.dump(@iterator, socket)
+        @command.serializer.dump_to_io(@iterator, socket)
       end
 
       def send_error(e)

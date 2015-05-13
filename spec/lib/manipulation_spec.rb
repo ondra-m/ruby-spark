@@ -8,7 +8,9 @@ RSpec::describe "Spark::RDD" do
     rdd = $sc.parallelize(numbers, 1).glom
     expect(rdd.collect).to eql([numbers.to_a])
 
-    rdd = $sc.parallelize(numbers, 5, batch_size: 1).glom
+    ser = Spark::Serializer.build { __batched__(__marshal__, 1) }
+
+    rdd = $sc.parallelize(numbers, 5, ser).glom
     expect(rdd.collect).to eql(numbers.each_slice(20).to_a)
   end
 
@@ -42,9 +44,9 @@ RSpec::describe "Spark::RDD" do
     end
 
     it "with a different serializer" do
-      rdd1 = $sc.parallelize(numbers, 1, serializer: "marshal")
-      rdd2 = $sc.parallelize(numbers, 1, serializer: "oj")
-      
+      rdd1 = $sc.parallelize(numbers, 1, Spark::Serializer.build{ __batched__(__marshal__) })
+      rdd2 = $sc.parallelize(numbers, 1, Spark::Serializer.build{ __batched__(__oj__) })
+
       expect { rdd1.union(rdd2).collect }.to_not raise_error
     end
 
@@ -59,14 +61,15 @@ RSpec::describe "Spark::RDD" do
   it ".compact" do
     data = [nil, nil , 0, 0, 1, 2, nil, 6]
     result = data.compact
+    ser = Spark::Serializer.build { __batched__(__marshal__, 1) }
 
     rdd = $sc.parallelize(data, 1).compact
     expect(rdd.collect).to eql(result)
 
-    rdd = $sc.parallelize(data, 5, batch_size: 1).compact
+    rdd = $sc.parallelize(data, 5, ser).compact
     expect(rdd.collect).to eql(result)
 
-    rdd = $sc.parallelize(data, 1, batch_size: 1).compact
+    rdd = $sc.parallelize(data, 1, ser).compact
     expect(rdd.collect).to eql(result)
   end
 
@@ -93,8 +96,10 @@ RSpec::describe "Spark::RDD" do
     let(:result) { data1.product(data2).map(&:to_s).sort }
 
     it "unbatched" do
-      rdd1 = $sc.parallelize(data1, 2, batch_size: 1)
-      rdd2 = $sc.parallelize(data2, 2, batch_size: 1)
+      ser = Spark::Serializer.build { __batched__(__marshal__, 1) }
+
+      rdd1 = $sc.parallelize(data1, 2, ser)
+      rdd2 = $sc.parallelize(data2, 2, ser)
 
       rdd = rdd1.cartesian(rdd2).map(lambda{|x| x.to_s})
 
@@ -102,8 +107,11 @@ RSpec::describe "Spark::RDD" do
     end
 
     it "batched" do
-      rdd1 = $sc.parallelize(data1, 2, batch_size: rand(4..10))
-      rdd2 = $sc.parallelize(data2, 2, batch_size: rand(4..10))
+      ser1 = Spark::Serializer.build { __batched__(__marshal__, rand(4..10)) }
+      ser2 = Spark::Serializer.build { __batched__(__marshal__, rand(4..10)) }
+
+      rdd1 = $sc.parallelize(data1, 2, ser1)
+      rdd2 = $sc.parallelize(data2, 2, ser2)
 
       rdd = rdd1.cartesian(rdd2).map(lambda{|x| x.to_s})
 

@@ -2,6 +2,7 @@
 Spark.load_lib
 
 module Spark
+  ##
   # Main entry point for Spark functionality. A SparkContext represents the connection to a Spark
   # cluster, and can be used to create RDDs, accumulators and broadcast variables on that cluster.
   #
@@ -57,10 +58,38 @@ module Spark
       sc.defaultParallelism
     end
 
-    def get_serializer(serializer, *args)
-      serializer   = Spark::Serializer.get(serializer)
-      serializer ||= Spark::Serializer.get(config['spark.ruby.serializer'])
-      serializer.new(config['spark.ruby.batch_size']).set(*args)
+    # Default serializer
+    #
+    # Batch -> Compress -> Basic
+    #
+    def default_serializer
+      # Basic
+      serializer = Spark::Serializer.find!(config('spark.ruby.serializer')).new
+
+      # Compress
+      if config('spark.ruby.serializer.compress')
+        serializer = Spark::Serializer.compressed(serializer)
+      end
+
+      # Bactching
+      batch_size = default_batch_size
+      if batch_size == 'auto'
+        serializer = Spark::Serializer.auto_batched(serializer)
+      else
+        serializer = Spark::Serializer.batched(serializer, batch_size)
+      end
+
+      # Finally, "container" contains serializers
+      serializer
+    end
+
+    def default_batch_size
+      size = config('spark.ruby.serializer.batch_size').to_i
+      if size >= 1
+        size
+      else
+        'auto'
+      end
     end
 
     # Set a local property that affects jobs submitted from this thread, such as the
@@ -93,12 +122,11 @@ module Spark
     # be changed at runtime.
     #
     def config(key=nil)
-      # if key
-      #   Spark.config[key]
-      # else
-      #   Spark.config.get_all
-      # end
-      Spark.config
+      if key
+        Spark.config.get(key)
+      else
+        Spark.config
+      end
     end
 
     # Add a file to be downloaded with this Spark job on every node.
@@ -164,10 +192,7 @@ module Spark
     # == Parameters:
     # data:: Range or Array
     # num_slices:: number of slice
-    # options::
-    #   - use
-    #   - serializer
-    #   - batch_size
+    # serializer:: custom serializer (default: serializer based on configuration)
     #
     # == Examples:
     #   $sc.parallelize(["1", "2", "3"]).map(lambda{|x| x.to_i}).collect
@@ -176,33 +201,21 @@ module Spark
     #   $sc.parallelize(1..3).map(:to_s).collect
     #   #=> ["1", "2", "3"]
     #
-    def parallelize(data, num_slices=nil, options={})
+    def parallelize(data, num_slices=nil, serializer=nil)
       num_slices ||= default_parallelism
+      serializer ||= default_serializer
 
-      # use = jruby? ? (options[:use] || :direct) : :file
-      use = :file
-      serializer = get_serializer(options[:serializer], options[:batch_size])
+      serializer.check_each(data)
 
-      if data.is_a?(Array) && config['spark.ruby.parallelize_strategy'] == 'deep_copy'
-        data = data.deep_copy
-      else
-        # For enumerator or range
-        data = data.to_a
-      end
-
-      case use
-      when :direct
-        serializer.dump_to_java(data)
-        jrdd = jcontext.parallelize(data, num_slices)
-      when :file
-        file = Tempfile.new('to_parallelize', temp_dir)
-        serializer.dump(data, file)
-        file.close # not unlink
-        jrdd = RubyRDD.readRDDFromFile(jcontext, file.path, num_slices)
-        file.unlink
-      end
+      # Through file
+      file = Tempfile.new('to_parallelize', temp_dir)
+      serializer.dump_to_io(data, file)
+      file.close # not unlink
+      jrdd = RubyRDD.readRDDFromFile(jcontext, file.path, num_slices)
 
       Spark::RDD.new(jrdd, self, serializer)
+    ensure
+      file && file.unlink
     end
 
     # Read a text file from HDFS, a local file system (available on all nodes), or any
@@ -217,11 +230,12 @@ module Spark
     #   $sc.text_file(f.path).map(lambda{|x| x.to_i}).collect
     #   # => [1, 2]
     #
-    def text_file(path, min_partitions=nil, options={})
+    def text_file(path, min_partitions=nil, encoding=Encoding::UTF_8, serializer=nil)
       min_partitions ||= default_parallelism
-      serializer = get_serializer(options[:serializer], options[:batch_size])
+      serializer     ||= default_serializer
+      deserializer     = Spark::Serializer.build { __text__(encoding) }
 
-      Spark::RDD.new(@jcontext.textFile(path, min_partitions), self, serializer, get_serializer('UTF8'))
+      Spark::RDD.new(@jcontext.textFile(path, min_partitions), self, serializer, deserializer)
     end
 
     # Read a directory of text files from HDFS, a local file system (available on all nodes), or any
@@ -240,10 +254,10 @@ module Spark
     #   $sc.whole_text_files(dir).flat_map(lambda{|key, value| value.split}).collect
     #   # => ["1", "2", "3", "4"]
     #
-    def whole_text_files(path, min_partitions=nil, options={})
+    def whole_text_files(path, min_partitions=nil, serializer=nil)
       min_partitions ||= default_parallelism
-      serializer = get_serializer(options[:serializer], options[:batch_size])
-      deserializer = get_serializer('Pair', get_serializer('UTF8'), get_serializer('UTF8'))
+      serializer     ||= default_serializer
+      deserializer     = Spark::Serializer.build{ __pair__(__text__, __text__) }
 
       Spark::RDD.new(@jcontext.wholeTextFiles(path, min_partitions), self, serializer, deserializer)
     end
@@ -254,7 +268,7 @@ module Spark
     # If partitions is not specified, this will run over all partitions.
     #
     # == Example:
-    #   rdd = $sc.parallelize(0..10, 5, batch_size: 1)
+    #   rdd = $sc.parallelize(0..10, 5)
     #   $sc.run_job(rdd, lambda{|x| x.to_s}, [0,2])
     #   # => ["[0, 1]", "[4, 5]"]
     #
@@ -282,9 +296,13 @@ module Spark
       # Rjb represent Fixnum as Integer but Jruby as Long
       partitions = to_java_array_list(convert_to_java_int(partitions))
 
+      # File for result
+      file = Tempfile.new('collect', temp_dir)
+
       mapped = rdd.new_rdd_from_command(command, *args)
-      iterator = PythonRDD.runJob(rdd.context.sc, mapped.jrdd, partitions, allow_local)
-      mapped.collect_from_iterator(iterator)
+      RubyRDD.runJob(rdd.context.sc, mapped.jrdd, partitions, allow_local, file.path)
+
+      mapped.collect_from_file(file)
     end
 
 
