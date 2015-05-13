@@ -51,8 +51,12 @@ module Spark
       klass
     end
 
-    def self.build(&block)
-      class_eval(&block)
+    def self.build(text=nil, &block)
+      if block_given?
+        class_eval(&block)
+      else
+        class_eval(text.to_s)
+      end
     end
 
   end
