@@ -133,8 +133,8 @@ rdd = sc.parallelize(1..5, workers_num, serializer=nil)
 
   <dt>serializer</dt>
   <dd>
-    Custom serializer.
-    <i>(default: by <b>spark.ruby.serializer</b> configurations)</i>
+    Custom serializer.<br>
+    <i>(default: by <b>spark.ruby.serializer</b> options)</i>
   </dd>
 </dl>
 
