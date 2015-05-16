@@ -6,7 +6,7 @@
     <title>Ruby-spark by ondra-m</title>
 
     <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -95,40 +95,111 @@ rdd_numbers <span class="pl-k">=</span> sc.parallelize(<span class="pl-c1">1</sp
 rdd_rands <span class="pl-k">=</span> sc.parallelize(rands, worker_nums)
 text_file <span class="pl-k">=</span> sc.text_file(<span class="pl-s"><span class="pl-pds">'</span>/etc/hosts<span class="pl-pds">'</span></span>, worker_nums)</pre></div>
 
+<h3>
+<a id="custom-serializer" class="anchor" href="#custom-serializer" aria-hidden="true"><span class="octicon octicon-link"></span></a>Custom serializer</h3>
+
+<p>RDD is using serializer defined from confing options (<code>spark.ruby-serializer*</code>). However if you want a different serializer just for one RDD you can do:</p>
+
+<div class="highlight highlight-ruby"><pre>ser <span class="pl-k">=</span> <span class="pl-c1">Spark</span>::<span class="pl-c1">Serializer</span>.build { auto_batched(compressed(oj)) }
+custom_rdd <span class="pl-k">=</span> sc.parallelize(<span class="pl-c1">1</span>..<span class="pl-c1">1000</span>, worker_nums, ser)</pre></div>
+
+<h3>
+<a id="examples" class="anchor" href="#examples" aria-hidden="true"><span class="octicon octicon-link"></span></a>Examples</h3>
+
 <p>Now you can define a computing function. All function can be found at <a href="http://www.rubydoc.info/github/ondra-m/ruby-spark/Spark/RDD">ruby-doc</a>. Every new function is attached to dataset and are executed at once by <code>.collect</code> (lazy definition). However some methods start calculation automatically (e.g. sum, count, first, ...).</p>
 
-<div class="highlight highlight-ruby"><pre><span class="pl-c"># Simple map</span>
-rdd <span class="pl-k">=</span> rdd_numbers.map(lambda{|<span class="pl-smi">x</span>| x<span class="pl-k">*</span><span class="pl-c1">2</span>}).collect <span class="pl-c"># =&gt; [2, 4, 6, 8, 10, 12, ...]</span>
+<h4>
+<a id="simple-mapping" class="anchor" href="#simple-mapping" aria-hidden="true"><span class="octicon octicon-link"></span></a>Simple mapping</h4>
 
-<span class="pl-c"># Pipelined methods</span>
-func <span class="pl-k">=</span> lambda <span class="pl-k">do </span>|<span class="pl-smi">iterator</span>|
-  iterator.map { |(<span class="pl-smi">modulo</span>, <span class="pl-smi">max</span>)|
-    <span class="pl-s"><span class="pl-pds">"</span>Modulo: <span class="pl-pse">#{</span><span class="pl-s1">modulo</span><span class="pl-pse"><span class="pl-s1">}</span></span> have max <span class="pl-pse">#{</span><span class="pl-s1">max</span><span class="pl-pse"><span class="pl-s1">}</span></span>.<span class="pl-pds">"</span></span>
-  }
+<p>This function will be applied to every element in the collection.</p>
+
+<div class="highlight highlight-ruby"><pre>rdd_x2 <span class="pl-k">=</span> rdd_numbers.map(lambda{|<span class="pl-smi">x</span>| x<span class="pl-k">*</span><span class="pl-c1">2</span>})
+
+rdd_x2.collect <span class="pl-c"># =&gt; [2, 4, 6, 8, 10, 12, ...]</span></pre></div>
+
+<h4>
+<a id="pipelined-functions" class="anchor" href="#pipelined-functions" aria-hidden="true"><span class="octicon octicon-link"></span></a>Pipelined functions</h4>
+
+<p>You can also add new function to old RDD.</p>
+
+<div class="highlight highlight-ruby"><pre>filtered <span class="pl-k">=</span> rdd_x2.filter(lambda{|<span class="pl-smi">x</span>| x<span class="pl-k">%</span><span class="pl-c1">3</span> <span class="pl-k">==</span> <span class="pl-c1">0</span>})
+
+filtered.collect <span class="pl-c"># =&gt; [6, 12, 18, 24, 30, 36, ...]</span></pre></div>
+
+<h4>
+<a id="word-count" class="anchor" href="#word-count" aria-hidden="true"><span class="octicon octicon-link"></span></a>Word count</h4>
+
+<p>Word counting on text file.</p>
+
+<h5>
+<a id="version-1" class="anchor" href="#version-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>Version 1</h5>
+
+<pre><code># text_file: element on the collection is one line on the file
+
+# Split line to words
+words = text_file.flat_map(:split)
+
+# Transform all word to [word, 1] (key, value)
+arrays = words.map(lambda{|word| [word, 1]})
+
+# Merge words (values will be reduced)
+count = arrays.reduce_by_key(lambda{|a, b| a+b})
+
+count.collect # =&gt; [["127.0.0.1", 1], ["localhost", 1], ["#", 3], ...]
+</code></pre>
+
+<h5>
+<a id="version-2" class="anchor" href="#version-2" aria-hidden="true"><span class="octicon octicon-link"></span></a>Version 2</h5>
+
+<div class="highlight highlight-ruby"><pre>word_count <span class="pl-k">=</span> lambda <span class="pl-k">do </span>|<span class="pl-smi">iterator</span>|
+  result <span class="pl-k">=</span> <span class="pl-c1">Hash</span>.<span class="pl-k">new</span> {|<span class="pl-smi">hash</span>, <span class="pl-smi">key</span>| hash[key] <span class="pl-k">=</span> <span class="pl-c1">0</span>}
+
+  iterator.each <span class="pl-k">do </span>|<span class="pl-smi">line</span>|
+    line.split.each <span class="pl-k">do </span>|<span class="pl-smi">word</span>|
+      result[word] <span class="pl-k">+=</span> <span class="pl-c1">1</span>
+    <span class="pl-k">end</span>
+  <span class="pl-k">end</span>
+
+  result.to_a
 <span class="pl-k">end</span>
 
-rdd <span class="pl-k">=</span> rdd_rands.map(<span class="pl-c1">:to_f</span>)          <span class="pl-c"># `.to_f` will be called on ever item</span>
-rdd <span class="pl-k">=</span> rdd.filter(lambda{|<span class="pl-smi">x</span>| x <span class="pl-k">&gt;</span> <span class="pl-c1">2</span>}) <span class="pl-c"># select items greater than 2</span>
-rdd <span class="pl-k">=</span> rdd.group_by(lambda{|<span class="pl-smi">x</span>| x<span class="pl-k">%</span><span class="pl-c1">2</span>}) <span class="pl-c"># group items based on modulo</span>
-rdd <span class="pl-k">=</span> rdd.map_values(<span class="pl-c1">:max</span>)          <span class="pl-c"># get max from values</span>
-rdd <span class="pl-k">=</span> rdd.map_partitions(func)      <span class="pl-c"># map on whole iterator</span>
-rdd.collect <span class="pl-c"># =&gt; ["Modulo: 1.0 have max 7.0.", "Modulo: 0.0 have max 8.0."]</span>
+reduce <span class="pl-k">=</span> lambda <span class="pl-k">do </span>|<span class="pl-smi">iterator</span>|
+  result <span class="pl-k">=</span> <span class="pl-c1">Hash</span>.<span class="pl-k">new</span> {|<span class="pl-smi">hash</span>, <span class="pl-smi">key</span>| hash[key] <span class="pl-k">=</span> <span class="pl-c1">0</span>}
 
-<span class="pl-c"># Word count</span>
-words <span class="pl-k">=</span> text_file.flat_map(<span class="pl-c1">:split</span>)
-arrays <span class="pl-k">=</span> words.map(lambda{|<span class="pl-smi">word</span>| [word, <span class="pl-c1">1</span>]})
-count <span class="pl-k">=</span> arrays.reduce_by_key(lambda{|<span class="pl-smi">a</span>, <span class="pl-smi">b</span>| a<span class="pl-k">+</span>b})
-count.collect <span class="pl-c"># =&gt; [["127.0.0.1", 1], ["localhost", 1], ["#", 3], ...]</span>
+  iterator.each <span class="pl-k">do </span>|(<span class="pl-smi">word</span>, <span class="pl-smi">count</span>)|
+    result[word] <span class="pl-k">+=</span> count
+  <span class="pl-k">end</span>
 
-<span class="pl-c"># PI</span>
-rdd <span class="pl-k">=</span> sc.parallelize([<span class="pl-c1">10_000</span>], <span class="pl-c1">1</span>)
+  result.to_a
+<span class="pl-k">end</span>
+
+<span class="pl-c"># Every node calculate word count on own collection</span>
+rdd <span class="pl-k">=</span> text_file.map_partitions(word_count)
+
+<span class="pl-c"># Set worker count to 1</span>
+rdd <span class="pl-k">=</span> rdd.coalesce(<span class="pl-c1">1</span>)
+
+<span class="pl-c"># Reduce all prev results</span>
+rdd <span class="pl-k">=</span> rdd.map_partitions(reduce)
+
+rdd.collect <span class="pl-c"># =&gt; [["127.0.0.1", 1], ["localhost", 1], ["#", 3], ...]</span></pre></div>
+
+<h4>
+<a id="estimating-pi" class="anchor" href="#estimating-pi" aria-hidden="true"><span class="octicon octicon-link"></span></a>Estimating PI</h4>
+
+<p>Using Ruby Math library.</p>
+
+<div class="highlight highlight-ruby"><pre>rdd <span class="pl-k">=</span> sc.parallelize([<span class="pl-c1">10_000</span>], <span class="pl-c1">1</span>)
 rdd <span class="pl-k">=</span> rdd.add_library(<span class="pl-s"><span class="pl-pds">'</span>bigdecimal/math<span class="pl-pds">'</span></span>)
 rdd <span class="pl-k">=</span> rdd.map(lambda{|<span class="pl-smi">x</span>| <span class="pl-c1">BigMath</span>.<span class="pl-c1">PI</span>(x)})
-rdd.collect <span class="pl-c"># =&gt; #&lt;BigDecimal, '0.31415926...'&gt;</span>
+rdd.collect <span class="pl-c"># =&gt; #&lt;BigDecimal, '0.31415926...'&gt;</span></pre></div>
 
-<span class="pl-c"># Stats</span>
-rdd <span class="pl-k">=</span> rdd_numbers.map(lambda{|<span class="pl-smi">x</span>| (x <span class="pl-k">*</span> rand) <span class="pl-k">**</span> <span class="pl-c1">2</span>})
-stats <span class="pl-k">=</span> rdd.stats <span class="pl-c"># =&gt; StatCounter</span>
+<h4>
+<a id="basic-statistic" class="anchor" href="#basic-statistic" aria-hidden="true"><span class="octicon octicon-link"></span></a>Basic statistic</h4>
+
+<pre><code># Stats
+rdd = rdd_numbers.map(lambda{|x| (x * rand) ** 2})
+stats = rdd.stats # =&gt; StatCounter
 
 stats.min
 stats.max
@@ -137,7 +208,84 @@ stats.mean
 stats.stdev
 stats.variance
 stats.sample_stdev
-stats.sample_variance</pre></div>
+stats.sample_variance
+</code></pre>
+
+<h4>
+<a id="linear-regression" class="anchor" href="#linear-regression" aria-hidden="true"><span class="octicon octicon-link"></span></a>Linear regression</h4>
+
+<p>Mllib functions are using Spark's Machine Learning Library.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="pl-c"># Import Mllib classes to Object</span>
+<span class="pl-c1">Spark</span>::<span class="pl-c1">Mllib</span>.import
+
+<span class="pl-c"># Dense vectors</span>
+data <span class="pl-k">=</span> [
+  <span class="pl-c1">LabeledPoint</span>.<span class="pl-k">new</span>(<span class="pl-c1">0.0</span>, [<span class="pl-c1">0.0</span>]),
+  <span class="pl-c1">LabeledPoint</span>.<span class="pl-k">new</span>(<span class="pl-c1">1.0</span>, [<span class="pl-c1">1.0</span>]),
+  <span class="pl-c1">LabeledPoint</span>.<span class="pl-k">new</span>(<span class="pl-c1">3.0</span>, [<span class="pl-c1">2.0</span>]),
+  <span class="pl-c1">LabeledPoint</span>.<span class="pl-k">new</span>(<span class="pl-c1">2.0</span>, [<span class="pl-c1">3.0</span>])
+]
+lrm <span class="pl-k">=</span> <span class="pl-c1">LinearRegressionWithSGD</span>.train(sc.parallelize(data), <span class="pl-c1">initial_weights:</span> [<span class="pl-c1">1.0</span>])
+
+lrm.intercept <span class="pl-c"># =&gt; 0.0</span>
+lrm.weights   <span class="pl-c"># =&gt; [0.9285714285714286]</span>
+
+lrm.predict([<span class="pl-c1">0.0</span>]) <span class="pl-c"># =&gt; 0.0</span>
+lrm.predict([<span class="pl-c1">0.7</span>]) <span class="pl-c"># =&gt; 0.65</span>
+lrm.predict([<span class="pl-c1">0.6</span>]) <span class="pl-c"># =&gt; 0.5571428571428572</span></pre></div>
+
+<h2>
+<a id="computing-model" class="anchor" href="#computing-model" aria-hidden="true"><span class="octicon octicon-link"></span></a>Computing model</h2>
+
+<p><img src="http://i.imgur.com/vhIrosW.png"></p>
+
+<h2>
+<a id="benchmarks" class="anchor" href="#benchmarks" aria-hidden="true"><span class="octicon octicon-link"></span></a>Benchmarks</h2>
+
+<p>All benchmarks can be found on <a href="https://github.com/ondra-m/ruby-spark/tree/master/benchmark/comparison">github repo</a>.</p>
+
+<h3>
+<a id="serializations" class="anchor" href="#serializations" aria-hidden="true"><span class="octicon octicon-link"></span></a>Serializations</h3>
+
+<h4>
+<a id="integers" class="anchor" href="#integers" aria-hidden="true"><span class="octicon octicon-link"></span></a>Integers</h4>
+
+<p><img src="http://i.imgur.com/zEZQpGp.png"></p>
+
+<h4>
+<a id="floats" class="anchor" href="#floats" aria-hidden="true"><span class="octicon octicon-link"></span></a>Floats</h4>
+
+<p><img src="http://i.imgur.com/GiCKDyx.png"></p>
+
+<h4>
+<a id="text" class="anchor" href="#text" aria-hidden="true"><span class="octicon octicon-link"></span></a>Text</h4>
+
+<p><img src="http://i.imgur.com/itgwSSQ.png"></p>
+
+<h3>
+<a id="coputing" class="anchor" href="#coputing" aria-hidden="true"><span class="octicon octicon-link"></span></a>Coputing</h3>
+
+<h4>
+<a id="prime-number" class="anchor" href="#prime-number" aria-hidden="true"><span class="octicon octicon-link"></span></a>Prime number</h4>
+
+<p>Check if number is prime</p>
+
+<p><img src="http://i.imgur.com/6TRSpTI.png"></p>
+
+<h4>
+<a id="matrix-multiplication" class="anchor" href="#matrix-multiplication" aria-hidden="true"><span class="octicon octicon-link"></span></a>Matrix multiplication</h4>
+
+<p>Square matrix multiplication. Matrix is represented by build Array in every language.</p>
+
+<p><img src="http://i.imgur.com/ftJ44M2.png"></p>
+
+<h4>
+<a id="pi-digits" class="anchor" href="#pi-digits" aria-hidden="true"><span class="octicon octicon-link"></span></a>PI digits</h4>
+
+<p>Computing PI number to X digit. Algorithm is borrowed from <a href="http://rosettacode.org/wiki/Pi">http://rosettacode.org/wiki/Pi</a>.</p>
+
+<p><img src="http://i.imgur.com/YX6tPPn.png"></p>
 
 <p>Github: <a href="https://github.com/ondra-m/ruby-spark">https://github.com/ondra-m/ruby-spark</a></p>
       </section>
