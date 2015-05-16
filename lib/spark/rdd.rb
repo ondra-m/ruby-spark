@@ -672,8 +672,14 @@ module Spark
     #   # => [[0, 1, 2], [3, 4, 5, 6, 7, 8, 9, 10]]
     #
     def coalesce(num_partitions)
+      if self.is_a?(PipelinedRDD)
+        deser = @command.serializer
+      else
+        deser = @command.deserializer
+      end
+
       new_jrdd = jrdd.coalesce(num_partitions)
-      RDD.new(new_jrdd, context, @command.serializer, @command.deserializer)
+      RDD.new(new_jrdd, context, @command.serializer, deser)
     end
 
     # Return the Cartesian product of this RDD and another one, that is, the
