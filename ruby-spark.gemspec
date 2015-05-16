@@ -21,9 +21,13 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   if RUBY_PLATFORM =~ /java/
+    spec.platform = 'java'
+
     extensions = ['ext/ruby_java/extconf.rb']
   else
     extensions = ['ext/ruby_c/extconf.rb']
+
+    spec.add_dependency 'rjb'
   end
 
   spec.extensions = extensions
@@ -37,11 +41,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'pry'
   spec.add_dependency 'nio4r'
   spec.add_dependency 'distribution'
-
-  if RUBY_PLATFORM =~ /java/
-  else
-    spec.add_dependency 'rjb'
-  end
 
   spec.add_development_dependency 'bundler', '~> 1.6'
   spec.add_development_dependency 'rake'
