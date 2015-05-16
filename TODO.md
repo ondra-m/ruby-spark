@@ -1,7 +1,6 @@
-- add compress
 - refactor JavaBridge: to_java, from_java
 - add Streaming
 - add SQL
 - worker informations (time, memory, ...)
-- encoding parameter to context.text_file
 - killing zombie workers
+- global config to ~/.ruby-spark.conf (e.g. target folder for spark)
