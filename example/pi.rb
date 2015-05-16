@@ -22,7 +22,7 @@ def map(_)
   end
 end
 
-rdd = Spark.context.parallelize(1..n, slices, serializer: 'oj')
+rdd = Spark.context.parallelize(1..n, slices)
 rdd = rdd.map(method(:map))
 
 puts 'Pi is roughly %f' % (4.0 * rdd.sum / n)
