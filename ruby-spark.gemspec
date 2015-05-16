@@ -31,6 +31,18 @@ Gem::Specification.new do |spec|
 
   spec.requirements << 'java, scala'
 
+  spec.add_dependency 'sourcify', '0.6.0.rc4'
+  spec.add_dependency 'method_source'
+  spec.add_dependency 'commander'
+  spec.add_dependency 'pry'
+  spec.add_dependency 'nio4r'
+  spec.add_dependency 'distribution'
+
+  if RUBY_PLATFORM =~ /java/
+  else
+    spec.add_dependency 'rjb'
+  end
+
   spec.add_development_dependency 'bundler', '~> 1.6'
   spec.add_development_dependency 'rake'
 end
