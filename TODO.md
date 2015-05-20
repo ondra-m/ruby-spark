@@ -4,3 +4,4 @@
 - worker informations (time, memory, ...)
 - killing zombie workers
 - global config to ~/.ruby-spark.conf (e.g. target folder for spark)
+- add_rb to Spark::Context
