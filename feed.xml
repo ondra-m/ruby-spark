@@ -4,10 +4,10 @@
     <title>Ruby-Spark</title>
     <description>Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.
 </description>
-    <link>/</link>
-    <atom:link href="/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Wed, 20 May 2015 21:07:11 +0200</pubDate>
-    <lastBuildDate>Wed, 20 May 2015 21:07:11 +0200</lastBuildDate>
+    <link>/ruby-spark/</link>
+    <atom:link href="/ruby-spark/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Wed, 20 May 2015 21:12:44 +0200</pubDate>
+    <lastBuildDate>Wed, 20 May 2015 21:12:44 +0200</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
     
       <item>
@@ -28,8 +28,8 @@
 
 </description>
         <pubDate>Wed, 20 May 2015 20:50:32 +0200</pubDate>
-        <link>/jekyll/update/2015/05/20/welcome-to-jekyll.html</link>
-        <guid isPermaLink="true">/jekyll/update/2015/05/20/welcome-to-jekyll.html</guid>
+        <link>/ruby-spark/jekyll/update/2015/05/20/welcome-to-jekyll.html</link>
+        <guid isPermaLink="true">/ruby-spark/jekyll/update/2015/05/20/welcome-to-jekyll.html</guid>
         
         
         <category>jekyll</category>
