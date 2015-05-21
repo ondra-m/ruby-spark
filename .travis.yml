@@ -5,7 +5,7 @@ rvm:
 
 before_script:
   - bundle exec rake compile
-  - bin/ruby-spark build
+  - bundle exec ruby bin/ruby-spark build
 
 cache:
   bundler: true
