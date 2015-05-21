@@ -1,4 +1,4 @@
-# Ruby-Spark
+# Ruby-Spark [![Build Status](https://travis-ci.org/ondra-m/ruby-spark.svg?branch=master)](https://travis-ci.org/ondra-m/ruby-spark)
 
 Apache Spark™ is a fast and general engine for large-scale data processing.
 
