@@ -1,12 +1,12 @@
-require "spec_helper"
+require 'spec_helper'
 
 def func4(item)
-  item.start_with?("a") && item.size > 3 && item[1].to_s.ord > 106
+  item.start_with?('a') && item.size > 3 && item[1].to_s.ord > 106
 end
 
-RSpec::shared_examples "a filtering" do |workers|
+RSpec.shared_examples 'a filtering' do |workers|
   context "with #{workers || 'default'} worker" do
-    it "when numbers" do
+    it 'when numbers' do
       rdd2 = rdd_numbers(workers)
       rdd2 = rdd2.filter(func1)
       result = numbers.select(&func1)
@@ -20,7 +20,7 @@ RSpec::shared_examples "a filtering" do |workers|
       expect(rdd3.collect).to eql([])
     end
 
-    it "when words" do
+    it 'when words' do
       rdd2 = rdd_words(workers)
       rdd2 = rdd2.filter(func3)
       result = words.select{|x| func3.call(x)}
@@ -36,12 +36,12 @@ RSpec::shared_examples "a filtering" do |workers|
   end
 end
 
-RSpec::describe "Spark::RDD.filter" do
+RSpec.describe 'Spark::RDD.filter' do
   let(:func1) { lambda{|x| x.to_i.even?} }
   let(:func2) { lambda{|x| x.to_i.odd?} }
-  let(:func3) { lambda{|x| x.to_s.start_with?("b")} }
+  let(:func3) { lambda{|x| x.to_s.start_with?('b')} }
 
-  context "throught parallelize" do
+  context 'throught parallelize' do
     let(:numbers) { Generator.numbers_with_zero }
     let(:words)   { Generator.words }
 
@@ -53,14 +53,14 @@ RSpec::describe "Spark::RDD.filter" do
       $sc.parallelize(words, workers)
     end
 
-    it_behaves_like "a filtering", nil
-    it_behaves_like "a filtering", 1
-    it_behaves_like "a filtering", rand(2..10)
+    it_behaves_like 'a filtering', 2
+    # it_behaves_like 'a filtering', nil
+    # it_behaves_like 'a filtering', rand(2..10)
   end
 
-  context "throught text_file" do
-    let(:file_numbers) { File.join("spec", "inputs", "numbers_0_100.txt") }
-    let(:file_words)   { File.join("spec", "inputs", "lorem_300.txt") }
+  context 'throught text_file' do
+    let(:file_numbers) { File.join('spec', 'inputs', 'numbers_0_100.txt') }
+    let(:file_words)   { File.join('spec', 'inputs', 'lorem_300.txt') }
 
     let(:numbers) { File.readlines(file_numbers).map(&:strip) }
     let(:words)   { File.readlines(file_words).map(&:strip) }
@@ -73,8 +73,8 @@ RSpec::describe "Spark::RDD.filter" do
       $sc.text_file(file_words, workers)
     end
 
-    it_behaves_like "a filtering", nil
-    it_behaves_like "a filtering", 1
-    it_behaves_like "a filtering", rand(2..10)
+    it_behaves_like 'a filtering', 2
+    # it_behaves_like 'a filtering', nil
+    # it_behaves_like 'a filtering', rand(2..10)
   end
 end

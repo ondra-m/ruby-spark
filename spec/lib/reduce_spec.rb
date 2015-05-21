@@ -1,12 +1,12 @@
-require "spec_helper"
+require 'spec_helper'
 
 def longest_words(memo, word)
   memo.length > word.length ? memo : word
 end
 
-RSpec::shared_examples "a reducing" do |workers|
+RSpec.shared_examples 'a reducing' do |workers|
   context "with #{workers || 'default'} worker" do
-    it ".reduce" do
+    it '.reduce' do
       rdd2 = rdd_numbers(workers)
       rdd2 = rdd2.map(to_i)
       rdd2 = rdd2.reduce(func1)
@@ -30,7 +30,7 @@ RSpec::shared_examples "a reducing" do |workers|
       expect(rdd4).to eql(result)
     end
 
-    it ".fold" do
+    it '.fold' do
       rdd2 = rdd_numbers(workers)
       rdd2 = rdd2.map(to_i)
       rdd_result = rdd2.fold(1, func1)
@@ -41,7 +41,7 @@ RSpec::shared_examples "a reducing" do |workers|
       expect(rdd_result).to eql(result)
     end
 
-    it ".aggregate" do
+    it '.aggregate' do
       rdd2 = rdd_numbers(workers)
       rdd2 = rdd2.map(to_i)
 
@@ -55,28 +55,28 @@ RSpec::shared_examples "a reducing" do |workers|
       expect(rdd_result).to eql(result)
     end
 
-    it ".max" do
+    it '.max' do
       rdd2 = rdd_numbers(workers)
       rdd2 = rdd2.map(to_i)
 
       expect(rdd2.max).to eql(numbers.map(&:to_i).max)
     end
 
-    it ".min" do
+    it '.min' do
       rdd2 = rdd_numbers(workers)
       rdd2 = rdd2.map(to_i)
 
       expect(rdd2.min).to eql(numbers.map(&:to_i).min)
     end
 
-    it ".sum" do
+    it '.sum' do
       rdd2 = rdd_numbers(workers)
       rdd2 = rdd2.map(to_i)
 
       expect(rdd2.sum).to eql(numbers.map(&:to_i).reduce(:+))
     end
 
-    it ".count" do
+    it '.count' do
       rdd2 = rdd_numbers(workers)
       rdd2 = rdd2.map(to_i)
 
@@ -85,14 +85,14 @@ RSpec::shared_examples "a reducing" do |workers|
   end
 end
 
-RSpec::describe "Spark::RDD" do
+RSpec.describe 'Spark::RDD' do
   let(:func1) { lambda{|sum, x| sum+x} }
   let(:func2) { lambda{|product, x| product*x} }
 
   let(:to_i)  { lambda{|item| item.to_i} }
   let(:split) { lambda{|item| item.split} }
 
-  context "throught parallelize" do
+  context 'throught parallelize' do
     let(:numbers) { Generator.numbers }
     let(:lines)   { Generator.lines }
 
@@ -104,14 +104,15 @@ RSpec::describe "Spark::RDD" do
       $sc.parallelize(lines, workers)
     end
 
-    it_behaves_like "a reducing", nil
-    it_behaves_like "a reducing", 1
-    it_behaves_like "a reducing", rand(2..10)
+    it_behaves_like 'a reducing', 1
+    it_behaves_like 'a reducing', 2
+    # it_behaves_like 'a reducing', nil
+    # it_behaves_like 'a reducing', rand(2..10)
   end
 
-  context "throught text_file" do
-    let(:file)       { File.join("spec", "inputs", "numbers_0_100.txt") }
-    let(:file_lines) { File.join("spec", "inputs", "lorem_300.txt") }
+  context 'throught text_file' do
+    let(:file)       { File.join('spec', 'inputs', 'numbers_0_100.txt') }
+    let(:file_lines) { File.join('spec', 'inputs', 'lorem_300.txt') }
 
     let(:numbers) { File.readlines(file).map(&:strip).map(&:to_i) }
     let(:lines)   { File.readlines(file_lines).map(&:strip) }
@@ -124,8 +125,9 @@ RSpec::describe "Spark::RDD" do
       $sc.text_file(file_lines, workers)
     end
 
-    it_behaves_like "a reducing", nil
-    it_behaves_like "a reducing", 1
-    it_behaves_like "a reducing", rand(2..10)
+    it_behaves_like 'a reducing', 1
+    it_behaves_like 'a reducing', 2
+    # it_behaves_like 'a reducing', nil
+    # it_behaves_like 'a reducing', rand(2..10)
   end
 end

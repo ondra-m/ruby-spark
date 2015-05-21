@@ -46,120 +46,121 @@ RSpec.describe Spark::Context do
     )
   end
 
-  context '.accumulator' do
-    it 'test' do
-      accum1 = $sc.accumulator(0,)
-      accum2 = $sc.accumulator(1, :*, 1)
-      accum3 = $sc.accumulator(0, lambda{|max, val| val > max ? val : max})
+  # context '.accumulator' do
 
-      accum1 += 1
+  #   it 'test' do
+  #     accum1 = $sc.accumulator(0,)
+  #     accum2 = $sc.accumulator(1, :*, 1)
+  #     accum3 = $sc.accumulator(0, lambda{|max, val| val > max ? val : max})
 
-      accum2.add(2)
-      accum2.add(2)
-      accum2.add(2)
+  #     accum1 += 1
 
-      accum3.add(9)
-      accum3.add(6)
-      accum3.add(7)
+  #     accum2.add(2)
+  #     accum2.add(2)
+  #     accum2.add(2)
 
-      expect(accum1.value).to eql(1)
-      expect(accum2.value).to eql(8)
-      expect(accum3.value).to eql(9)
+  #     accum3.add(9)
+  #     accum3.add(6)
+  #     accum3.add(7)
 
-      func = Proc.new do |_, index|
-        accum1.add(1)
-        accum2.add(2)
-        accum3.add(index * 10)
-      end
+  #     expect(accum1.value).to eql(1)
+  #     expect(accum2.value).to eql(8)
+  #     expect(accum3.value).to eql(9)
 
-      rdd = $sc.parallelize(0..4, 4)
-      rdd = rdd.bind(accum1: accum1, accum2: accum2, accum3: accum3)
-      rdd = rdd.map_partitions_with_index(func)
-      rdd.collect
+  #     func = Proc.new do |_, index|
+  #       accum1.add(1)
+  #       accum2.add(2)
+  #       accum3.add(index * 10)
+  #     end
 
-      # http://stackoverflow.com/questions/28560133/ruby-server-java-scala-client-deadlock
-      sleep(1)
+  #     rdd = $sc.parallelize(0..4, 4)
+  #     rdd = rdd.bind(accum1: accum1, accum2: accum2, accum3: accum3)
+  #     rdd = rdd.map_partitions_with_index(func)
+  #     rdd.collect
 
-      expect(accum1.value).to eql(5)
-      expect(accum2.value).to eql(128)
-      expect(accum3.value).to eql(30)
-    end
+  #     # http://stackoverflow.com/questions/28560133/ruby-server-java-scala-client-deadlock
+  #     sleep(1)
 
-    context 'accum param' do
-      it 'symbol' do
-        accum1 = $sc.accumulator(1, :+, 0)
-        accum2 = $sc.accumulator(5, :-, 3)
-        accum3 = $sc.accumulator(1, :*, 1)
-        accum4 = $sc.accumulator(1.0, :/, 1.0)
-        accum5 = $sc.accumulator(2, :**, 2)
+  #     expect(accum1.value).to eql(5)
+  #     expect(accum2.value).to eql(128)
+  #     expect(accum3.value).to eql(30)
+  #   end
 
-        func = Proc.new do |_|
-          accum1.add(1)
-          accum2.add(1)
-          accum3.add(2)
-          accum4.add(2)
-          accum5.add(2)
-        end
+  #   context 'accum param' do
+  #     it 'symbol' do
+  #       accum1 = $sc.accumulator(1, :+, 0)
+  #       accum2 = $sc.accumulator(5, :-, 3)
+  #       accum3 = $sc.accumulator(1, :*, 1)
+  #       accum4 = $sc.accumulator(1.0, :/, 1.0)
+  #       accum5 = $sc.accumulator(2, :**, 2)
 
-        rdd = $sc.parallelize(0..4, 2)
-        rdd = rdd.bind(accum1: accum1, accum2: accum2, accum3: accum3, accum4: accum4, accum5: accum5)
-        rdd = rdd.map_partitions(func)
-        rdd.collect
+  #       func = Proc.new do |_|
+  #         accum1.add(1)
+  #         accum2.add(1)
+  #         accum3.add(2)
+  #         accum4.add(2)
+  #         accum5.add(2)
+  #       end
 
-        # http://stackoverflow.com/questions/28560133/ruby-server-java-scala-client-deadlock
-        sleep(1)
+  #       rdd = $sc.parallelize(0..4, 2)
+  #       rdd = rdd.bind(accum1: accum1, accum2: accum2, accum3: accum3, accum4: accum4, accum5: accum5)
+  #       rdd = rdd.map_partitions(func)
+  #       rdd.collect
 
-        expect(accum1.value).to eq(3)
-        expect(accum2.value).to eq(1)
-        expect(accum3.value).to eq(4)
-        expect(accum4.value).to eq(4)
-        expect(accum5.value).to eq(65536)
-      end
+  #       # http://stackoverflow.com/questions/28560133/ruby-server-java-scala-client-deadlock
+  #       sleep(1)
 
-      it 'proc' do
-        accum1 = $sc.accumulator(1, lambda{|mem, val| mem + val}, 0)
-        accum2 = $sc.accumulator('a', lambda{|mem, val| mem + val}, '')
-        accum3 = $sc.accumulator([], lambda{|mem, val| mem << val}, [])
+  #       expect(accum1.value).to eq(3)
+  #       expect(accum2.value).to eq(1)
+  #       expect(accum3.value).to eq(4)
+  #       expect(accum4.value).to eq(4)
+  #       expect(accum5.value).to eq(65536)
+  #     end
 
-        func = Proc.new do |_|
-          accum1.add(1)
-          accum2.add('a')
-          accum3.add(1)
-        end
+  #     it 'proc' do
+  #       accum1 = $sc.accumulator(1, lambda{|mem, val| mem + val}, 0)
+  #       accum2 = $sc.accumulator('a', lambda{|mem, val| mem + val}, '')
+  #       accum3 = $sc.accumulator([], lambda{|mem, val| mem << val}, [])
 
-        rdd = $sc.parallelize(0..4, 2)
-        rdd = rdd.bind(accum1: accum1, accum2: accum2, accum3: accum3)
-        rdd = rdd.map_partitions(func)
-        rdd.collect
+  #       func = Proc.new do |_|
+  #         accum1.add(1)
+  #         accum2.add('a')
+  #         accum3.add(1)
+  #       end
 
-        # http://stackoverflow.com/questions/28560133/ruby-server-java-scala-client-deadlock
-        sleep(1)
+  #       rdd = $sc.parallelize(0..4, 2)
+  #       rdd = rdd.bind(accum1: accum1, accum2: accum2, accum3: accum3)
+  #       rdd = rdd.map_partitions(func)
+  #       rdd.collect
 
-        expect(accum1.value).to eq(3)
-        expect(accum2.value).to eq('aaa')
-        expect(accum3.value).to eq([[1], [1]])
-      end
+  #       # http://stackoverflow.com/questions/28560133/ruby-server-java-scala-client-deadlock
+  #       sleep(1)
 
-      it 'string' do
-        expect { $sc.accumulator(1, '0') }.to raise_error(Spark::SerializeError)
+  #       expect(accum1.value).to eq(3)
+  #       expect(accum2.value).to eq('aaa')
+  #       expect(accum3.value).to eq([[1], [1]])
+  #     end
 
-        accum = $sc.accumulator(1, 'lambda{|mem, val| mem + val}', 0)
+  #     it 'string' do
+  #       expect { $sc.accumulator(1, '0') }.to raise_error(Spark::SerializeError)
 
-        func = Proc.new do |_|
-          accum.add(1)
-        end
+  #       accum = $sc.accumulator(1, 'lambda{|mem, val| mem + val}', 0)
 
-        rdd = $sc.parallelize(0..4, 2)
-        rdd = rdd.bind(accum: accum)
-        rdd = rdd.map_partitions(func)
-        rdd.collect
+  #       func = Proc.new do |_|
+  #         accum.add(1)
+  #       end
 
-        # http://stackoverflow.com/questions/28560133/ruby-server-java-scala-client-deadlock
-        sleep(1)
+  #       rdd = $sc.parallelize(0..4, 2)
+  #       rdd = rdd.bind(accum: accum)
+  #       rdd = rdd.map_partitions(func)
+  #       rdd.collect
 
-        expect(accum.value).to eq(3)
-      end
-    end
-  end
+  #       # http://stackoverflow.com/questions/28560133/ruby-server-java-scala-client-deadlock
+  #       sleep(1)
+
+  #       expect(accum.value).to eq(3)
+  #     end
+  #   end
+  # end
 
 end

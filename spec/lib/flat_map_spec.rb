@@ -1,6 +1,6 @@
-require "spec_helper"
+require 'spec_helper'
 
-RSpec::shared_examples "a flat mapping" do |workers|
+RSpec.shared_examples 'a flat mapping' do |workers|
   it "with #{workers || 'default'} worker" do
     rdd2 = rdd(workers).map(func1)
     result = numbers.flat_map(&func1)
@@ -24,7 +24,7 @@ RSpec::shared_examples "a flat mapping" do |workers|
   end
 end
 
-RSpec::shared_examples "a flat mapping values" do |workers|
+RSpec.shared_examples 'a flat mapping values' do |workers|
   it "with #{workers || 'default'} worker" do
     rdd2 = rdd(workers).flat_map_values(func1)
     result = []
@@ -50,25 +50,26 @@ RSpec::shared_examples "a flat mapping values" do |workers|
   end
 end
 
-RSpec::describe "Spark::RDD" do
+RSpec.describe 'Spark::RDD' do
   let(:func1) { lambda{|x| x*2} }
   let(:func2) { lambda{|x| [x*3, 1, 1]} }
   let(:func3) { lambda{|x| [x*4, 2, 2]} }
 
-  context "throught parallelize" do
-    context ".flat_map" do
+  context 'throught parallelize' do
+    context '.flat_map' do
       let(:numbers) { Generator.numbers_with_zero }
 
       def rdd(workers)
         $sc.parallelize(numbers, workers)
       end
 
-      it_behaves_like "a flat mapping", nil
-      it_behaves_like "a flat mapping", 1
-      it_behaves_like "a flat mapping", rand(2..10)
+      it_behaves_like 'a flat mapping', 1
+      it_behaves_like 'a flat mapping', 2
+      # it_behaves_like 'a flat mapping', nil
+      # it_behaves_like 'a flat mapping', rand(2..10)
     end
 
-    context ".flat_map_values" do
+    context '.flat_map_values' do
       let(:func1) { lambda{|x| x*2} }
       let(:func2) { lambda{|x| [x.first]} }
       let(:hash_with_values) { Generator.hash_with_values }
@@ -77,24 +78,26 @@ RSpec::describe "Spark::RDD" do
         $sc.parallelize(hash_with_values, workers)
       end
 
-      it_behaves_like "a flat mapping values", nil
-      it_behaves_like "a flat mapping values", 1
-      it_behaves_like "a flat mapping values", rand(2..10)
+      it_behaves_like 'a flat mapping values', 1
+      it_behaves_like 'a flat mapping values', 2
+      # it_behaves_like 'a flat mapping values', nil
+      # it_behaves_like 'a flat mapping values', rand(2..10)
     end
   end
 
-  context "throught text_file" do
-    context ".flat_map" do
-      let(:file)    { File.join("spec", "inputs", "numbers_0_100.txt") }
+  context 'throught text_file' do
+    context '.flat_map' do
+      let(:file)    { File.join('spec', 'inputs', 'numbers_0_100.txt') }
       let(:numbers) { File.readlines(file).map(&:strip) }
 
       def rdd(workers)
         $sc.text_file(file, workers)
       end
 
-      it_behaves_like "a flat mapping", nil
-      it_behaves_like "a flat mapping", 1
-      it_behaves_like "a flat mapping", rand(2..10)
+      it_behaves_like 'a flat mapping', 1
+      it_behaves_like 'a flat mapping', 2
+      # it_behaves_like 'a flat mapping', nil
+      # it_behaves_like 'a flat mapping', rand(2..10)
     end
   end
 end

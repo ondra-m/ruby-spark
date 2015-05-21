@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-RSpec::describe Spark::RDD do
+RSpec.describe Spark::RDD do
 
   context '.pipe' do
     let(:words)   { Generator.words }

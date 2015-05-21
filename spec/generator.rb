@@ -18,7 +18,7 @@ class Generator
   def self.lines(size=1000, letters=3)
     Array.new(size) do
       Array.new(rand(50..100)){
-        (97+rand(letters)).chr + (" " * (rand(10) == 0 ? 1 : 0))
+        (97+rand(letters)).chr + (' ' * (rand(10) == 0 ? 1 : 0))
       }.join
     end
   end

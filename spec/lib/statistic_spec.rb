@@ -160,11 +160,13 @@ RSpec.describe Spark::RDD do
 
   context '.stats' do
     it_behaves_like 'a stats', 1
-    it_behaves_like 'a stats', rand(2..5)
+    it_behaves_like 'a stats', 2
+    # it_behaves_like 'a stats', rand(2..5)
   end
 
   context '.histogram' do
     it_behaves_like 'a histogram', 1
-    it_behaves_like 'a histogram', rand(2..5)
+    it_behaves_like 'a histogram', 2
+    # it_behaves_like 'a histogram', rand(2..5)
   end
 end

@@ -1,6 +1,6 @@
-require "spec_helper"
+require 'spec_helper'
 
-RSpec::shared_examples "a mapping" do |workers|
+RSpec.shared_examples 'a mapping' do |workers|
   it "with #{workers || 'default'} worker" do
     rdd2 = rdd(workers).map(func1)
     result = numbers.map(&func1)
@@ -24,7 +24,7 @@ RSpec::shared_examples "a mapping" do |workers|
   end
 end
 
-RSpec::shared_examples "a mapping values" do |workers|
+RSpec.shared_examples 'a mapping values' do |workers|
   it "with #{workers || 'default'} worker" do
     rdd2 = rdd(workers).map_values(func1)
     result = hash.map{|key, value| [key, func1.call(value)]}
@@ -43,49 +43,52 @@ RSpec::shared_examples "a mapping values" do |workers|
   end
 end
 
-RSpec::describe "Spark::RDD" do
+RSpec.describe 'Spark::RDD' do
   let(:func1) { lambda{|x| x*2} }
   let(:func2) { lambda{|x| x*3} }
   let(:func3) { lambda{|x| x*4} }
 
-  context "throught parallelize" do
-    context ".map" do
+  context 'throught parallelize' do
+    context '.map' do
       let(:numbers) { Generator.numbers }
 
       def rdd(workers)
         $sc.parallelize(numbers, workers)
       end
 
-      it_behaves_like "a mapping", nil
-      it_behaves_like "a mapping", 1
-      it_behaves_like "a mapping", rand(2..10)
+      it_behaves_like 'a mapping', 1
+      it_behaves_like 'a mapping', 2
+      # it_behaves_like 'a mapping', nil
+      # it_behaves_like 'a mapping', rand(2..10)
     end
 
-    context ".map_values" do
+    context '.map_values' do
       let!(:hash) { Generator.hash }
 
       def rdd(workers)
         $sc.parallelize(hash, workers)
       end
 
-      it_behaves_like "a mapping values", nil
-      it_behaves_like "a mapping values", 1
-      it_behaves_like "a mapping values", rand(2..10)
+      it_behaves_like 'a mapping values', 1
+      it_behaves_like 'a mapping values', 2
+      # it_behaves_like 'a mapping values', nil
+      # it_behaves_like 'a mapping values', rand(2..10)
     end
   end
 
-  context "throught text_file" do
-    context ".map" do
-      let(:file) { File.join("spec", "inputs", "numbers_0_100.txt") }
+  context 'throught text_file' do
+    context '.map' do
+      let(:file) { File.join('spec', 'inputs', 'numbers_0_100.txt') }
       let(:numbers) { File.readlines(file).map(&:strip) }
 
       def rdd(workers)
         $sc.text_file(file, workers)
       end
 
-      it_behaves_like "a mapping", nil
-      it_behaves_like "a mapping", 1
-      it_behaves_like "a mapping", rand(2..10)
+      it_behaves_like 'a mapping', 1
+      it_behaves_like 'a mapping', 2
+      # it_behaves_like 'a mapping', nil
+      # it_behaves_like 'a mapping', rand(2..10)
     end
   end
 end

@@ -67,9 +67,10 @@ RSpec::describe 'Spark::RDD.map_partitions(_with_index)' do
       $sc.parallelize(numbers, workers)
     end
 
-    it_behaves_like 'a map partitions', nil
     it_behaves_like 'a map partitions', 1
-    it_behaves_like 'a map partitions', rand(2..10)
+    it_behaves_like 'a map partitions', 2
+    # it_behaves_like 'a map partitions', nil
+    # it_behaves_like 'a map partitions', rand(2..10)
   end
 
   context 'throught text_file' do
@@ -80,8 +81,9 @@ RSpec::describe 'Spark::RDD.map_partitions(_with_index)' do
       $sc.text_file(file, workers)
     end
 
-    it_behaves_like 'a map partitions', nil
     it_behaves_like 'a map partitions', 1
-    it_behaves_like 'a map partitions', rand(2..10)
+    it_behaves_like 'a map partitions', 2
+    # it_behaves_like 'a map partitions', nil
+    # it_behaves_like 'a map partitions', rand(2..10)
   end
 end

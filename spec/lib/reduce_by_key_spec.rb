@@ -1,4 +1,4 @@
-require "spec_helper"
+require 'spec_helper'
 
 def flat_map(line)
   line.split
@@ -12,7 +12,7 @@ def reduce(x,y)
   x+y
 end
 
-RSpec::shared_examples "a words counting" do |workers|
+RSpec.shared_examples 'a words counting' do |workers|
   context "with #{workers || 'default'} worker" do
     let(:result) do
       keyyed = lines.flat_map{|x| x.split}.map{|x| [x,1]}
@@ -27,7 +27,7 @@ RSpec::shared_examples "a words counting" do |workers|
       result
     end
 
-    it "when lambda" do
+    it 'when lambda' do
       rdd2 = rdd(workers)
       rdd2 = rdd2.flat_map(lambda{|line| line.split})
       rdd2 = rdd2.map(lambda{|word| [word, 1]})
@@ -36,7 +36,7 @@ RSpec::shared_examples "a words counting" do |workers|
       expect(rdd2.collect_as_hash).to eql(result)
     end
 
-    it "when method" do
+    it 'when method' do
       rdd2 = rdd(workers)
       rdd2 = rdd2.flat_map(method(:flat_map))
       rdd2 = rdd2.map(method(:map))
@@ -45,7 +45,7 @@ RSpec::shared_examples "a words counting" do |workers|
       expect(rdd2.collect_as_hash).to eql(result)
     end
 
-    it "keys, values" do
+    it 'keys, values' do
       rdd2 = rdd(workers)
       rdd2 = rdd2.flat_map(method(:flat_map))
       rdd2 = rdd2.map(method(:map))
@@ -57,35 +57,35 @@ RSpec::shared_examples "a words counting" do |workers|
   end
 end
 
-RSpec::describe "Spark::RDD" do
-  context ".reduce_by_key" do
-    context "throught parallelize" do
+RSpec.describe 'Spark::RDD' do
+  context '.reduce_by_key' do
+    context 'throught parallelize' do
       let(:lines) { Generator.lines }
 
       def rdd(workers)
         $sc.parallelize(lines, workers)
       end
 
-      it_behaves_like "a words counting", nil
-      it_behaves_like "a words counting", 1
-      it_behaves_like "a words counting", rand(2..10)
+      it_behaves_like 'a words counting', 2
+      # it_behaves_like 'a words counting', nil
+      # it_behaves_like 'a words counting', rand(2..10)
     end
 
-    context "throught text_file" do
-      let(:file)  { File.join("spec", "inputs", "lorem_300.txt") }
+    context 'throught text_file' do
+      let(:file)  { File.join('spec', 'inputs', 'lorem_300.txt') }
       let(:lines) { File.readlines(file).map(&:strip) }
 
       def rdd(workers)
         $sc.text_file(file, workers)
       end
 
-      it_behaves_like "a words counting", nil
-      it_behaves_like "a words counting", 1
-      it_behaves_like "a words counting", rand(2..10)
+      it_behaves_like 'a words counting', 2
+      # it_behaves_like 'a words counting', nil
+      # it_behaves_like 'a words counting', rand(2..10)
     end
   end
 
-  context ".fold_by_key" do
+  context '.fold_by_key' do
     let(:numbers)    { Generator.numbers }
     let(:zero_value) { 0 }
     let(:rdd)        { $sc.parallelize(numbers) }
@@ -105,11 +105,11 @@ RSpec::describe "Spark::RDD" do
       rdd.map(map).fold_by_key(zero_value, add, num_partitions).collect_as_hash
     end
 
-    it "default num_partitions" do
+    it 'default num_partitions' do
       expect(fold_by_key).to eq(result)
     end
 
-    it "default num_partitions" do
+    it 'default num_partitions' do
       expect(
         fold_by_key rand(1..10)
       ).to eq(result)

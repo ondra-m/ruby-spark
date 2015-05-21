@@ -1,6 +1,6 @@
-require "spec_helper"
+require 'spec_helper'
 
-RSpec::describe Spark::Config do
+RSpec.describe Spark::Config do
 
   before(:context) do
     Spark.stop
@@ -10,17 +10,17 @@ RSpec::describe Spark::Config do
     spark_start
   end
 
-  it "should be stopped" do
+  it 'should be stopped' do
     expect(Spark.started?).to be_falsy
   end
 
-  context "new config" do
+  context 'new config' do
 
     let(:configuration) do
       {
-        "test.test1" => "test1",
-        "test.test2" => "test2",
-        "test.test3" => "test3"
+        'test.test1' => 'test1',
+        'test.test2' => 'test2',
+        'test.test3' => 'test3'
       }
     end
 
@@ -28,7 +28,7 @@ RSpec::describe Spark::Config do
       Spark.clear_config
     end
 
-    it "throught methods" do
+    it 'throught methods' do
       configuration.each do |key, value|
         Spark.config.set(key, value)
       end
@@ -38,7 +38,7 @@ RSpec::describe Spark::Config do
       end
     end
 
-    it "throught hash style" do
+    it 'throught hash style' do
       configuration.each do |key, value|
         Spark.config[key] = value
       end
@@ -48,7 +48,7 @@ RSpec::describe Spark::Config do
       end
     end
 
-    it "throught dsl" do
+    it 'throught dsl' do
       configuration.each do |key, value|
         Spark.config {
           set key, value

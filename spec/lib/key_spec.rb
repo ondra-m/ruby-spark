@@ -1,6 +1,6 @@
-require "spec_helper"
+require 'spec_helper'
 
-RSpec::shared_examples "a keying by" do |workers|
+RSpec.shared_examples 'a keying by' do |workers|
   it "with #{workers || 'default'} worker" do
     rdd = rdd_numbers(workers)
     rdd = rdd.key_by(key_function1)
@@ -16,11 +16,11 @@ RSpec::shared_examples "a keying by" do |workers|
   end
 end
 
-RSpec::describe "Spark::RDD" do
+RSpec.describe 'Spark::RDD' do
 
-  context "key_by" do
+  context 'key_by' do
     let(:key_function1) { lambda{|x| x.even?} }
-    let(:key_function2) { lambda{|x| x.include?("a")} }
+    let(:key_function2) { lambda{|x| x.include?('a')} }
 
     let(:numbers) { Generator.numbers }
     let(:words)   { Generator.words }
@@ -33,9 +33,10 @@ RSpec::describe "Spark::RDD" do
       $sc.parallelize(words)
     end
 
-    it_behaves_like "a keying by", nil
-    it_behaves_like "a keying by", 1
-    it_behaves_like "a keying by", rand(2..10)
+    it_behaves_like 'a keying by', 1
+    it_behaves_like 'a keying by', 2
+    # it_behaves_like 'a keying by', nil
+    # it_behaves_like 'a keying by', rand(2..10)
   end
 
 end

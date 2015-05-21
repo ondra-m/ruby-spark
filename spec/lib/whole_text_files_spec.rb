@@ -1,6 +1,6 @@
-require "spec_helper"
+require 'spec_helper'
 
-RSpec::shared_examples "a whole_text_files" do |workers|
+RSpec.shared_examples 'a whole_text_files' do |workers|
   it "with #{workers || 'default'} worker" do
     rdd2 = rdd(workers).map(get_numbers)
     result = files.size
@@ -17,17 +17,18 @@ RSpec::shared_examples "a whole_text_files" do |workers|
   end
 end
 
-RSpec::describe "Spark::Context" do
+RSpec.describe 'Spark::Context' do
   let(:get_numbers) { lambda{|file, content| content.split.map(&:to_i)} }
 
-  let(:dir)   { File.join("spec", "inputs", "numbers") }
-  let(:files) { Dir.glob(File.join(dir, "*")) }
+  let(:dir)   { File.join('spec', 'inputs', 'numbers') }
+  let(:files) { Dir.glob(File.join(dir, '*')) }
 
   def rdd(workers)
     $sc.whole_text_files(dir, workers)
   end
 
-  it_behaves_like "a whole_text_files", nil
-  it_behaves_like "a whole_text_files", 1
-  it_behaves_like "a whole_text_files", rand(2..10)
+  it_behaves_like 'a whole_text_files', 1
+  it_behaves_like 'a whole_text_files', 2
+  # it_behaves_like 'a whole_text_files', nil
+  # it_behaves_like 'a whole_text_files', rand(2..10)
 end
