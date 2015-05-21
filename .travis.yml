@@ -1,0 +1,14 @@
+language: ruby
+
+rvm:
+  - 2.2.0
+
+before_script:
+  - bin/ruby-spark build
+
+cache:
+  bundler: true
+  directories:
+    - $HOME/.m2
+    - $HOME/.ivy2
+    - $HOME/.sbt
