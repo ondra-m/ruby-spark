@@ -189,6 +189,9 @@ pre code {
   color: inherit;
   background-color: transparent; }
 
+code.small {
+  font-size: 15px; }
+
 /* Pygments via Jekyll */
 .highlight {
   margin-bottom: 1rem;
@@ -253,6 +256,11 @@ pre code {
   vertical-align: middle; }
   .icon > svg path {
     fill: #828282; }
+
+.note {
+  font-size: 14px;
+  font-style: italic;
+  color: #555; }
 
 /**
  * Site header

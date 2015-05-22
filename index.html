@@ -118,6 +118,8 @@ ruby-spark build
     <h2>
     <a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h2>
 
+    <h3>Creating RDD</h3>
+
     <p>First, you need create a distributed data collection. This dataset will be splitted into computing process. All process have the same computing function and cannot comunicate with each other.</p>
 
 <div class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">worker_nums</span> <span class="o">=</span> <span class="mi">2</span>
@@ -140,7 +142,22 @@ ruby-spark build
     <h3>
     <a id="examples" class="anchor" href="#examples" aria-hidden="true"><span class="octicon octicon-link"></span></a>Examples</h3>
 
-    <p>Now you can define a computing function. All function can be found at <a href="http://www.rubydoc.info/github/ondra-m/ruby-spark/Spark/RDD" target="_blank">Rubydoc</a>. Every new function is attached to the RDD and are executed at once by <code>.collect</code> (lazy definition). However some methods start calculation automatically (sum, count, first, ...).</p>
+    <p>Now you can define a computing function. All function can be found at <a href="http://www.rubydoc.info/github/ondra-m/ruby-spark/Spark/RDD" target="_blank">Rubydoc</a> or <a href="https://github.com/ondra-m/ruby-spark/wiki/RDD"></a>. Every new function is attached to the RDD and are executed at once by <code>.collect</code> (lazy definition).</p>
+
+    <p>
+      Methods can be divided into:
+
+      <ul>
+        <li>
+          <b>Transformations:</b><br>
+          <code class="small">.map, .flat_map, .map_partitions, .filter, .compact, .glom, .distinct, .shuffle, ...</code>
+        </li>
+        <li>
+          <b>Actions:</b> <span class="note">(calculation is started immediately)</span><br>
+          <code class="small">.take, .first, .aggregate, .max, .min, .sum, ...</code>
+        </li>
+      </ul>
+    </p>
 
     <h4>
     <a id="simple-mapping" class="anchor" href="#simple-mapping" aria-hidden="true"><span class="octicon octicon-link"></span></a>Simple mapping</h4>
