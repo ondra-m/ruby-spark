@@ -15,6 +15,7 @@ file.flat_map(:split)
 ```
 
 - [Apache Spark](http://spark.apache.org)
+- [RubySpark Website](http://ondra-m.github.io/ruby-spark/)
 - [Wiki](https://github.com/ondra-m/ruby-spark/wiki)
 - [Ruby-doc](http://www.rubydoc.info/github/ondra-m/ruby-spark)
 
@@ -24,6 +25,7 @@ file.flat_map(:split)
 
 - Java 7+
 - Ruby 2+
+- wget or curl
 - MRI or JRuby
 
 Add this line to your application's Gemfile:
@@ -145,7 +147,7 @@ All operations can be divided into 2 groups:
 - **Transformations:** append new operation to current RDD and return new
 - **Actions:** add operation and start calculations
 
-See [wiki page](https://github.com/ondra-m/ruby-spark/wiki/RDD) or [Ruby-doc](http://www.rubydoc.info/github/ondra-m/ruby-spark/master/Spark/RDD) for more details.
+See [Wiki page](https://github.com/ondra-m/ruby-spark/wiki/RDD) or [Rubydoc](http://www.rubydoc.info/github/ondra-m/ruby-spark/master/Spark/RDD) for more details.
 
 #### Transformations
 
@@ -170,14 +172,16 @@ rdd.collect
 
 ## Examples
 
-Sum of numbers
+
+
+##### Sum of numbers
 
 ```ruby
 sc.parallelize(0..10).sum
 # => 55
 ```
 
-Words count using methods
+##### Words count using methods
 
 ```ruby
 # Content:
@@ -198,7 +202,7 @@ rdd = rdd.reduce_by_key(lambda{|a, b| a+b})
 rdd.collect_as_hash
 ```
 
-Estimating PI with a custom serializer
+##### Estimating PI with a custom serializer
 
 ```ruby
 slices = 3
@@ -221,7 +225,7 @@ rdd = rdd.map(method(:map))
 puts 'Pi is roughly %f' % (4.0 * rdd.sum / n)
 ```
 
-Estimating PI
+##### Estimating PI
 
 ```ruby
 rdd = sc.parallelize([10_000], 1)
@@ -230,7 +234,16 @@ rdd = rdd.map(lambda{|x| BigMath.PI(x)})
 rdd.collect # => #<BigDecimal, '0.31415926...'>
 ```
 
-Linear regression
+### Mllib (Machine Learning Library)
+
+Mllib functions are using Spark's Machine Learning Library. Ruby objects are serialized and deserialized in Java so you cannot use custom classes. Supported are primitive types such as string or integers.
+
+All supported methods/models:
+
+- [Rubydoc / Mllib](http://www.rubydoc.info/github/ondra-m/ruby-spark/Spark/Mlli)
+- [Github / Mllib](https://github.com/ondra-m/ruby-spark/tree/master/lib/spark/mllib)
+
+##### Linear regression
 
 ```ruby
 # Import Mllib classes into Object
@@ -249,4 +262,26 @@ data = [
 lrm = LinearRegressionWithSGD.train(sc.parallelize(data), initial_weights: [1.0])
 
 lrm.predict([0.0])
+```
+
+##### K-Mean
+
+```ruby
+Spark::Mllib.import
+
+# Dense vectors
+data = [
+  DenseVector.new([0.0,0.0]),
+  DenseVector.new([1.0,1.0]),
+  DenseVector.new([9.0,8.0]),
+  DenseVector.new([8.0,9.0])
+]
+
+model = KMeans.train(sc.parallelize(data), 2, max_iterations: 10,
+                     runs: 30, initialization_mode: "random")
+
+model.predict([0.0, 0.0]) == model.predict([1.0, 1.0])
+# => true
+model.predict([8.0, 9.0]) == model.predict([9.0, 8.0])
+# => true
 ```
