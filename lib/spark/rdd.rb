@@ -166,8 +166,13 @@ module Spark
 
     # Assign a name to this RDD.
     #
-    def set_name(name)
-      jrdd.setName(name)
+    def set_name(value)
+      jrdd.setName(value)
+      value
+    end
+
+    def name=(value)
+      set_name(value)
     end
 
     def to_java
