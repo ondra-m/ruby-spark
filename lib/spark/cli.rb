@@ -65,7 +65,7 @@ module Spark
           options.default start: true, logger: true
 
           Spark.load_lib(options.spark_home)
-          Spark::Logger.disable unless options.logger
+          Spark.logger.disable unless options.logger
 
           Spark.config do
             set_app_name 'Pry RubySpark'
