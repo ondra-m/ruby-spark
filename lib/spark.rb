@@ -203,7 +203,7 @@ module Spark
     target ||= Spark.target_dir
 
     @java_bridge = JavaBridge.init(target)
-    @java_bridge.import
+    @java_bridge.import_all
     nil
   end
 

@@ -46,7 +46,7 @@ module Spark
       end
 
       # Import all important classes into Objects
-      def import
+      def import_all
         return if @imported
 
         java_objects.each do |name, klass|
@@ -58,7 +58,7 @@ module Spark
       end
 
       # Import classes for testing
-      def import_test
+      def import_all_test
         return if @imported_test
 
         java_test_objects.each do |name, klass|

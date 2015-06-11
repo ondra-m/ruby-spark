@@ -7,7 +7,7 @@ require 'generator'
 
 # Loading
 Spark.load_lib
-Spark.jb.import_test
+Spark.jb.import_all_test
 Spark::Mllib.import
 
 # Keep it on method because its called from config test
