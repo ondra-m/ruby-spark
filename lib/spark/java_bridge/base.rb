@@ -198,6 +198,10 @@ module Spark
           objects_with_names(JAVA_TEST_OBJECTS)
         end
 
+        def raise_missing_class(klass)
+          raise Spark::JavaBridgeError, "Class #{klass} is missing. Make sure that Spark and RubySpark is assembled."
+        end
+
     end
   end
 end

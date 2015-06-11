@@ -11,7 +11,9 @@ module Spark
 
       def import(name, klass)
         klass = "Java::#{klass}"
-        Object.const_set(name, eval(klass)) rescue nil
+        Object.const_set(name, eval(klass))
+      rescue NameError
+        raise_missing_class(klass)
       end
 
       def java_object?(object)

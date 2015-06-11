@@ -47,4 +47,8 @@ module Spark
   # Wrong instances
   class MllibError < StandardError
   end
+
+  # Missing Java class
+  class JavaBridgeError < StandardError
+  end
 end

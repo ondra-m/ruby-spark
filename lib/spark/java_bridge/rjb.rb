@@ -16,6 +16,8 @@ module Spark
 
       def import(name, klass)
         Object.const_set(name, silence_warnings { Rjb.import(klass) })
+      rescue NoClassDefFoundError
+        raise_missing_class(klass)
       end
 
       def java_object?(object)
