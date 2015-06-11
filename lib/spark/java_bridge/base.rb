@@ -168,13 +168,9 @@ module Spark
       private
 
         def jars
-          result = []
-          if File.file?(@target)
-            result << @target
-          else
-            result << Dir.glob(File.join(@target, '*.jar'))
-          end
-          result.flatten
+          result = Dir.glob(File.join(@target, '*.jar'))
+          result.flatten!
+          result
         end
 
         def objects_with_names(objects)

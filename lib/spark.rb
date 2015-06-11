@@ -127,7 +127,7 @@ module Spark
     values = File.readlines(file_path)
     values.map!(&:strip)
     values.select!{|value| value.start_with?('gem.')}
-    values.map!(&:split)
+    values.map!{|value| value.split(nil, 2)}
     values = Hash[values]
 
     # Clear prev values

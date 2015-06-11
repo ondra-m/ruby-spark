@@ -16,6 +16,7 @@ module Spark
     def initialize
       @spark_conf = SparkConf.new(true)
       set_default
+      from_file(Spark::DEFAULT_CONFIG_FILE)
     end
 
     def from_file(file)
