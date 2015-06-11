@@ -13,8 +13,8 @@ module Spark
   class CLI
     include Commander::Methods
 
-    IRB_HISTORY_FILE = File.join(Dir.home, '.irb_spark_history')
-    IRB_HISTORY_SIZE = 100
+    # IRB_HISTORY_FILE = File.join(Dir.home, '.irb_spark_history')
+    # IRB_HISTORY_SIZE = 100
 
     def run
       program :name, 'RubySpark'
@@ -29,22 +29,15 @@ module Spark
       command :build do |c|
         c.syntax = 'build [options]'
         c.description = 'Build spark and gem extensions'
-        c.option '--hadoop-version STRING', String, 'Version of hadoop which will stored with the SPARK'
-        c.option '--spark-home STRING', String, 'Directory where SPARK will be stored'
-        c.option '--spark-core STRING', String, 'Version of SPARK core'
-        c.option '--spark-version STRING', String, 'Version of SPARK'
+        c.option '--hadoop-version STRING', String, 'Version of hadoop which will stored with the Spark'
+        c.option '--spark-core-version STRING', String, 'Version of Spark core'
+        c.option '--spark-version STRING', String, 'Version of Spark'
         c.option '--scala-version STRING', String, 'Version of Scala'
-        c.option '--only-ext', 'Start SPARK immediately'
+        c.option '--target STRING', String, 'Directory where Spark will be stored'
+        c.option '--only-ext', 'Build only extension for RubySpark'
 
         c.action do |args, options|
-          options.default hadoop_version: Spark::Build::DEFAULT_HADOOP_VERSION,
-                          spark_home: Spark.target_dir,
-                          spark_core: Spark::Build::DEFAULT_CORE_VERSION,
-                          spark_version: Spark::Build::DEFAULT_SPARK_VERSION,
-                          scala_version: Spark::Build::DEFAULT_SCALA_VERSION,
-                          only_ext: false
-
-          Spark::Build.build(options)
+          Spark::Build.build(options.__hash__)
           puts
           puts 'Everything is OK'
         end
@@ -56,15 +49,15 @@ module Spark
       command :shell do |c|
         c.syntax = 'shell [options]'
         c.description = 'Start ruby shell for spark'
-        c.option '--spark-home STRING', String, 'Directory where SPARK is stored'
+        c.option '--target STRING', String, 'Directory where Spark is stored'
         c.option '--properties-file STRING', String, 'Path to a file from which to load extra properties'
-        c.option '--[no-]start', 'Start SPARK immediately'
+        c.option '--[no-]start', 'Start Spark immediately'
         c.option '--[no-]logger', 'Enable/disable logger (default: enable)'
 
         c.action do |args, options|
           options.default start: true, logger: true
 
-          Spark.load_lib(options.spark_home)
+          Spark.load_lib(options.target)
           Spark.logger.disable unless options.logger
 
           Spark.config do
@@ -94,8 +87,8 @@ module Spark
       # command :irb do |c|
       #   c.syntax = 'irb [options]'
       #   c.description = 'Start ruby shell for spark'
-      #   c.option '--spark-home STRING', String, 'Directory where SPARK is stored'
-      #   c.option '--[no-]start', 'Start SPARK immediately'
+      #   c.option '--spark-home STRING', String, 'Directory where Spark is stored'
+      #   c.option '--[no-]start', 'Start Spark immediately'
       #   c.option '--[no-]logger', 'Enable/disable logger (default: enable)'
       #
       #   c.action do |args, options|

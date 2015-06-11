@@ -6,15 +6,15 @@ assemblySettings
 val defaultScalaVersion     = "2.10.4"
 val defaultSparkVersion     = "1.3.0"
 val defaultSparkCoreVersion = "2.10"
-val defaultSparkHome        = "target"
+val defaultTargetDir        = "target"
 val defaultHadoopVersion    = "1.0.4"
 
 // Values
+val _hadoopVersion    = scala.util.Properties.envOrElse("HADOOP_VERSION", defaultHadoopVersion)
 val _scalaVersion     = scala.util.Properties.envOrElse("SCALA_VERSION", defaultScalaVersion)
 val _sparkVersion     = scala.util.Properties.envOrElse("SPARK_VERSION", defaultSparkVersion)
 val _sparkCoreVersion = scala.util.Properties.envOrElse("SPARK_CORE_VERSION", defaultSparkCoreVersion)
-val _sparkHome        = scala.util.Properties.envOrElse("SPARK_HOME", defaultSparkHome)
-val _hadoopVersion    = scala.util.Properties.envOrElse("HADOOP_VERSION", defaultHadoopVersion)
+val _targetDir        = scala.util.Properties.envOrElse("TARGET_DIR", defaultTargetDir)
 
 // Project settings
 name := "ruby-spark"
@@ -26,8 +26,8 @@ scalaVersion := _scalaVersion
 javacOptions ++= Seq("-source", "1.7", "-target", "1.7")
 
 // Jar target folder
-artifactPath in Compile in packageBin := file(s"${_sparkHome}/ruby-spark.jar")
-outputPath in packageDependency := file(s"${_sparkHome}/ruby-spark-deps.jar")
+artifactPath in Compile in packageBin := file(s"${_targetDir}/ruby-spark.jar")
+outputPath in packageDependency := file(s"${_targetDir}/ruby-spark-deps.jar")
 
 // Protocol buffer support
 seq(sbtprotobuf.ProtobufPlugin.protobufSettings: _*)

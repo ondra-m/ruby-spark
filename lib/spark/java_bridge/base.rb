@@ -41,8 +41,8 @@ module Spark
 
       RUBY_TO_JAVA_SKIP = [Fixnum, Integer]
 
-      def initialize(spark_home)
-        @spark_home = spark_home
+      def initialize(target)
+        @target = target
       end
 
       # Import all important classes into Objects
@@ -169,10 +169,10 @@ module Spark
 
         def jars
           result = []
-          if File.file?(@spark_home)
-            result << @spark_home
+          if File.file?(@target)
+            result << @target
           else
-            result << Dir.glob(File.join(@spark_home, '*.jar'))
+            result << Dir.glob(File.join(@target, '*.jar'))
           end
           result.flatten
         end

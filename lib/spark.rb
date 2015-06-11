@@ -194,16 +194,16 @@ module Spark
   # Cannot load before CLI::install
   #
   # == Parameters:
-  # spark_home::
+  # target::
   #   path to directory where are located sparks .jar files or single Spark jar
   #
-  def self.load_lib(spark_home=nil)
+  def self.load_lib(target=nil)
     return if @java_bridge
 
-    spark_home ||= Spark.target_dir
+    target ||= Spark.target_dir
 
     bridge = JavaBridge.get
-    @java_bridge = bridge.new(spark_home)
+    @java_bridge = bridge.new(target)
     @java_bridge.load
     nil
   end

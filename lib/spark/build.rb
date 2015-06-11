@@ -11,20 +11,20 @@ module Spark
     SBT_EXT   = 'package'
     SBT_CLEAN = 'clean'
 
-    def self.build(options)
-      spark_home     = options.spark_home     || Spark.target_dir
-      scala_version  = options.scala_version  || DEFAULT_SCALA_VERSION
-      spark_core     = options.spark_core     || DEFAULT_CORE_VERSION
-      spark_version  = options.spark_version  || DEFAULT_SPARK_VERSION
-      hadoop_version = options.hadoop_version || DEFAULT_HADOOP_VERSION
-      only_ext       = options.only_ext
+    def self.build(options={})
+      scala_version      = options[:scala_version]      || DEFAULT_SCALA_VERSION
+      spark_core_version = options[:spark_core_version] || DEFAULT_CORE_VERSION
+      spark_version      = options[:spark_version]      || DEFAULT_SPARK_VERSION
+      hadoop_version     = options[:hadoop_version]     || DEFAULT_HADOOP_VERSION
+      target             = options[:target]             || Spark.target_dir
+      only_ext           = options[:only_ext]           || false
 
       env = {
         'SCALA_VERSION' => scala_version,
         'SPARK_VERSION' => spark_version,
-        'SPARK_CORE_VERSION' => spark_core,
+        'SPARK_CORE_VERSION' => spark_core_version,
         'HADOOP_VERSION' => hadoop_version,
-        'SPARK_HOME' => spark_home
+        'TARGET_DIR' => target
       }
 
       cmd = [SBT]
