@@ -46,26 +46,26 @@ module Spark
       end
 
       # Import all important classes into Objects
-      def load
-        return if @loaded
+      def import
+        return if @imported
 
         java_objects.each do |name, klass|
           import(name, klass)
         end
 
-        @loaded = true
+        @imported = true
         nil
       end
 
       # Import classes for testing
-      def load_test
-        return if @loaded_test
+      def import_test
+        return if @imported_test
 
         java_test_objects.each do |name, klass|
           import(name, klass)
         end
 
-        @loaded_test = true
+        @imported_test = true
         nil
       end
 

@@ -7,12 +7,14 @@ module Spark
 
     include Spark::Helper::System
 
-    def self.get
+    def self.init(*args)
       if jruby?
-        JRuby
+        klass = JRuby
       else
-        RJB
+        klass = RJB
       end
+
+      klass.new(*args)
     end
 
   end
