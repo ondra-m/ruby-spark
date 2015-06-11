@@ -1,5 +1,6 @@
 # Gems and libraries
 require 'method_source'
+require 'securerandom'
 require 'forwardable'
 require 'sourcify'
 require 'socket'
@@ -28,6 +29,8 @@ module Spark
   autoload :Mllib,          'spark/mllib'
 
   include Helper::System
+
+  DEFAULT_CONFIG_FILE = File.join(Dir.home, '.ruby-spark.conf')
 
   def self.print_logo(message=nil)
     puts <<-STRING
@@ -107,6 +110,55 @@ module Spark
     !!@context
   end
 
+  # Load default configuration for Spark and RubySpark
+  # By default are values stored at ~/.ruby-spark.conf
+  # File is automatically created
+  def self.load_defaults
+    unless File.exists?(DEFAULT_CONFIG_FILE)
+      save_defaults_to(DEFAULT_CONFIG_FILE)
+    end
+
+    load_defaults_from(DEFAULT_CONFIG_FILE)
+  end
+
+  # Clear prev setting and load new from file
+  def self.load_defaults_from(file_path)
+    # Parse values
+    values = File.readlines(file_path)
+    values.map!(&:strip)
+    values.select!{|value| value.start_with?('gem.')}
+    values.map!(&:split)
+    values = Hash[values]
+
+    # Clear prev values
+    @target_dir = nil
+    @ruby_spark_jar = nil
+    @spark_home = nil
+
+    # Load new
+    @target_dir = values['gem.target']
+  end
+
+  # Create target dir and new config file
+  def self.save_defaults_to(file_path)
+    dir = File.join(Dir.home, ".ruby-spark.#{SecureRandom.uuid}")
+
+    if Dir.exist?(dir)
+      save_defaults_to(file_path)
+    else
+      Dir.mkdir(dir, 0700)
+      file = File.open(file_path, 'w')
+      file.puts "# Directory where will be Spark saved"
+      file.puts "gem.target   #{dir}"
+      file.puts ""
+      file.puts "# You can also defined spark properties"
+      file.puts "# spark.master                       spark://master:7077"
+      file.puts "# spark.ruby.serializer              marshal"
+      file.puts "# spark.ruby.serializer.batch_size   2048"
+      file.close
+    end
+  end
+
   def self.logger
     @logger ||= Spark::Logger.new
   end
@@ -114,10 +166,6 @@ module Spark
   # Root of the gem
   def self.root
     @root ||= File.expand_path('..', File.dirname(__FILE__))
-  end
-
-  def self.home
-    root
   end
 
   # Default directory for java extensions
@@ -169,6 +217,7 @@ module Spark
   class << self
     alias_method :sc, :context
     alias_method :jb, :java_bridge
+    alias_method :home, :root
   end
 
 end
@@ -188,6 +237,9 @@ require 'spark/ext/io'
 # Other requirments
 require 'spark/version'
 require 'spark/error'
+
+# Load default settings for gem and Spark
+Spark.load_defaults
 
 # Make sure that Spark be always stopped
 Kernel.at_exit do
