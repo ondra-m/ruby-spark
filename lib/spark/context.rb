@@ -38,6 +38,12 @@ module Spark
       set_call_site('Ruby') # description of stage
     end
 
+    def inspect
+      result  = %{#<#{self.class.name}:0x#{object_id}\n}
+      result << %{Tempdir: "#{temp_dir}">}
+      result
+    end
+
     def stop
       Spark::Accumulator::Server.stop
       log_info('Ruby accumulator server was stopped')

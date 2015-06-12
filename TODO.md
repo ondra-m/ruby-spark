@@ -4,6 +4,4 @@
 - worker informations (time, memory, ...)
 - killing zombie workers
 - add_rb, add_inline_rb to Spark::{Context, RDD}
-- fix spark.ruby.executor.uri
-- better inspect (accumulator, broadcast, context)
 - fix broadcast for cluster

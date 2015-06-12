@@ -77,6 +77,14 @@ module Spark
       @@instances[@id] = self
     end
 
+    def inspect
+      result  = %{#<#{self.class.name}:0x#{object_id}\n}
+      result << %{   ID: #{@id}\n}
+      result << %{ Zero: #{@zero_value.to_s[0, 10]}\n}
+      result << %{Value: #{@value.to_s[0, 10]}>}
+      result
+    end
+
     def self.changed
       @@changed
     end

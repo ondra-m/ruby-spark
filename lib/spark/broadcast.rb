@@ -61,6 +61,13 @@ module Spark
       ObjectSpace.define_finalizer(self, proc { File.unlink(@path) })
     end
 
+    def inspect
+      result  = %{#<#{self.class.name}:0x#{object_id}\n}
+      result << %{   ID: #{@id}\n}
+      result << %{Value: #{@value.to_s[0, 10]}>}
+      result
+    end
+
     def self.register(id, path)
       @@registered[id] = path
     end
