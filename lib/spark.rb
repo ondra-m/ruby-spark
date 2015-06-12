@@ -110,6 +110,10 @@ module Spark
     !!@context
   end
 
+
+  # ===============================================================================
+  # Defaults
+
   # Load default configuration for Spark and RubySpark
   # By default are values stored at ~/.ruby-spark.conf
   # File is automatically created
@@ -158,6 +162,10 @@ module Spark
       file.close
     end
   end
+
+
+  # ===============================================================================
+  # Global settings and variables
 
   def self.logger
     @logger ||= Spark::Logger.new

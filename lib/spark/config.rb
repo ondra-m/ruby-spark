@@ -141,9 +141,9 @@ module Spark
       set('spark.ruby.serializer', default_serializer)
       set('spark.ruby.serializer.compress', default_serializer_compress)
       set('spark.ruby.serializer.batch_size', default_serializer_batch_size)
-      set('spark.ruby.executor.uri', default_executor_uri)
       set('spark.ruby.executor.command', default_executor_command)
       set('spark.ruby.executor.options', default_executor_options)
+      set('spark.ruby.executor.install', default_executor_install)
       set('spark.ruby.worker.type', default_worker_type)
       load_executor_envs
     end
@@ -160,21 +160,6 @@ module Spark
       ENV['SPARK_RUBY_SERIALIZER_BATCH_SIZE'] || Spark::Serializer::DEFAULT_BATCH_SIZE
     end
 
-    # Ruby executor.
-    #
-    # == Options:
-    # nil::
-    #   System's gem is loaded (ruby-spark).
-    #
-    # other::
-    #   Path of library which will be used.
-    #   Current ruby-spark gem is used.
-    #   (default)
-    #
-    def default_executor_uri
-      ENV['SPARK_RUBY_EXECUTOR_URI'] || ''
-    end
-
     # Command template which is applied when scala want create a ruby
     # process (e.g. master, home request). Command is represented by '%s'.
     #
@@ -187,11 +172,21 @@ module Spark
 
     # Options for every worker.
     #
-    # == Examples:
+    # == Example:
     #   -J-Xmx512m
     #
     def default_executor_options
       ENV['SPARK_RUBY_EXECUTOR_OPTIONS'] || ''
+    end
+
+    # Install command which is triggered before on start.
+    # This command using executor command template.
+    #
+    # == Example:
+    #   gem install ruby-spark -v 1.2.0
+    #
+    def default_executor_install
+      ENV['SPARK_RUBY_EXECUTOR_INSTALL'] || ''
     end
 
     # Type of worker.
