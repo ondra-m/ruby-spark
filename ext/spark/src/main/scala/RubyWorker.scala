@@ -123,26 +123,12 @@ object RubyWorker extends Logging {
         executorLocation = env.conf.get("spark.ruby.driver_home")
       }
       else{
-        // Install
-        val install = env.conf.get("spark.ruby.executor.install", "")
-
-        if(!install.isEmpty){
-          try {
-            val installCommand = new FileCommand(commandTemplate, install, env, getEnvVars(env))
-            installCommand.run
-          } catch {
-            case e: java.io.IOException =>
-              throw new SparkException("Install command failed.", e)
-          }
-        }
-
         // Use gem installed on the system
         try {
-          val homeCommand = new FileCommand(commandTemplate, "ruby-spark home", env, getEnvVars(env))
-
-          executorLocation = homeCommand.run.readLine
+          val homeCommand = (new FileCommand(commandTemplate, "ruby-spark home", env, getEnvVars(env))).run
+          executorLocation = homeCommand.readLine
         } catch {
-          case e: java.io.IOException =>
+          case e: Exception =>
             throw new SparkException("Ruby-spark gem is not installed.", e)
         }
       }

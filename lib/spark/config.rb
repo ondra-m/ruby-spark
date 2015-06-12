@@ -143,9 +143,9 @@ module Spark
       set('spark.ruby.serializer.batch_size', default_serializer_batch_size)
       set('spark.ruby.executor.command', default_executor_command)
       set('spark.ruby.executor.options', default_executor_options)
-      set('spark.ruby.executor.install', default_executor_install)
       set('spark.ruby.worker.type', default_worker_type)
       load_executor_envs
+      # set('spark.ruby.executor.install', default_executor_install)
     end
 
     def default_serializer
@@ -179,15 +179,15 @@ module Spark
       ENV['SPARK_RUBY_EXECUTOR_OPTIONS'] || ''
     end
 
-    # Install command which is triggered before on start.
-    # This command using executor command template.
-    #
-    # == Example:
-    #   gem install ruby-spark -v 1.2.0
-    #
-    def default_executor_install
-      ENV['SPARK_RUBY_EXECUTOR_INSTALL'] || ''
-    end
+    # # Install command which is triggered before on start.
+    # # This command using executor command template.
+    # #
+    # # == Example:
+    # #   gem install ruby-spark -v 1.2.0
+    # #
+    # def default_executor_install
+    #   ENV['SPARK_RUBY_EXECUTOR_INSTALL'] || ''
+    # end
 
     # Type of worker.
     #
