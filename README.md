@@ -2,7 +2,7 @@
 
 Apache Spark™ is a fast and general engine for large-scale data processing.
 
-This Gem allows you use Spark functionality on Ruby.
+This Gem allows the use Spark functionality on Ruby.
 
 > Word count in Spark's Ruby API
 
@@ -15,9 +15,8 @@ file.flat_map(:split)
 ```
 
 - [Apache Spark](http://spark.apache.org)
-- [RubySpark Website](http://ondra-m.github.io/ruby-spark/)
 - [Wiki](https://github.com/ondra-m/ruby-spark/wiki)
-- [Ruby-doc](http://www.rubydoc.info/github/ondra-m/ruby-spark)
+- [Rubydoc](http://www.rubydoc.info/gems/ruby-spark)
 
 ## Installation
 
@@ -50,11 +49,12 @@ Run `rake compile` if you are using gem from local filesystem.
 
 ### Build Apache Spark
 
-This command will download Spark and build extensions for this gem ([SBT](ext/spark/build.sbt) is used for compiling). For more informations check [wiki](https://github.com/ondra-m/ruby-spark/wiki/Installation). Everything is stored by default at [GEM_ROOT]/target,
+This command will download Spark and build extensions for this gem ([SBT](ext/spark/build.sbt) is used for compiling). For more informations check [wiki](https://github.com/ondra-m/ruby-spark/wiki/Installation). Jars will be stored at you HOME directory.
 
 ```
 $ ruby-spark build
 ```
+
 
 ## Usage
 
@@ -64,25 +64,12 @@ You can use Ruby Spark via interactive shell (Pry is used)
 $ ruby-spark shell
 ```
 
-Or on existing project
-
-```ruby
-require 'ruby-spark'
-
-# Create a SparkContext
-Spark.start
-
-# Context reference
-Spark.sc
-```
+Or on existing project.
 
 If you want configure Spark first. See [configurations](https://github.com/ondra-m/ruby-spark/wiki/Configuration) for more details.
 
 ```ruby
 require 'ruby-spark'
-
-# Use if you have custom SPARK_HOME
-Spark.load_lib(spark_home)
 
 # Configuration
 Spark.config do
@@ -93,17 +80,21 @@ end
 
 # Start Apache Spark
 Spark.start
+
+# Context reference
+Spark.sc
 ```
 
-Finally, to stop the cluster. On the shell is Spark stopped automatically when you exist.
+Finally, to stop the cluster. On the shell is Spark stopped automatically when environment exit.
 
 ```ruby
 Spark.stop
 ```
+After first use, global configuration is created at **~/.ruby-spark.conf**. There can be specified properties for Spark and RubySpark.
 
 
 
-## Creating RDD (upload data)
+## Creating RDD (a new collection)
 
 Single text file:
 
@@ -117,28 +108,18 @@ All files on directory:
 rdd = sc.whole_text_files(DIRECTORY, workers_num, serializer=nil)
 ```
 
-Direct uploading structures from ruby (choosen serializer must be able to serialize it):
+Direct uploading structures from ruby:
 
 ```ruby
 rdd = sc.parallelize([1,2,3,4,5], workers_num, serializer=nil)
 rdd = sc.parallelize(1..5, workers_num, serializer=nil)
 ```
 
-### Options
+There is 2 conditions:
+1. choosen serializer must be able to serialize it
+2. data must be iterable
 
-<dl>
-  <dt>workers_num</dt>
-  <dd>
-    Min count of works computing this task.<br>
-    <i>(This value can be overwriten by spark)</i>
-  </dd>
-
-  <dt>serializer</dt>
-  <dd>
-    Custom serializer.<br>
-    <i>(default: by <b>spark.ruby.serializer</b> options)</i>
-  </dd>
-</dl>
+If you do not specified serializer -> default is used (defined from spark.ruby.serializer.* options). [Check this](https://github.com/ondra-m/ruby-spark/wiki/Loading-data#custom-serializer) if you want create custom serializer.
 
 ## Operations
 
