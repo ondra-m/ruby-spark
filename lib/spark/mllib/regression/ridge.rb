@@ -55,7 +55,9 @@ module Spark
         step: 1.0,
         reg_param: 0.01,
         mini_batch_fraction: 1.0,
-        initial_weights: nil
+        initial_weights: nil,
+        intercept: false,
+        validate: true
       }
 
       # Train a ridge regression model on the given data.
@@ -79,6 +81,18 @@ module Spark
       # initial_weights::
       #   The initial weights (default: nil).
       #
+      # intercept::
+      #   Boolean parameter which indicates the use
+      #   or not of the augmented representation for
+      #   training data (i.e. whether bias features
+      #   are activated or not).
+      #   (default: false)
+      #
+      # validate::
+      #   Boolean parameter which indicates if the
+      #   algorithm should validate data before training.
+      #   (default: true)
+      #
       def self.train(rdd, options={})
         super
 
@@ -87,7 +101,9 @@ module Spark
                                            options[:step].to_f,
                                            options[:reg_param].to_f,
                                            options[:mini_batch_fraction].to_f,
-                                           options[:initial_weights])
+                                           options[:initial_weights],
+                                           options[:intercept],
+                                           options[:validate])
 
         RidgeRegressionModel.new(weights, intercept)
       end

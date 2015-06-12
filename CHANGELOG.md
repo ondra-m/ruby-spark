@@ -3,4 +3,5 @@
   - target folder is now located at HOME
   - better serializators
   - error when java class does not exist
-  - added executor install command
+  - default setting at ~/.ruby-spark.conf
+  - compatible with Spark 1.4.0

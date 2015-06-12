@@ -97,7 +97,8 @@ module Spark
         initial_weights: nil,
         reg_param: 0.01,
         reg_type: 'l2',
-        intercept: false
+        intercept: false,
+        validate: true
       }
 
       # Train a logistic regression model on the given data.
@@ -134,6 +135,12 @@ module Spark
       #   or not of the augmented representation for
       #   training data (i.e. whether bias features
       #   are activated or not).
+      #   (default: false)
+      #
+      # validate::
+      #   Boolean parameter which indicates if the
+      #   algorithm should validate data before training.
+      #   (default: true)
       #
       def self.train(rdd, options={})
         super
@@ -145,7 +152,8 @@ module Spark
                                            options[:initial_weights],
                                            options[:reg_param].to_f,
                                            options[:reg_type],
-                                           options[:intercept])
+                                           options[:intercept],
+                                           options[:validate])
 
         LogisticRegressionModel.new(weights, intercept)
       end

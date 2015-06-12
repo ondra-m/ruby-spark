@@ -66,7 +66,8 @@ module Spark
         initial_weights: nil,
         reg_param: 0.0,
         reg_type: nil,
-        intercept: false
+        intercept: false,
+        validate: true
       }
 
       # Train a linear regression model on the given data.
@@ -102,7 +103,13 @@ module Spark
       #   Boolean parameter which indicates the use
       #   or not of the augmented representation for
       #   training data (i.e. whether bias features
-      #   are activated or not). (default: False)
+      #   are activated or not).
+      #   (default: false)
+      #
+      # validate::
+      #   Boolean parameter which indicates if the
+      #   algorithm should validate data before training.
+      #   (default: true)
       #
       def self.train(rdd, options={})
         super
@@ -114,7 +121,8 @@ module Spark
                                            options[:initial_weights],
                                            options[:reg_param].to_f,
                                            options[:reg_type],
-                                           options[:intercept])
+                                           options[:intercept],
+                                           options[:validate])
 
         LinearRegressionModel.new(weights, intercept)
       end

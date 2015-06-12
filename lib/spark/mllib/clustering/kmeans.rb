@@ -107,10 +107,14 @@ module Spark
       # seed::
       #   Random seed value for cluster initialization.
       #
-      def self.train(rdd, k, max_iterations: 100, runs: 1, initialization_mode: 'k-means||', seed: nil)
+      # epsilon::
+      #   The distance threshold within which we've consider centers to have converged.
+      #
+      def self.train(rdd, k, max_iterations: 100, runs: 1, initialization_mode: 'k-means||', seed: nil,
+                             initialization_steps: 5, epsilon: 0.0001)
         # Call returns KMeansModel
         Spark.jb.call(RubyMLLibAPI.new, 'trainKMeansModel', rdd,
-                      k, max_iterations, runs, initialization_mode, Spark.jb.to_long(seed))
+                      k, max_iterations, runs, initialization_mode, Spark.jb.to_long(seed), initialization_steps, epsilon)
       end
 
     end

@@ -78,7 +78,8 @@ module Spark
         mini_batch_fraction: 1.0,
         initial_weights: nil,
         reg_type: 'l2',
-        intercept: false
+        intercept: false,
+        validate: true
       }
 
       # Train a support vector machine on the given data.
@@ -114,6 +115,12 @@ module Spark
       #   or not of the augmented representation for
       #   training data (i.e. whether bias features
       #   are activated or not).
+      #   (default: false)
+      #
+      # validateData::
+      #   Boolean parameter which indicates if the
+      #   algorithm should validate data before training.
+      #   (default: true)
       #
       def self.train(rdd, options={})
         super
@@ -125,7 +132,8 @@ module Spark
                                            options[:mini_batch_fraction].to_f,
                                            options[:initial_weights],
                                            options[:reg_type],
-                                           options[:intercept])
+                                           options[:intercept],
+                                           options[:validate])
 
         SVMModel.new(weights, intercept)
       end
