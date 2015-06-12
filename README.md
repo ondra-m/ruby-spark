@@ -138,6 +138,7 @@ rdd.flat_map(lambda{|item| ...})
 rdd.filter(lambda{|item| ...})
 rdd.union(rdd)
 rdd.map_paritions(lambda{|iterator| ...})
+rdd.sample(...)
 # ...
 ```
 
@@ -146,6 +147,8 @@ rdd.map_paritions(lambda{|iterator| ...})
 ```ruby
 rdd.count
 rdd.take(n)
+rdd.aggregate(...)
+rdd.histogram(...)
 rdd.collect
 # ...
 ```
@@ -258,11 +261,13 @@ data = [
   DenseVector.new([8.0,9.0])
 ]
 
-model = KMeans.train(sc.parallelize(data), 2, max_iterations: 10,
-                     runs: 30, initialization_mode: "random")
+model = KMeans.train(sc.parallelize(data), 2)
 
 model.predict([0.0, 0.0]) == model.predict([1.0, 1.0])
 # => true
 model.predict([8.0, 9.0]) == model.predict([9.0, 8.0])
 # => true
 ```
+
+## Benchmarks
+
