@@ -133,22 +133,24 @@ See [Wiki page](https://github.com/ondra-m/ruby-spark/wiki/RDD) or [Rubydoc](htt
 #### Transformations
 
 ```ruby
-rdd.map(lambda{|item| ...})
-rdd.flat_map(lambda{|item| ...})
-rdd.filter(lambda{|item| ...})
-rdd.union(rdd)
-rdd.map_paritions(lambda{|iterator| ...})
-rdd.sample(...)
+rdd.map(function)
+rdd.flat_map(function)
+rdd.map_partitions(function)
+rdd.filter(function)
+rdd.cartesian(other)
+rdd.intersection(other)
+rdd.sample(with_replacement, fraction, seed)
+rdd.group_by_key(num_partitions)
 # ...
 ```
 
 #### Actions
 
 ```ruby
-rdd.count
-rdd.take(n)
-rdd.aggregate(...)
-rdd.histogram(...)
+rdd.take(count)
+rdd.reduce(function)
+rdd.aggregate(zero_value, seq_op, comb_op)
+rdd.histogram(buckets)
 rdd.collect
 # ...
 ```
