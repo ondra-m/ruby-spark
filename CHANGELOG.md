@@ -5,3 +5,4 @@
   - error when java class does not exist
   - default setting at ~/.ruby-spark.conf
   - compatible with Spark 1.4.0
+  - added calling site to RDD

@@ -114,14 +114,11 @@ module Spark
     # Support function for API backtraces.
     #
     def set_call_site(site)
-      set_local_property('externalCallSite', site)
+      jcontext.setCallSite(site)
     end
 
-    # Capture the current user callsite and return a formatted version for printing. If the user
-    # has overridden the call site, this will return the user's version.
-    #
-    def get_call_site
-      jcontext.getCallSite
+    def clear_call_site
+      jcontext.clearCallSite
     end
 
     # Return a copy of this SparkContext's configuration. The configuration *cannot*
@@ -319,7 +316,7 @@ module Spark
     alias_method :setLocalProperty, :set_local_property
     alias_method :getLocalProperty, :get_local_property
     alias_method :setCallSite, :set_call_site
-    alias_method :getCallSite, :get_call_site
+    alias_method :clearCallSite, :clear_call_site
     alias_method :runJob, :run_job
     alias_method :runJobWithCommand, :run_job_with_command
     alias_method :addFile, :add_file

@@ -198,11 +198,14 @@ module Spark
     def collect(as_enum=false)
       file = Tempfile.new('collect', context.temp_dir)
 
+      context.set_call_site(caller.first)
       RubyRDD.writeRDDToFile(jrdd.rdd, file.path)
 
       collect_from_file(file, as_enum)
     rescue => e
       raise Spark::RDDError, e.message
+    ensure
+      context.clear_call_site
     end
 
     def collect_from_file(file, as_enum=false)
