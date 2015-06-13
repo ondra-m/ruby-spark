@@ -128,7 +128,16 @@ All operations can be divided into 2 groups:
 - **Transformations:** append new operation to current RDD and return new
 - **Actions:** add operation and start calculations
 
-See [Wiki page](https://github.com/ondra-m/ruby-spark/wiki/RDD),  [Rubydoc](http://www.rubydoc.info/github/ondra-m/ruby-spark/master/Spark/RDD) or [rdd.rb](https://github.com/ondra-m/ruby-spark/blob/master/lib/spark/rdd.rb) for more details.
+More informations:
+
+- [Wiki page](https://github.com/ondra-m/ruby-spark/wiki/RDD)
+- [Rubydoc](http://www.rubydoc.info/github/ondra-m/ruby-spark/master/Spark/RDD)
+- [rdd.rb](https://github.com/ondra-m/ruby-spark/blob/master/lib/spark/rdd.rb) for more details.
+
+You can also check official Spark documentation. First make sure that method is implemented here.
+
+- [Transformations](http://spark.apache.org/docs/latest/programming-guide.html#transformations)
+- [Actions](http://spark.apache.org/docs/latest/programming-guide.html#actions)
 
 #### Transformations
 
