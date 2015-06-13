@@ -133,34 +133,6 @@ See [Wiki page](https://github.com/ondra-m/ruby-spark/wiki/RDD),  [Rubydoc](http
 #### Transformations
 
 <dl>          
-  <dt><a href="http://www.rubydoc.info/gems/ruby-spark/Spark/RDD#map-instance_method" target="_blank"><code>rdd.map(function)</code></a></dt>
-  <dd>Return a new RDD by applying a function to all elements of this RDD.</dd>
-
-  <dt><a href="http://www.rubydoc.info/gems/ruby-spark/Spark/RDD#flat_map-instance_method" target="_blank"><code>rdd.flat_map(function)</code></a></dt>
-  <dd>Return a new RDD by first applying a function to all elements of this RDD, and then flattening the results.</dd>
-
-  <dt><a href="http://www.rubydoc.info/gems/ruby-spark/Spark/RDD#map_partitions-instance_method" target="_blank"><code>rdd.map_partitions(function)</code></a></dt>
-  <dd>Return a new RDD by applying a function to each partition of this RDD.</dd>
-
-  <dt><a href="http://www.rubydoc.info/gems/ruby-spark/Spark/RDD#filter-instance_method" target="_blank"><code>rdd.filter(function)</code></a></dt>
-  <dd>Return a new RDD containing only the elements that satisfy a predicate.</dd>
-
-  <dt><a href="http://www.rubydoc.info/gems/ruby-spark/Spark/RDD#cartesian-instance_method" target="_blank"><code>rdd.cartesian(other)</code></a></dt>
-  <dd>Return the Cartesian product of this RDD and another one, that is, the RDD of all pairs of elements `(a, b)` where `a` is in `self` and `b` is in `other`.</dd>
-
-  <dt><a href="http://www.rubydoc.info/gems/ruby-spark/Spark/RDD#intersection-instance_method" target="_blank"><code>rdd.intersection(other)</code></a></dt>
-  <dd>Return the intersection of this RDD and another one. The output will not contain any duplicate elements, even if the input RDDs did.</dd>
-
-  <dt><a href="http://www.rubydoc.info/gems/ruby-spark/Spark/RDD#sample-instance_method" target="_blank"><code>rdd.sample(with_replacement, fraction, seed)</code></a></dt>
-  <dd>Return a sampled subset of this RDD. Operations are base on Poisson and Uniform distributions.</dd>
-
-  <dt><a href="http://www.rubydoc.info/gems/ruby-spark/Spark/RDD#group_by_key-instance_method" target="_blank"><code>rdd.group_by_key(num_partitions)</code></a></dt>
-  <dd>Group the values for each key in the RDD into a single sequence. </dd>
-
-
-</dl>
-
-<dl>          
   <dt><code>rdd.map(function)</code></dt>
   <dd>Return a new RDD by applying a function to all elements of this RDD.</dd>
 
