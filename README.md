@@ -157,6 +157,34 @@ See [Wiki page](https://github.com/ondra-m/ruby-spark/wiki/RDD),  [Rubydoc](http
   <dt><a href="http://www.rubydoc.info/gems/ruby-spark/Spark/RDD#group_by_key-instance_method" target="_blank"><code>rdd.group_by_key(num_partitions)</code></a></dt>
   <dd>Group the values for each key in the RDD into a single sequence. </dd>
 
+
+</dl>
+
+<dl>          
+  <dt><code>rdd.map(function)</code></dt>
+  <dd>Return a new RDD by applying a function to all elements of this RDD.</dd>
+
+  <dt><code>rdd.flat_map(function)</code></dt>
+  <dd>Return a new RDD by first applying a function to all elements of this RDD, and then flattening the results.</dd>
+
+  <dt><code>rdd.map_partitions(function)</code></dt>
+  <dd>Return a new RDD by applying a function to each partition of this RDD.</dd>
+
+  <dt><code>rdd.filter(function)</code></dt>
+  <dd>Return a new RDD containing only the elements that satisfy a predicate.</dd>
+
+  <dt><code>rdd.cartesian(other)</code></dt>
+  <dd>Return the Cartesian product of this RDD and another one, that is, the RDD of all pairs of elements `(a, b)` where `a` is in `self` and `b` is in `other`.</dd>
+
+  <dt><code>rdd.intersection(other)</code></dt>
+  <dd>Return the intersection of this RDD and another one. The output will not contain any duplicate elements, even if the input RDDs did.</dd>
+
+  <dt><code>rdd.sample(with_replacement, fraction, seed)</code></dt>
+  <dd>Return a sampled subset of this RDD. Operations are base on Poisson and Uniform distributions.</dd>
+
+  <dt><code>rdd.group_by_key(num_partitions)</code></dt>
+  <dd>Group the values for each key in the RDD into a single sequence.</dd>
+  
   <dt><a href="http://www.rubydoc.info/gems/ruby-spark/Spark/RDD" target="_blank"><code>...many more...</code></a></dt>
   <dd></dd>
 </dl>
@@ -165,19 +193,19 @@ See [Wiki page](https://github.com/ondra-m/ruby-spark/wiki/RDD),  [Rubydoc](http
 #### Actions
 
 <dl> 
-  <dt><a href="http://www.rubydoc.info/gems/ruby-spark/Spark/RDD#take-instance_method" target="_blank"><code>rdd.take(count)</code></a></dt>
+  <dt><code>rdd.take(count)</code></dt>
   <dd>Take the first num elements of the RDD.</dd>
 
-  <dt><a href="http://www.rubydoc.info/gems/ruby-spark/Spark/RDD#reduce-instance_method" target="_blank"><code>rdd.reduce(function)</code></a></dt>
+  <dt><code>rdd.reduce(function)</code></dt>
   <dd>Reduces the elements of this RDD using the specified lambda or method.</dd>
 
-  <dt><a href="http://www.rubydoc.info/gems/ruby-spark/Spark/RDD#aggregate-instance_method" target="_blank"><code>rdd.aggregate(zero_value, seq_op, comb_op)</code></a></dt>
+  <dt><code>rdd.aggregate(zero_value, seq_op, comb_op)</code></dt>
   <dd>Aggregate the elements of each partition, and then the results for all the partitions, using given combine functions and a neutral “zero value”.</dd>
 
-  <dt><a href="http://www.rubydoc.info/gems/ruby-spark/Spark/RDD#histogram-instance_method" target="_blank"><code>rdd.histogram(buckets)</code></a></dt>
+  <dt><code>rdd.histogram(buckets)</code></dt>
   <dd>Compute a histogram using the provided buckets.</dd>
 
-  <dt><a href="http://www.rubydoc.info/gems/ruby-spark/Spark/RDD#collect-instance_method" target="_blank"><code>rdd.collect</code></a></dt>
+  <dt><code>rdd.collect</code></dt>
   <dd>Return an array that contains all of the elements in this RDD.</dd>
 
   <dt><a href="http://www.rubydoc.info/gems/ruby-spark/Spark/RDD" target="_blank"><code>...many more...</code></a></dt>
