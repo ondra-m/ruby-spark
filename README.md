@@ -132,7 +132,7 @@ More informations:
 
 - [Wiki page](https://github.com/ondra-m/ruby-spark/wiki/RDD)
 - [Rubydoc](http://www.rubydoc.info/github/ondra-m/ruby-spark/master/Spark/RDD)
-- [rdd.rb](https://github.com/ondra-m/ruby-spark/blob/master/lib/spark/rdd.rb) for more details.
+- [rdd.rb](https://github.com/ondra-m/ruby-spark/blob/master/lib/spark/rdd.rb)
 
 You can also check official Spark documentation. First make sure that method is implemented here.
 
