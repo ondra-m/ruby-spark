@@ -29,7 +29,7 @@ module Spark
       command :build do |c|
         c.syntax = 'build [options]'
         c.description = 'Build spark and gem extensions'
-        c.option '--hadoop-version STRING', String, 'Version of hadoop which will stored with the Spark'
+        c.option '--hadoop-version STRING', String, 'Version of hadoop which will assembled with the Spark'
         c.option '--spark-core-version STRING', String, 'Version of Spark core'
         c.option '--spark-version STRING', String, 'Version of Spark'
         c.option '--scala-version STRING', String, 'Version of Scala'

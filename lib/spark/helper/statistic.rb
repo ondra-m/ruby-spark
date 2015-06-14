@@ -77,9 +77,13 @@ module Spark
       # == Example:
       #   data = [0,1,2,3,4,5,6,7,8,9,10]
       #   determine_bounds(data, 3)
-      #   # => [2, 5, 8]
+      #   # => [3, 7]
       #
       def determine_bounds(data, num_partitions)
+        if num_partitions > data.size
+          return data
+        end
+
         bounds = []
         count = data.size
         (0...(num_partitions-1)).each do |index|

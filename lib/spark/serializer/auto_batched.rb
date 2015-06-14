@@ -16,6 +16,13 @@ module Spark
         error('Batch size must be greater than 1') if @best_size < 2
       end
 
+      def batched?
+        true
+      end
+
+      def unbatch!
+      end
+
       def name
         "AutoBatched(#{@best_size})"
       end

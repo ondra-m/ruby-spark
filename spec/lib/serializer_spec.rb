@@ -85,4 +85,31 @@ RSpec.describe Spark::Serializer do
       Zlib::Deflate.deflate(Marshal.dump(data))
     )
   end
+
+  context 'Auto batched' do
+    let(:klass) { Spark::Serializer::AutoBatched }
+    let(:marshal) { Spark::Serializer::Marshal.new }
+    let(:numbers) { Generator.numbers }
+
+    it 'initialize' do
+      expect { klass.new }.to raise_error(ArgumentError)
+      expect { klass.new(marshal) }.to_not raise_error
+      expect { klass.new(marshal, 1) }.to raise_error(Spark::SerializeError)
+    end
+
+    it 'serialization' do
+      serializer1 = klass.new(marshal)
+      serializer2 = klass.new(marshal, 2)
+
+      rdd1 = Spark.sc.parallelize(numbers, 2, serializer1)
+      rdd2 = Spark.sc.parallelize(numbers, 2, serializer2).map(:to_i)
+
+      result = rdd1.collect
+
+      expect(rdd1.serializer).to eq(serializer1)
+      expect(result).to eq(numbers)
+      expect(result).to eq(rdd2.collect)
+    end
+
+  end
 end
