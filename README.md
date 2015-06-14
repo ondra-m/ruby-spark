@@ -230,7 +230,8 @@ rdd.aggregate(1, seq, com)
 
 # Statistic method
 rdd.stats
-# => StatCounter: (count, mean, max, min, variance, sample_variance, stdev, sample_stdev)
+# => StatCounter: (count, mean, max, min, variance,
+#                  sample_variance, stdev, sample_stdev)
 
 
 # Compute a histogram using the provided buckets.
