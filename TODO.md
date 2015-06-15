@@ -5,3 +5,4 @@
 - killing zombie workers
 - add_rb, add_inline_rb to Spark::{Context, RDD}
 - fix broadcast for cluster
+- dump to disk if there is memory limit

@@ -55,7 +55,7 @@ module Spark
       if block_given?
         class_eval(&block)
       else
-        class_eval(text.to_s)
+        class_eval(text.to_s.downcase)
       end
     end
 

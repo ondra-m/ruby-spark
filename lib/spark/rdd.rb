@@ -39,6 +39,7 @@ module Spark
 
       result  = %{#<#{self.class.name}:0x#{object_id}}
       result << %{ (#{comms})} unless comms.empty?
+      result << %{ (cached)} if cached?
       result << %{\n}
       result << %{  Serializer: "#{serializer}"\n}
       result << %{Deserializer: "#{deserializer}"}

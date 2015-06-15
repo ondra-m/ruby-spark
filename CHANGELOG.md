@@ -1,4 +1,4 @@
-## 1.2.0 (Unreleased)
+## 1.2.0 (15.06.2015)
 
   - target folder is now located at HOME
   - better serializators
