@@ -1241,6 +1241,28 @@ module Spark
       self.map('lambda{|(_, value)| value}')
     end
 
+    # Return the list of values in the RDD for key `key`.
+    # TODO: add Partitioner for efficiently searching
+    #
+    # == Example:
+    #   rdd = $sc.parallelize(0..10)
+    #   rdd = rdd.group_by(lambda {|x| x%3})
+    #   rdd.lookup(2)
+    #   # => [[2, 5, 8]]
+    #
+    #   rdd = $sc.parallelize(0..10)
+    #   rdd = rdd.key_by(lambda{|x| x.even?})
+    #   rdd.lookup(true)
+    #   # => [0, 2, 4, 6, 8, 10]
+    #
+    def lookup(key)
+      lookup_key = "lookup_key_#{object_id}"
+
+      self.filter("lambda{|(key, _)| key == #{lookup_key}}")
+          .bind(lookup_key => key)
+          .values
+          .collect
+    end
 
     # Aliases
     alias_method :partitionsSize, :partitions_size
