@@ -39,4 +39,21 @@ RSpec.describe 'Spark::RDD' do
     # it_behaves_like 'a keying by', rand(2..10)
   end
 
+  it 'lookup' do
+    numbers = Generator.numbers
+    rdd_numbers = $sc.parallelize(numbers, 2)
+
+    rdd = rdd_numbers.group_by(lambda {|x| x%3})
+    rdd.lookup(2)
+
+    expect(rdd.lookup(2).first).to eq(
+      numbers.group_by{|x| x%3}[2]
+    )
+
+    rdd = rdd_numbers.key_by(lambda{|x| x.even?})
+    expect(rdd.lookup(true)).to eq(
+      numbers.select(&:even?)
+    )
+  end
+
 end
