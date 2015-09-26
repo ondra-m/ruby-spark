@@ -99,7 +99,7 @@ RSpec.describe 'Spark::Mllib regression' do
 
       expect(lrm.weights[0]).to be_between(1.9, 2.1)
       expect(lrm.weights[1]).to be_between(-1.60, -1.40)
-      expect(lrm.weights[2]).to be_between(-1.0e-3, 1.0e-3)
+      expect(lrm.weights[2]).to be_between(-1.0e-2, 1.0e-2)
     end
   end
 
