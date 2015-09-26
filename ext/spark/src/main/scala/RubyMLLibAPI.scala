@@ -22,10 +22,10 @@ class RubyMLLibAPI extends MLLibAPI {
   // trainLogisticRegressionModelWithLBFGS
   // trainSVMModelWithSGD
   // trainKMeansModel
-  // trainGaussianMixture
+  // trainGaussianMixtureModel
 
   // Rjb have a problem with theta: Array[Array[Double]]
-  override def trainNaiveBayes(data: JavaRDD[LabeledPoint], lambda: Double) = {
+  override def trainNaiveBayesModel(data: JavaRDD[LabeledPoint], lambda: Double) = {
     val model = NaiveBayes.train(data.rdd, lambda)
 
     List(

@@ -64,7 +64,7 @@ module Spark
     class GaussianMixture
 
       def self.train(rdd, k, convergence_tol: 0.001, max_iterations: 100, seed: nil)
-        weights, means, sigmas = Spark.jb.call(RubyMLLibAPI.new, 'trainGaussianMixture', rdd,
+        weights, means, sigmas = Spark.jb.call(RubyMLLibAPI.new, 'trainGaussianMixtureModel', rdd,
                                                k, convergence_tol, max_iterations, Spark.jb.to_long(seed))
 
         means.map! {|mu|    Spark.jb.java_to_ruby(mu)}

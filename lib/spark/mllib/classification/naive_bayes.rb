@@ -86,7 +86,7 @@ module Spark
           raise Spark::MllibError, "RDD should contains LabeledPoint, got #{first.class}"
         end
 
-        labels, pi, theta = Spark.jb.call(RubyMLLibAPI.new, 'trainNaiveBayes', rdd, lambda)
+        labels, pi, theta = Spark.jb.call(RubyMLLibAPI.new, 'trainNaiveBayesModel', rdd, lambda)
         theta = Spark::Mllib::Matrices.dense(theta.size, theta.first.size, theta)
 
         NaiveBayesModel.new(labels, pi, theta)
