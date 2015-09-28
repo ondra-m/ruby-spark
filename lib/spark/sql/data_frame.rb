@@ -1,5 +1,10 @@
 module Spark
   module SQL
+    ##
+    # Spark::SQL::DataFrame
+    #
+    # All example are base on people.json
+    #
     class DataFrame
 
       attr_reader :jdf, :sql_context
@@ -33,6 +38,35 @@ module Spark
       #
       def print_schema
         puts jdf.schema.treeString
+      end
+
+
+      # =============================================================================
+      # Queries
+
+      # Projects a set of expressions and returns a new {DataFrame}
+      #
+      # == Parameters:
+      # *cols::
+      #   List of column names (string) or expressions {Column}.
+      #   If one of the column names is '*', that column is expanded to include all columns
+      #   in the current DataFrame.
+      #
+      # == Example:
+      #   df.select('*').collect()
+      #   [Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
+      #   df.select('name', 'age').collect()
+      #   [Row(name=u'Alice', age=2), Row(name=u'Bob', age=5)]
+      #   df.select(df.name, (df.age + 10).alias('age')).collect()
+      #   [Row(name=u'Alice', age=12), Row(name=u'Bob', age=15)]
+      #
+      def select(*cols)
+        jcols = cols.map do |col|
+          Column.to_java(col)
+        end
+
+        new_jdf = jdf.select(jcols)
+        DataFrame.new(new_jdf, sql_context)
       end
 
     end

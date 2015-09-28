@@ -33,7 +33,8 @@ module Spark
         :JSQLContext => 'org.apache.spark.sql.SQLContext',
         :JDenseVector => 'org.apache.spark.mllib.linalg.DenseVector',
         :JDenseMatrix => 'org.apache.spark.mllib.linalg.DenseMatrix',
-        :JStorageLevel => 'org.apache.spark.storage.StorageLevel'
+        :JStorageLevel => 'org.apache.spark.storage.StorageLevel',
+        :JSQLFunctions => 'org.apache.spark.sql.functions'
       ]
 
       JAVA_TEST_OBJECTS = [
