@@ -114,6 +114,35 @@ module Spark
         DataFrame.new(new_jdf, sql_context)
       end
 
+      # Filters rows using the given condition.
+      #
+      # == Examples:
+      #   df.filter(df.age > 3).collect
+      #   # => [#<Row {"age"=>5, "name"=>"Bob"}>]
+      #
+      #   df.where(df.age == 2).collect
+      #   # => [#<Row {"age"=>2, "name"=>"Alice"}>]
+      #
+      #   df.filter("age > 3").collect
+      #   # => [#<Row {"age"=>5, "name"=>"Bob"}>]
+      #
+      #   df.where("age = 2").collect
+      #   # => [#<Row {"age"=>2, "name"=>"Alice"}>]
+      #
+      def where(condition)
+        case condition
+        when String
+          new_jdf = jdf.filter(condition)
+        when Column
+          new_jdf = jdf.filter(condition.jcolumn)
+        else
+          raise ArgumentError, 'Condition must be String or Column'
+        end
+
+        DataFrame.new(new_jdf, sql_context)
+      end
+
+      alias_method :filter, :where
     end
   end
 end
