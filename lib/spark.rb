@@ -28,6 +28,10 @@ module Spark
   autoload :StatCounter,    'spark/stat_counter'
   autoload :Mllib,          'spark/mllib'
 
+  # SQL
+  autoload :SQL,        'spark/sql'
+  autoload :SQLContext, 'spark/sql'
+
   include Helper::System
 
   DEFAULT_CONFIG_FILE = File.join(Dir.home, '.ruby-spark.conf')

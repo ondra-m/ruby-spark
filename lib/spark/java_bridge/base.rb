@@ -30,9 +30,10 @@ module Spark
         :JLevel    => 'org.apache.log4j.Level',
         :JPriority => 'org.apache.log4j.Priority',
         :JUtils    => 'org.apache.spark.util.Utils',
-        :JStorageLevel => 'org.apache.spark.storage.StorageLevel',
+        :JSQLContext => 'org.apache.spark.sql.SQLContext',
         :JDenseVector => 'org.apache.spark.mllib.linalg.DenseVector',
-        :JDenseMatrix => 'org.apache.spark.mllib.linalg.DenseMatrix'
+        :JDenseMatrix => 'org.apache.spark.mllib.linalg.DenseMatrix',
+        :JStorageLevel => 'org.apache.spark.storage.StorageLevel'
       ]
 
       JAVA_TEST_OBJECTS = [
