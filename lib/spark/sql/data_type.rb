@@ -190,6 +190,11 @@ module Spark
       def to_h
         @data
       end
+
+      def inspect
+        %{#<Row #{data}>}
+      end
+
     end
 
   end

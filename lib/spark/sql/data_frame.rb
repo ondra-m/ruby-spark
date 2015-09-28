@@ -15,18 +15,36 @@ module Spark
       end
 
       # Returns the column as a {Column}.
+      #
+      # == Examples:
+      #   df.select(df['age']).collect
+      #   # => [#<Row {"age"=>2}>, #<Row {"age"=>5}>]
+      #
+      #   df[ ["name", "age"] ].collect
+      #   # => [#<Row {"name"=>"Alice", "age"=>2}>, #<Row {"name"=>"Bob", "age"=>5}>]
+      #
+      #   df[ df.age > 3 ].collect
+      #   # => [#<Row {"age"=>5, "name"=>"Bob"}>]
+      #
+      #   df[df[0] > 3].collect
+      #   # => [#<Row {"age"=>5, "name"=>"Bob"}>]
+      #
       def [](item)
         case item
         when String
           jcolumn = jdf.apply(item)
           Column.new(jcolumn)
+        when Array
+          select(*items)
+        when Numeric
+          jcolumn = jdf.apply(columns[item])
+          Column.new(jcolumn)
+        when Column
+          where(item)
         else
           raise ArgumentError, "Unsupported type: #{item.class}"
         end
       end
-
-
-
 
       # Returns all column names as a Array.
       #
@@ -39,7 +57,6 @@ module Spark
       end
 
       # Returns the schema of this {DataFrame} as a {StructType}.
-      #
       def schema
         return @schema if @schema
 
@@ -68,9 +85,9 @@ module Spark
       #
       # == Example:
       #   df.print_schema
-      #   root
-      #    |-- age: integer (nullable = true)
-      #    |-- name: string (nullable = true)
+      #   # root
+      #   #  |-- age: integer (nullable = true)
+      #   #  |-- name: string (nullable = true)
       #
       def print_schema
         puts jdf.schema.treeString
@@ -86,6 +103,7 @@ module Spark
         Spark.jb.call(jdf, 'collect')
       end
 
+
       # =============================================================================
       # Queries
 
@@ -98,12 +116,14 @@ module Spark
       #   in the current DataFrame.
       #
       # == Example:
-      #   df.select('*').collect()
-      #   [Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
-      #   df.select('name', 'age').collect()
-      #   [Row(name=u'Alice', age=2), Row(name=u'Bob', age=5)]
-      #   df.select(df.name, (df.age + 10).alias('age')).collect()
-      #   [Row(name=u'Alice', age=12), Row(name=u'Bob', age=15)]
+      #   df.select('*').collect
+      #   # => [#<Row {"age"=>2, "name"=>"Alice"}>, #<Row {"age"=>5, "name"=>"Bob"}>]
+      #
+      #   df.select('name', 'age').collect
+      #   # => [#<Row {"name"=>"Alice", "age"=>2}>, #<Row {"name"=>"Bob", "age"=>5}>]
+      #
+      #   df.select(df.name, (df.age + 10).alias('age')).collect
+      #   # => [#<Row {"name"=>"Alice", "age"=>12}>, #<Row {"name"=>"Bob", "age"=>15}>]
       #
       def select(*cols)
         jcols = cols.map do |col|
@@ -142,7 +162,17 @@ module Spark
         DataFrame.new(new_jdf, sql_context)
       end
 
+      def method_missing(method, *args, &block)
+        name = method.to_s
+        if columns.include?(name)
+          self[name]
+        else
+          super
+        end
+      end
+
       alias_method :filter, :where
+
     end
   end
 end

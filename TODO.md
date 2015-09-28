@@ -1,6 +1,8 @@
-- refactor JavaBridge: to_java, from_java
+- refactor JavaBridge
+  - to_java, from_java
+  - every type should have class
+  - automatic registration
 - add Streaming
-- add SQL
 - worker informations (time, memory, ...)
 - killing zombie workers
 - add_rb, add_inline_rb to Spark::{Context, RDD}
