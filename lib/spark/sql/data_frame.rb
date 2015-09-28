@@ -14,6 +14,18 @@ module Spark
         @sql_context = sql_context
       end
 
+      # Returns the column as a {Column}.
+      def [](item)
+        case item
+        when String
+          jcolumn = jdf.apply(item)
+          Column.new(jcolumn)
+        else
+          raise ArgumentError, "Unsupported type: #{item.class}"
+        end
+      end
+
+
       def show_string(n=20, truncate=true)
         jdf.showString(n, truncate)
       end

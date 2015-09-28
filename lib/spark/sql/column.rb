@@ -10,6 +10,12 @@ module Spark
         end
       end
 
+      attr_reader :jcolumn
+
+      def initialize(jcolumn)
+        @jcolumn = jcolumn
+      end
+
     end
   end
 end
