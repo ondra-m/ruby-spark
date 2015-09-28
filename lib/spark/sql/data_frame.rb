@@ -26,6 +26,30 @@ module Spark
       end
 
 
+
+
+      # Returns all column names as a Array.
+      #
+      # == Example:
+      #   df.columns
+      #   # => ['age', 'name']
+      #
+      def columns
+        schema.fields.map(&:name)
+      end
+
+      # Returns the schema of this {DataFrame} as a {StructType}.
+      #
+      def schema
+        return @schema if @schema
+
+        begin
+          @schema = DataType.parse(JSON.parse(jdf.schema.json))
+        rescue => e
+          raise Spark::ParseError, 'Unable to parse datatype from schema'
+        end
+      end
+
       def show_string(n=20, truncate=true)
         jdf.showString(n, truncate)
       end

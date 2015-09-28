@@ -26,6 +26,7 @@ module Spark
   end
 
   # Parser helper
+  # SQL DataType
   class ParseError < StandardError
   end
 
@@ -46,6 +47,10 @@ module Spark
 
   # Wrong instances
   class MllibError < StandardError
+  end
+
+  # Wrong datatype
+  class SQLError < StandardError
   end
 
   # Missing Java class

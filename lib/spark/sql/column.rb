@@ -16,6 +16,24 @@ module Spark
         @jcolumn = jcolumn
       end
 
+      def +(item)
+        bin_op('plus', item)
+      end
+
+
+
+
+      def bin_op(name, item)
+        if item.is_a?(Column)
+          col = item.jcolumn
+        else
+          col = item
+        end
+
+        new_jcolumn = jcolumn.__send__(name, col)
+        Column.new(new_jcolumn)
+      end
+
     end
   end
 end

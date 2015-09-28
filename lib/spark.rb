@@ -6,6 +6,7 @@ require 'sourcify'
 require 'socket'
 require 'tempfile'
 require 'tmpdir'
+require 'json'
 
 module Spark
   autoload :Context,        'spark/context'
