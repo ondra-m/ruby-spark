@@ -76,6 +76,15 @@ module Spark
         puts jdf.schema.treeString
       end
 
+      # Returns all the records as a list of {Row}.
+      #
+      # == Example:
+      #   df.collect
+      #   # => [Row(age=2, name=u'Alice'), Row(age=5, name=u'Bob')]
+      #
+      def collect
+        Spark.jb.call(jdf, 'collect')
+      end
 
       # =============================================================================
       # Queries

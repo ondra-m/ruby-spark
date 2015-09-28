@@ -116,6 +116,7 @@ module Spark
       #   Jruby: object.toArray -> java.lang.Object
       #
       def to_ruby(object)
+        # Java object
         if java_object?(object)
           class_name = object.getClass.getSimpleName
           case class_name
@@ -136,6 +137,7 @@ module Spark
           when 'DenseVector';  Spark::Mllib::DenseVector.from_java(object)
           when 'KMeansModel';  Spark::Mllib::KMeansModel.from_java(object)
           when 'DenseMatrix';  Spark::Mllib::DenseMatrix.from_java(object)
+          when 'GenericRowWithSchema'; Spark::SQL::Row.from_java(object, true)
           else
             # Some RDD
             if class_name != 'JavaRDD' && class_name.end_with?('RDD')
@@ -158,8 +160,15 @@ module Spark
             object
           end
 
+        # Array can be automatically transfered but content not
+        elsif object.is_a?(Array)
+          object.map! do |item|
+            to_ruby(item)
+          end
+          object
+
+        # Already transfered
         else
-          # Already transfered
           object
         end
       end
