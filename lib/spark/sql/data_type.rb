@@ -30,8 +30,12 @@ module Spark
         end
       end
 
+      def self.class_name
+        name.split('::').last
+      end
+
       def self.type_name
-        name.split('::').last.sub('Type', '').downcase
+        class_name.sub('Type', '').downcase
       end
 
       def self.complex
@@ -42,6 +46,30 @@ module Spark
         atomic_types[type_name] = self
       end
 
+      def ==(other)
+        self.class == other.class && self.to_s == other.to_s
+      end
+
+      def type_name
+        self.class.type_name
+      end
+
+      def json_value
+        type_name
+      end
+
+      def json
+        json_value.to_json
+      end
+
+      def to_s
+        "#<#{self.class.class_name}>"
+      end
+
+      def inspect
+        to_s
+      end
+
     end
 
     ##
@@ -49,6 +77,12 @@ module Spark
     #
     # Struct type, consisting of a list of {StructField}.
     # This is the data type representing a {Row}.
+    #
+    # == Example:
+    #   struct1 = StructType.new([StructField.new('f1', StringType.new, true)])
+    #   struct2 = StructType.new([StructField.new('f2', StringType.new, true)])
+    #   struct1 == struct2
+    #   # => true
     #
     class StructType < DataType
       complex
@@ -66,6 +100,17 @@ module Spark
       def initialize(fields=[])
         @fields = fields
         @names = fields.map(&:name)
+      end
+
+      def json_value
+        {
+          'type' => type_name,
+          'fields' => fields.map(&:json_value)
+        }
+      end
+
+      def to_s
+        "#<StructType #{fields}>"
       end
     end
 
@@ -89,11 +134,30 @@ module Spark
       # nullable:: boolean, whether the field can be null (nil) or not.
       # metadata:: a dict from string to simple type that can be to_internald to JSON automatically
       #
+      # == Example:
+      #   f1 = StructField.new('f1', StringType.new, true)
+      #   f2 = StructField.new('f2', StringType.new, true)
+      #   f1 == f2
+      #   # => true
+      #
       def initialize(name, data_type, nullable=true, metadata={})
         @name = name
         @data_type = data_type
         @nullable = nullable
         @metadata = metadata
+      end
+
+      def json_value
+        {
+          'name' => name,
+          'type' => data_type.json_value,
+          'nullable' => nullable,
+          'metadata' => metadata,
+        }
+      end
+
+      def to_s
+        %{#<StructField name="#{name}" type="#{data_type}" nullable="#{nullable}" metadata="#{metadata}"}
       end
     end
 
