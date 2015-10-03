@@ -63,11 +63,11 @@ module Spark
       end
 
       def to_s
-        "#<#{self.class.class_name}>"
+        self.class.class_name
       end
 
       def inspect
-        to_s
+        "#<#{to_s}>"
       end
 
     end
@@ -110,7 +110,7 @@ module Spark
       end
 
       def to_s
-        "#<StructType #{fields}>"
+        "StructType(#{fields.join(', ')})"
       end
     end
 
@@ -157,7 +157,7 @@ module Spark
       end
 
       def to_s
-        %{#<StructField name="#{name}" type="#{data_type}" nullable="#{nullable}" metadata="#{metadata}"}
+        %{StructField(#{name}, #{data_type}, #{nullable})}
       end
     end
 
