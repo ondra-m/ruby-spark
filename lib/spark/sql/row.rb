@@ -45,7 +45,11 @@ module Spark
       end
 
       def inspect
-        %{#<Row #{data}>}
+        formated = data.map do |key, value|
+          "#{key}: \"#{value}\""
+        end
+
+        %{#<Row(#{formated.join(', ')})>}
       end
 
     end

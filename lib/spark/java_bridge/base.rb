@@ -11,6 +11,7 @@ module Spark
 
       JAVA_OBJECTS = [
         'java.util.ArrayList',
+        'scala.collection.mutable.HashMap',
         'org.apache.spark.SparkConf',
         'org.apache.spark.api.java.JavaSparkContext',
         'org.apache.spark.api.ruby.RubyRDD',
@@ -21,15 +22,16 @@ module Spark
         'org.apache.spark.api.ruby.RubySerializer',
         'org.apache.spark.api.python.PythonRDD',
         'org.apache.spark.api.python.PythonPartitioner',
+        'org.apache.spark.api.python.PythonUtils',
         'org.apache.spark.ui.ruby.RubyTab',
         'org.apache.spark.mllib.api.ruby.RubyMLLibAPI',
-        'scala.collection.mutable.HashMap',
         :JInteger  => 'java.lang.Integer',
         :JLong     => 'java.lang.Long',
         :JLogger   => 'org.apache.log4j.Logger',
         :JLevel    => 'org.apache.log4j.Level',
         :JPriority => 'org.apache.log4j.Priority',
         :JUtils    => 'org.apache.spark.util.Utils',
+        :JDataType => 'org.apache.spark.sql.types.DataType',
         :JSQLContext => 'org.apache.spark.sql.SQLContext',
         :JDenseVector => 'org.apache.spark.mllib.linalg.DenseVector',
         :JDenseMatrix => 'org.apache.spark.mllib.linalg.DenseMatrix',
@@ -83,12 +85,16 @@ module Spark
         to_ruby(result)
       end
 
-      def to_java_array_list(array)
+      def to_array_list(array)
         array_list = ArrayList.new
         array.each do |item|
           array_list.add(to_java(item))
         end
         array_list
+      end
+
+      def to_seq(array)
+        PythonUtils.toSeq(to_array_list(array))
       end
 
       def to_long(number)
@@ -105,7 +111,7 @@ module Spark
         elsif object.respond_to?(:to_java)
           object.to_java
         elsif object.is_a?(Array)
-          to_java_array_list(object)
+          to_array_list(object)
         else
           object
         end
