@@ -35,7 +35,13 @@ module Spark
         '>' => 'gt',
         '>=' => 'geq',
         '&' => 'and',
-        '|' => 'or'
+        '|' => 'or',
+        'like' => 'like',
+        'starts_with' => 'startsWith',
+        'ends_with' => 'endsWith',
+        'bitwiseOR' => 'bitwiseOR',
+        'bitwiseAND' => 'bitwiseAND',
+        'bitwiseXOR' => 'bitwiseXOR',
       }
 
       UNARY_OPERATORS = {
