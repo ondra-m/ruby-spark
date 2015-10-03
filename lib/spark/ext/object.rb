@@ -9,6 +9,13 @@ module Spark
           Marshal.load(Marshal.dump(self))
         end
 
+        def silence_warnings
+          old_verbose, $VERBOSE = $VERBOSE, nil
+          yield
+        ensure
+          $VERBOSE = old_verbose
+        end
+
         def cattr_reader_with_spark(*syms)
           syms.each do |sym|
             raise NameError.new("Invalid attribute name: #{sym}") unless sym =~ /^[_A-Za-z]\w*$/
@@ -58,6 +65,7 @@ module Spark
         base.send(:include, InstanceMethods)
         base.class_eval do
           patch_unless_exist :deep_copy, :spark
+          patch_unless_exist :silence_warnings, :spark
           patch_unless_exist :cattr_accessor, :spark
         end
       end

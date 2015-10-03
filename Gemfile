@@ -40,6 +40,7 @@ group :development do
   gem 'rake-compiler'
   gem 'guard'
   gem 'guard-rspec'
+  gem 'listen'
 end
 
 group :test do
