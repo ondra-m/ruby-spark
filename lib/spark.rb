@@ -82,22 +82,24 @@ module Spark
   end
 
   # Return a current active context or nil.
-  #
-  # TODO: Run `start` if context is nil?
-  #
   def self.context
     @context
+  end
+
+  # Current active SQLContext or nil.
+  def self.sql_context
+    @sql_context
   end
 
   # Initialize spark context if not already. Config will be automatically
   # loaded on constructor. From that point `config` will use configuration
   # from running Spark and will be locked only for reading.
   def self.start
-    if started?
-      # Already started
-    else
-      @context ||= Spark::Context.new
-    end
+    @context ||= Spark::Context.new
+  end
+
+  def self.start_sql
+    @sql_context ||= Spark::SQL::Context.new(start)
   end
 
   def self.stop
