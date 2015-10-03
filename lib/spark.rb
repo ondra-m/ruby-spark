@@ -27,7 +27,10 @@ module Spark
   autoload :Broadcast,      'spark/broadcast'
   autoload :Accumulator,    'spark/accumulator'
   autoload :StatCounter,    'spark/stat_counter'
-  autoload :Mllib,          'spark/mllib'
+  autoload :Library,        'spark/library'
+
+  # Mllib
+  autoload :Mllib, 'spark/mllib'
 
   # SQL
   autoload :SQL,        'spark/sql'

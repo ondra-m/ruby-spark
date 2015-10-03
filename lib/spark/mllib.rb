@@ -3,19 +3,7 @@ module Spark
   # including classification, regression, clustering, collaborative filtering, dimensionality reduction,
   # as well as underlying optimization primitives.
   module Mllib
-
-    def self.autoload(klass, location, import=true)
-      if import
-        @for_importing ||= []
-        @for_importing << klass
-      end
-
-      super(klass, location)
-    end
-
-    def self.autoload_without_import(klass, location)
-      autoload(klass, location, false)
-    end
+    extend Spark::Library
 
     # Base classes
     autoload_without_import :VectorBase, 'spark/mllib/vector'
@@ -77,13 +65,6 @@ module Spark
       require 'spark/mllib/ruby_matrix/matrix_adapter'
 
       @prepared = true
-      nil
-    end
-
-    def self.import(to=Object)
-      @for_importing.each do |klass|
-        to.const_set(klass, const_get(klass))
-      end
       nil
     end
 
