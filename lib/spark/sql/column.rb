@@ -6,8 +6,16 @@ module Spark
         if col.is_a?(Column)
           col.jcolumn
         else
-          JSQLFunctions.col(col)
+          from_name(col)
         end
+      end
+
+      def self.from_literal(literal)
+        JSQLFunctions.lit(literal)
+      end
+
+      def self.from_name(name)
+        JSQLFunctions.col(col)
       end
 
       attr_reader :jcolumn
@@ -73,6 +81,49 @@ module Spark
             unary_op('#{func}')
           end
         METHOD
+      end
+
+      # An expression that gets an item at position ordinal out of a list,
+      # or gets an item by key out of a Hash.
+      #
+      # == Example:
+      #   df.select(df.l.get_item(0), df.d.get_item("key")).show
+      #   # +----+------+
+      #   # |l[0]|d[key]|
+      #   # +----+------+
+      #   # |   1| value|
+      #   # +----+------+
+      #
+      #   df.select(df.l[0], df.d["key"]).show
+      #   # +----+------+
+      #   # |l[0]|d[key]|
+      #   # +----+------+
+      #   # |   1| value|
+      #   # +----+------+
+      #
+      def get_item(key)
+        self[key]
+      end
+
+      # An expression that gets a field by name in a StructField.
+      #
+      # == Example:
+      #   df.select(df.r.get_field("b")).show
+      #   # +----+
+      #   # |r[b]|
+      #   # +----+
+      #   # |   b|
+      #   # +----+
+      #
+      #   df.select(df.r.a).show
+      #   # +----+
+      #   # |r[a]|
+      #   # +----+
+      #   # |   1|
+      #   # +----+
+      #
+      def get_field(name)
+        self[name]
       end
       end
 
