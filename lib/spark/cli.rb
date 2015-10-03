@@ -69,7 +69,7 @@ module Spark
 
           if options.auto_reload
             require 'listen'
-            listener = Listen.to(Spark.root) do |modified, added, removed|
+            listener = Listen.to(File.join(Spark.root, 'lib')) do |modified, added, removed|
               (modified+added).each do |file|
                 silence_warnings { load(file) }
               end
