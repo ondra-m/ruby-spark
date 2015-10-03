@@ -38,6 +38,13 @@ module Spark
         '|' => 'or'
       }
 
+      UNARY_OPERATORS = {
+        'asc' => 'asc',
+        'desc' => 'desc',
+        'is_null' => 'isNull',
+        'is_not_null' => 'isNotNull'
+      }
+
       FUNC_OPERATORS.each do |op, func|
         eval <<-METHOD
           def #{op}
@@ -54,6 +61,13 @@ module Spark
         METHOD
       end
 
+      UNARY_OPERATORS.each do |op, func|
+        eval <<-METHOD
+          def #{op}
+            unary_op('#{func}')
+          end
+        METHOD
+      end
       end
 
       # Returns this column aliased with a new name or names (in the case of expressions that
@@ -102,6 +116,13 @@ module Spark
           new_jcolumn = jcolumn.__send__(name, col)
           Column.new(new_jcolumn)
         end
+
+      def unary_op(name)
+        new_jcolumn = jcolumn.__send__(name)
+        Column.new(new_jcolumn)
+      end
+
+
     end
   end
 end
