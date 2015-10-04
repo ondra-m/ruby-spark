@@ -54,8 +54,8 @@ module Spark
       end
 
       FUNC_OPERATORS = {
-        '!' => 'negate',
-        '~' => 'not'
+        '!' => 'not',
+        '~' => 'negate'
       }
 
       BIN_OPERATORS = {

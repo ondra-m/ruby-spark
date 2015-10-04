@@ -170,6 +170,14 @@ module Spark
     class AtomicType < DataType
     end
 
+    ##
+    # Spark::SQL::BooleanType
+    #
+    # Boolean data type.
+    #
+    class BooleanType < AtomicType
+      atomic
+    end
 
     ##
     # Spark::SQL::NumericType
