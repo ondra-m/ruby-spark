@@ -93,6 +93,68 @@ module Spark
         puts jdf.schema.treeString
       end
 
+      def explain(extended=false)
+        if extended
+          jdf.queryExecution.toString
+        else
+          jdf.queryExecution.executedPlan.toString
+        end
+      end
+
+      # Prints the (logical and physical) plans to the console for debugging purpose.
+      #
+      # == Example:
+      #   df.print_explain
+      #   # Scan PhysicalRDD[age#0,name#1]
+      #
+      #   df.print_explain(true)
+      #   # == Parsed Logical Plan ==
+      #   # ...
+      #   # == Analyzed Logical Plan ==
+      #   # ...
+      #   # == Optimized Logical Plan ==
+      #   # ...
+      #   # == Physical Plan ==
+      #   # ...
+      #
+      def print_explain(extended=false)
+        puts explain(extended)
+      end
+
+      # Returns all column names and their data types as a list.
+      #
+      # == Example:
+      #   df.dtypes
+      #   # => [('age', 'int'), ('name', 'string')]
+      #
+      def dtypes
+        schema.fields.map do |field|
+          [field.name, field.data_type.simple_string]
+        end
+      end
+
+      def inspect
+        types = dtypes.map do |(name, type)|
+          "#{name}: #{type}"
+        end
+
+        "#<DataFrame(#{types.join(', ')})>"
+      end
+
+      # Get column by name
+      def method_missing(method, *args, &block)
+        name = method.to_s
+        if columns.include?(name)
+          self[name]
+        else
+          super
+        end
+      end
+
+
+      # =============================================================================
+      # Collect
+
       # Returns all the records as a list of {Row}.
       #
       # == Example:
@@ -115,6 +177,16 @@ module Spark
           item.to_h.values
         end
         result
+      end
+
+      # Returns the number of rows in this {DataFrame}.
+      def count
+        jdf.count.to_i
+      end
+
+      # Returns the first num rows as an Array of {Row}.
+      def take(num)
+        limit(num).collect
       end
 
 
@@ -176,14 +248,12 @@ module Spark
         DataFrame.new(new_jdf, sql_context)
       end
 
-      def method_missing(method, *args, &block)
-        name = method.to_s
-        if columns.include?(name)
-          self[name]
-        else
-          super
-        end
+      # Limits the result count to the number specified.
+      def limit(num)
+        new_jdf = jdf.limit(mum)
+        DataFrame.new(new_jdf, sql_context)
       end
+
 
       alias_method :where, :filter
 

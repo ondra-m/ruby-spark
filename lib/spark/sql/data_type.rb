@@ -54,6 +54,10 @@ module Spark
         self.class.type_name
       end
 
+      def simple_string
+        type_name
+      end
+
       def json_value
         type_name
       end
