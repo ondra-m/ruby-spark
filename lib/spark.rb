@@ -113,6 +113,7 @@ module Spark
     nil
   ensure
     @context = nil
+    @sql_context = nil
     clear_config
   end
 
