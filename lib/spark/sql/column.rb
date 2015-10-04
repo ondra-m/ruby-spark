@@ -18,7 +18,7 @@ module Spark
       end
 
       def self.from_name(name)
-        JSQLFunctions.col(col)
+        JSQLFunctions.col(name)
       end
 
 
@@ -55,7 +55,8 @@ module Spark
 
       FUNC_OPERATORS = {
         '!' => 'not',
-        '~' => 'negate'
+        '~' => 'negate',
+        '-@' => 'negate'
       }
 
       BIN_OPERATORS = {

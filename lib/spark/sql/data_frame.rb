@@ -103,6 +103,20 @@ module Spark
         Spark.jb.call(jdf, 'collect')
       end
 
+      def collect_as_hash
+        result = collect
+        result.map!(&:to_h)
+        result
+      end
+
+      def values
+        result = collect
+        result.map! do |item|
+          item.to_h.values
+        end
+        result
+      end
+
 
       # =============================================================================
       # Queries
@@ -149,7 +163,7 @@ module Spark
       #   df.where("age = 2").collect
       #   # => [#<Row {"age"=>2, "name"=>"Alice"}>]
       #
-      def where(condition)
+      def filter(condition)
         case condition
         when String
           new_jdf = jdf.filter(condition)
@@ -171,7 +185,7 @@ module Spark
         end
       end
 
-      alias_method :filter, :where
+      alias_method :where, :filter
 
     end
   end
