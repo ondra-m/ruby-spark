@@ -40,16 +40,7 @@ module Spark
       #   # [Row(age=3), Row(age=nil)]
       #
       def self.when(condition, value)
-        unless condition.is_a?(Column)
-          raise ArgumentError, "Condition must be a Column"
-        end
-
-        if value.is_a?(Column)
-          value = value.jcolumn
-        end
-
-        new_jcolumn = JSQLFunctions.when(condition.jcolumn, value)
-        Column.new(new_jcolumn)
+        Column.new(JSQLFunctions).when(condition, value)
       end
 
 
@@ -276,14 +267,13 @@ module Spark
       #   # +-----+--------------------------------------------------------+
       #
       def when(condition, value)
-        unless condition.is_a(Column)
+        unless condition.is_a?(Column)
           raise ArgumentError, "Condition must be a Column"
         end
 
         if value.is_a?(Column)
           value = value.jcolumn
         end
-
         new_jcolumn = jcolumn.when(condition.jcolumn, value)
         Column.new(new_jcolumn)
       end
@@ -293,7 +283,7 @@ module Spark
       # If {Column.otherwise} is not invoked, nil is returned for unmatched conditions.
       #
       # == Example:
-      #   df.select(df.name, F.when(df.age > 3, 1).otherwise(0)).show()
+      #   df.select(df.name, Column.when(df.age > 3, 1).otherwise(0)).show
       #   # +-----+---------------------------------+
       #   # | name|CASE WHEN (age > 3) THEN 1 ELSE 0|
       #   # +-----+---------------------------------+
@@ -319,7 +309,7 @@ module Spark
       end
 
       def to_s
-        "Column('#{jcolumn.toString}')"
+        "Column(\"#{jcolumn.toString}\")"
       end
 
       def inspect
@@ -349,10 +339,10 @@ module Spark
           Column.new(new_jcolumn)
         end
 
-      def unary_op(name)
-        new_jcolumn = jcolumn.__send__(name)
-        Column.new(new_jcolumn)
-      end
+        def unary_op(name)
+          new_jcolumn = jcolumn.__send__(name)
+          Column.new(new_jcolumn)
+        end
 
 
     end
