@@ -79,7 +79,8 @@ module Spark
         initial_weights: nil,
         reg_type: 'l2',
         intercept: false,
-        validate: true
+        validate: true,
+        convergence_tol: 0.001
       }
 
       # Train a support vector machine on the given data.
@@ -122,6 +123,10 @@ module Spark
       #   algorithm should validate data before training.
       #   (default: true)
       #
+      # convergence_tol::
+      #   A condition which decides iteration termination.
+      #   (default: 0.001)
+      #
       def self.train(rdd, options={})
         super
 
@@ -133,7 +138,8 @@ module Spark
                                            options[:initial_weights],
                                            options[:reg_type],
                                            options[:intercept],
-                                           options[:validate])
+                                           options[:validate],
+                                           options[:convergence_tol])
 
         SVMModel.new(weights, intercept)
       end
