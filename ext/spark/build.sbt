@@ -4,7 +4,7 @@ assemblySettings
 
 // Default values
 val defaultScalaVersion     = "2.10.4"
-val defaultSparkVersion     = "1.5.0"
+val defaultSparkVersion     = "1.6.0"
 val defaultSparkCoreVersion = "2.10"
 val defaultTargetDir        = "target"
 val defaultHadoopVersion    = "1.0.4"
