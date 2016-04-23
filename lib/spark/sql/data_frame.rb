@@ -35,7 +35,7 @@ module Spark
           jcolumn = jdf.apply(item)
           Column.new(jcolumn)
         when Array
-          select(*items)
+          select(*item)
         when Numeric
           jcolumn = jdf.apply(columns[item])
           Column.new(jcolumn)
@@ -250,7 +250,7 @@ module Spark
 
       # Limits the result count to the number specified.
       def limit(num)
-        new_jdf = jdf.limit(mum)
+        new_jdf = jdf.limit(num)
         DataFrame.new(new_jdf, sql_context)
       end
 
