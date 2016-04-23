@@ -6,6 +6,7 @@ require 'sourcify'
 require 'socket'
 require 'tempfile'
 require 'tmpdir'
+require 'json'
 
 module Spark
   autoload :Context,        'spark/context'
@@ -26,7 +27,14 @@ module Spark
   autoload :Broadcast,      'spark/broadcast'
   autoload :Accumulator,    'spark/accumulator'
   autoload :StatCounter,    'spark/stat_counter'
-  autoload :Mllib,          'spark/mllib'
+  autoload :Library,        'spark/library'
+
+  # Mllib
+  autoload :Mllib, 'spark/mllib'
+
+  # SQL
+  autoload :SQL,        'spark/sql'
+  autoload :SQLContext, 'spark/sql'
 
   include Helper::System
 
@@ -77,22 +85,24 @@ module Spark
   end
 
   # Return a current active context or nil.
-  #
-  # TODO: Run `start` if context is nil?
-  #
   def self.context
     @context
+  end
+
+  # Current active SQLContext or nil.
+  def self.sql_context
+    @sql_context
   end
 
   # Initialize spark context if not already. Config will be automatically
   # loaded on constructor. From that point `config` will use configuration
   # from running Spark and will be locked only for reading.
   def self.start
-    if started?
-      # Already started
-    else
-      @context ||= Spark::Context.new
-    end
+    @context ||= Spark::Context.new
+  end
+
+  def self.start_sql
+    @sql_context ||= Spark::SQL::Context.new(start)
   end
 
   def self.stop
@@ -103,6 +113,7 @@ module Spark
     nil
   ensure
     @context = nil
+    @sql_context = nil
     clear_config
   end
 

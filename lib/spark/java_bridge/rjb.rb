@@ -31,13 +31,6 @@ module Spark
           super.join(separator)
         end
 
-        def silence_warnings
-          old_verbose, $VERBOSE = $VERBOSE, nil
-          yield
-        ensure
-          $VERBOSE = old_verbose
-        end
-
     end
   end
 end

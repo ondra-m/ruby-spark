@@ -53,6 +53,7 @@ module Spark
         c.option '--properties-file STRING', String, 'Path to a file from which to load extra properties'
         c.option '--[no-]start', 'Start Spark immediately'
         c.option '--[no-]logger', 'Enable/disable logger (default: enable)'
+        c.option '--auto-reload', 'Autoreload changed files'
 
         c.action do |args, options|
           options.default start: true, logger: true
@@ -65,6 +66,16 @@ module Spark
           end
 
           Spark.config.from_file(options.properties_file)
+
+          if options.auto_reload
+            require 'listen'
+            listener = Listen.to(File.join(Spark.root, 'lib')) do |modified, added, removed|
+              (modified+added).each do |file|
+                silence_warnings { load(file) }
+              end
+            end
+            listener.start
+          end
 
           if options.start
             # Load Java and Spark

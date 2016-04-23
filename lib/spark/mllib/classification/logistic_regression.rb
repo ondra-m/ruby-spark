@@ -98,7 +98,8 @@ module Spark
         reg_param: 0.01,
         reg_type: 'l2',
         intercept: false,
-        validate: true
+        validate: true,
+        convergence_tol: 0.001
       }
 
       # Train a logistic regression model on the given data.
@@ -142,6 +143,10 @@ module Spark
       #   algorithm should validate data before training.
       #   (default: true)
       #
+      # convergence_tol::
+      #   A condition which decides iteration termination.
+      #   (default: 0.001)
+      #
       def self.train(rdd, options={})
         super
 
@@ -153,7 +158,8 @@ module Spark
                                            options[:reg_param].to_f,
                                            options[:reg_type],
                                            options[:intercept],
-                                           options[:validate])
+                                           options[:validate],
+                                           options[:convergence_tol])
 
         LogisticRegressionModel.new(weights, intercept)
       end

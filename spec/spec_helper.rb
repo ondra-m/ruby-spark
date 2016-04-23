@@ -16,8 +16,8 @@ def spark_start
   Spark.config do
     set 'spark.ruby.serializer.batch_size', 100
   end
-  Spark.start
-  $sc = Spark.context
+  $sc = Spark.start
+  $sql = Spark.start_sql
 end
 
 def windows?

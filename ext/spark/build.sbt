@@ -4,7 +4,7 @@ assemblySettings
 
 // Default values
 val defaultScalaVersion     = "2.10.4"
-val defaultSparkVersion     = "1.5.0"
+val defaultSparkVersion     = "1.6.0"
 val defaultSparkCoreVersion = "2.10"
 val defaultTargetDir        = "target"
 val defaultHadoopVersion    = "1.0.4"
@@ -37,6 +37,7 @@ libraryDependencies ++= Seq(
   "org.apache.spark"  %% "spark-core"    % _sparkVersion excludeAll(ExclusionRule(organization = "org.apache.hadoop")),
   "org.apache.spark"  %% "spark-graphx"  % _sparkVersion,
   "org.apache.spark"  %% "spark-mllib"   % _sparkVersion,
+  "org.apache.spark"  %% "spark-sql"     % _sparkVersion,
   "org.apache.hadoop" %  "hadoop-client" % _hadoopVersion,
   "com.github.fommil.netlib" % "all" % "1.1.2",
   "org.scalatest" % "scalatest_2.10" % "2.2.1" % "test"

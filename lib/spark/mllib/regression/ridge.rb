@@ -57,7 +57,8 @@ module Spark
         mini_batch_fraction: 1.0,
         initial_weights: nil,
         intercept: false,
-        validate: true
+        validate: true,
+        convergence_tol: 0.001
       }
 
       # Train a ridge regression model on the given data.
@@ -93,6 +94,10 @@ module Spark
       #   algorithm should validate data before training.
       #   (default: true)
       #
+      # convergence_tol::
+      #   A condition which decides iteration termination.
+      #   (default: 0.001)
+      #
       def self.train(rdd, options={})
         super
 
@@ -103,7 +108,8 @@ module Spark
                                            options[:mini_batch_fraction].to_f,
                                            options[:initial_weights],
                                            options[:intercept],
-                                           options[:validate])
+                                           options[:validate],
+                                           options[:convergence_tol])
 
         RidgeRegressionModel.new(weights, intercept)
       end
