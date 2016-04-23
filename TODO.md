@@ -9,3 +9,4 @@
 - fix broadcast for cluster
 - dump to disk if there is memory limit
 - Add Partitioner to RDD
+- add NonExist serializer
