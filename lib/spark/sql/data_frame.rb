@@ -189,6 +189,11 @@ module Spark
         limit(num).collect
       end
 
+      # Return first {Row}.
+      def first
+        take(1).first
+      end
+
 
       # =============================================================================
       # Queries
