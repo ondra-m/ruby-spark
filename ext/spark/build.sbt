@@ -46,7 +46,7 @@ libraryDependencies ++= Seq(
 // Repositories
 resolvers ++= Seq(
   "JBoss Repository"     at "http://repository.jboss.org/nexus/content/repositories/releases/",
-  "Spray Repository"     at "http://repo.spray.cc/",
+  "Spray Repository"     at "http://repo.spray.io/",
   "Cloudera Repository"  at "https://repository.cloudera.com/artifactory/cloudera-repos/",
   "Akka Repository"      at "http://repo.akka.io/releases/",
   "Twitter4J Repository" at "http://twitter4j.org/maven2/",
